@@ -1,5 +1,5 @@
 <template>
-  <app-layout :title="$gettext('Bestand')" :loading="loading" :error="error">
+  <app-layout :title="$gettext('Bestand')" :framed="!!resource" :loading="loading" :error="error">
     <template #actions>
       <span v-if="canWrite" class="zk-status ext:text-sm" role="status" aria-live="polite">
         <template v-if="saving">{{ $gettext('Wird gespeichert …') }}</template>
@@ -125,10 +125,14 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useGettext } from 'vue3-gettext'
+import type { Resource } from '@opencloud-eu/web-client'
 import AppLayout from '../components/AppLayout.vue'
 import { useStock } from '../composables/useStock'
 import { catalog } from '../domain/catalog'
 import { CATEGORIES, type Category } from '../domain/types'
+
+// Im App-Rahmen (AppWrapper) übergibt OpenCloud die geöffnete Datei; ohne Rahmen fehlt sie.
+defineProps<{ resource?: Resource }>()
 
 const { $gettext } = useGettext()
 const { entries, loading, saving, error, canWrite, load, setQuantity, setNote, flush } = useStock()

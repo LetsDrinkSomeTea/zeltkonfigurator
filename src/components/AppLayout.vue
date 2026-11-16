@@ -3,7 +3,11 @@
   <div ref="scroller" class="zk-scroll ext:overflow-y-auto" :style="{ height }">
     <main class="zk-app ext:p-4 ext:mx-auto ext:max-w-5xl">
       <header class="ext:flex ext:flex-wrap ext:items-center ext:gap-2 ext:mb-4">
-        <h1 class="ext:text-xl ext:font-bold ext:grow">{{ title }}</h1>
+        <!-- Im App-Rahmen steht der Dateiname schon in der Kopfleiste; gedruckt wird er trotzdem. -->
+        <h1 class="ext:text-xl ext:font-bold ext:grow" :class="{ 'zk-print-only': framed }">
+          {{ title }}
+        </h1>
+        <span v-if="framed" class="zk-no-print ext:grow" />
         <slot name="actions" />
       </header>
       <p v-if="error" class="zk-error ext:mb-4" role="alert">{{ errorMessage(error) }}</p>
@@ -24,7 +28,7 @@ import {
   NotFoundError
 } from '../storage/DataStore'
 
-defineProps<{ title: string; loading?: boolean; error?: Error | null }>()
+defineProps<{ title: string; loading?: boolean; error?: Error | null; framed?: boolean }>()
 
 const { $gettext } = useGettext()
 
@@ -71,7 +75,13 @@ function errorMessage(e: Error): string {
 .zk-error {
   color: var(--oc-role-error, #b3261e);
 }
+.zk-print-only {
+  display: none;
+}
 @media print {
+  .zk-print-only {
+    display: block;
+  }
   .zk-scroll {
     height: auto !important;
     overflow: visible !important;

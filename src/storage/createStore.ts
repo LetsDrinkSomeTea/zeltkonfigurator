@@ -4,9 +4,23 @@ import { parseStockFile } from '../domain/schema'
 import type { StockFile } from '../domain/types'
 import { getAppConfig } from './appConfig'
 import type { DataStore, Versioned } from './DataStore'
-import { readStorageConfig, resolveLocation } from './location'
+import { readStorageConfig, resolveLocation, type ResolvedLocation } from './location'
 import { useSpacesReady } from './spaces'
 import { createWebDavFiles, WebDavDataStore } from './WebDavDataStore'
+
+/**
+ * Liefert eine Funktion, die den konfigurierten Ablageort der Bestandsdatei auflöst (Space und
+ * Pfad). Muss in setup() aufgerufen werden.
+ */
+export function useStockLocation(): () => Promise<ResolvedLocation<SpaceResource>> {
+  const spacesStore = useSpacesStore()
+  const spacesReady = useSpacesReady()
+  return async () => {
+    const config = readStorageConfig(getAppConfig())
+    await spacesReady()
+    return resolveLocation<SpaceResource>(config, spacesStore.spaces)
+  }
+}
 
 /**
  * Erzeugt den DataStore für den Betrieb in OpenCloud (WebDavDataStore).
@@ -17,14 +31,12 @@ export function createStore(): DataStore {
   const clientService = useClientService()
   const spacesStore = useSpacesStore()
   const userStore = useUserStore()
-  const spacesReady = useSpacesReady()
+  const stockLocation = useStockLocation()
 
   let pending: Promise<WebDavDataStore> | undefined
 
   async function build(): Promise<WebDavDataStore> {
-    const config = readStorageConfig(getAppConfig())
-    await spacesReady()
-    const { space, path } = resolveLocation<SpaceResource>(config, spacesStore.spaces)
+    const { space, path } = await stockLocation()
 
     const canWrite = async (): Promise<boolean> => {
       // Die Berechtigungen eines Space werden erst beim Öffnen geladen.

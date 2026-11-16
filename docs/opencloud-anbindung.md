@@ -85,10 +85,20 @@ Anlegen ohne Überschreiben: `saveX(file, null)` ruft `putFileContents` ohne `pr
 Verhalten: Der Bestand liegt in der Datei `<path>` des konfigurierten Space (Vorgabe: oberste
 Ebene); fehlende Ordner oberhalb der Datei werden vor dem
 ersten Schreiben per MKCOL angelegt (405 = existiert schon). Packlisten (`<Name>.packliste`)
-liegen an beliebiger Stelle: `src/storage/createDocument.ts` löst Space und Pfad über
-`useAppDefaults` aus der Adresse auf und liest und schreibt die Datei an Ort und Stelle
-(`WebDavPacklistDocument`). Schreibrecht einer Packliste = DAV-Berechtigung der Datei. Beide
-Dateiarten sind YAML. Eine leere Datei (frisch über „Neu“ angelegt) gilt als neue Packliste.
+liegen an beliebiger Stelle: Die Ansicht läuft in OpenClouds App-Rahmen (`AppWrapperRoute`), der
+Space, Datei und Schreibrecht (`space`, `resource`, `isReadOnly`) als Props übergibt;
+`src/storage/createDocument.ts` liest und schreibt die Datei damit an Ort und Stelle
+(`WebDavPacklistDocument`). Beide Dateiarten sind YAML. Eine leere Datei (frisch über „Neu“
+angelegt) gilt als neue Packliste.
+
+App-Rahmen: Der Rahmen liefert Kopfleiste, Schließen und Dateiaktionen. Die Ansichten
+deklarieren bewusst weder `currentContent` noch das Ereignis `update:currentContent`; damit
+lädt und speichert der Rahmen den Inhalt nicht selbst (er würde nur alle zwei Minuten
+speichern), und die App behält ihr sofortiges Speichern mit Konflikterkennung. Der Rahmen
+verlangt, dass die Ansicht mindestens eine Prop deklariert. Der Bestand hat keine Datei in der
+Adresse, wenn er über den Link „Bestand“ geöffnet wird: `StockRoute.vue` sucht dann die
+Bestandsdatei und wechselt auf deren Adresse; gibt es die Datei noch nicht, erscheint der
+Bestand ohne Rahmen.
 
 ## 5. Nicht verifiziert (ohne laufenden Server)
 
