@@ -1,6 +1,6 @@
 # Architektur-Entwurf – Zeltkonfigurator
 
-Stand: 2026-11-16 · Status: Entwurf 2 zur Abstimmung · Bezug: [anforderungen.md](anforderungen.md)
+Stand: 2026-11-16 · Status: Entwurf 3 zur Abstimmung · Bezug: [anforderungen.md](anforderungen.md)
 
 ## 1. Überblick
 
@@ -152,23 +152,25 @@ export const jurte: TentType = {
     }
   ],
   walls: [
-    keineWand({ stangen: 'seitenstange-kurz', anzahl: 12 }),
-    normaleWand({ segmente: 12, stangen: 'seitenstange-165' }),
-    hoheWand({ segmente: 12, stangen: 'seitenstange-209' })
+    keineWand(),
+    normaleWand({ segmente: 12 }),
+    hoheWand({ segmente: 12 })
   ],
   fixed: [
     { articleId: 'jurtendaechle', quantity: 1 },
-    { articleId: 'jurtenkreuz', quantity: 1 }
-    // Mast, Heringe, Abspannung …
+    { articleId: 'jurtenspinne-6', quantity: 1 },
+    { articleId: 'seitenstange', quantity: 12 },
+    { articleId: 'mast-375', quantity: 3 }
+    // Abspannseile, Heringe, Blockseilrolle …
   ]
 }
 ```
 
 `keineWand`, `normaleWand`, `hoheWand`, `nurStreifen`, `erdstreifen` sind kleine
-Hilfsfunktionen in `catalog/walls.ts`. `hoheWand` liefert z. B.
+Hilfsfunktionen in `catalog/walls.ts`; sie ergänzen auch die Bodennägel je Wandsegment. `hoheWand` liefert z. B.
 `builds: [super, normal+streifen]`. Kohte und Hochkohte nutzen dieselben Bausteine:
 
-- Kohte: `walls: [ohneWand(), erdstreifen()]`
+- Kohte: `walls: [keineWand(), erdstreifen()]`
 - Hochkohte: `walls: [nurStreifen({ segmente: 8 }), normaleWand({ segmente: 8 }), hoheWand({ segmente: 8 })]`
 
 Ein Test prüft für alle Zelttypen: eindeutige IDs, alle `articleId`s existieren, jede
@@ -225,6 +227,7 @@ interface PacklistFile {
   name: string
   date?: string
   tents: TentConfig[]
+  finishOrder: Finish[] // Ausweichreihenfolge, Vorgabe ['gaze', 'fenster', 'blanko'] (F-2B)
   items: PackItem[] // festgeschriebenes Rechenergebnis (F-37)
   deviations: Deviation[]
   extraItems: { id: string; text: string; quantity: number; checked: boolean }[]
@@ -242,7 +245,7 @@ App-Update nicht mehr gibt, bleibt die Liste lesbar (das Material ist festgeschr
 Alle Funktionen sind rein. Eingaben: Zelte der Packliste, Katalog, Bestand.
 
 ```ts
-allocate(tents: TentConfig[], catalog: Catalog, stock: Stock): AllocationResult
+allocate(tents: TentConfig[], finishOrder: Finish[], catalog: Catalog, stock: Stock): AllocationResult
 //   → items: PackItem[] (ohne checked), deviations: Deviation[],
 //     status: 'ok' | 'mit-ausweichmaterial' | 'fehlt'
 recalculate(list: PacklistFile, catalog, stock): PacklistFile // übernimmt Haken (F-36)
@@ -260,7 +263,8 @@ Ablauf von `allocate` – Zelte in Listenreihenfolge, Bestand als Arbeitskopie:
 
 ### 5.1 Wandzuweisung
 
-Eingabe: Segmentzahl `n`, Bauarten der Wandoption, bevorzugte Bauart, Wunsch-Ausführung.
+Eingabe: Segmentzahl `n`, Bauarten der Wandoption, bevorzugte Bauart, Wunsch-Ausführung,
+Ausweichreihenfolge der Ausführungen.
 
 Daraus entsteht eine geordnete Liste von **Varianten** (Bauart × Ausführung) nach
 Anforderungen 5.4. Für jede Variante der Reihe nach:
@@ -376,8 +380,8 @@ Verträge (AP 0), Review und Zusammenführen liegen beim Hauptagenten.
 | 8   | Zusammenbau, Test gegen OpenCloud im Container, README mit Installationsanleitung                      | alle         | –        |
 
 AP 5–7 arbeiten gegen `MemoryDataStore` und einen kleinen Testkatalog und sind dadurch
-weder von AP 1 noch von AP 3 blockiert. AP 3 trägt offene Stücklisten-Angaben als
-deutlich markierte Platzhalter ein, die später in den Zelttyp-Dateien korrigiert werden.
+weder von AP 1 noch von AP 3 blockiert. AP 3 setzt Abschnitt 7 der Anforderungen um; angenommene Werte werden im Code mit
+`// PLATZHALTER` markiert und in `docs/zelttyp-anlegen.md` aufgelistet.
 
 ## 10. Entscheidungen
 

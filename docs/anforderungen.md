@@ -1,6 +1,6 @@
 # Anforderungen – Zeltkonfigurator
 
-Stand: 2026-11-16 · Status: Entwurf 2 zur Abstimmung
+Stand: 2026-11-16 · Status: Entwurf 3 zur Abstimmung
 
 ## 1. Ziel
 
@@ -92,6 +92,7 @@ Nicht Teil der App:
 | F-28 | Zelte werden in Listenreihenfolge bedient: Das erste Zelt bekommt seine Wünsche zuerst. Die Reihenfolge ist änderbar.                                                            |
 | F-29 | Eine Zusammenfassung oben zeigt: „alles vorhanden“, „mit Ausweichmaterial machbar“ oder „es fehlt Material“.                                                                     |
 | F-2A | Stangen, die laut Artikelliste auch vor Ort geschlagen werden können, zählen nicht als fehlend. Was der Bestand nicht deckt, erscheint als „vor Ort schlagen“ mit Anzahl und Länge. |
+| F-2B | Die Ausweichreihenfolge der Ausführungen ist je Packliste einstellbar (drei Einträge umsortieren). Vorgabe: Gaze, Fenster, Blanko. |
 
 ### 5.4 Ausweichregeln
 
@@ -105,8 +106,8 @@ in dieser Reihenfolge gedeckt, jeweils so viele Segmente wie möglich:
 
 1. Bauart B in Ausführung A
 2. andere Bauart in Ausführung A
-3. Bauart B in anderer Ausführung (Reihenfolge: Blanko, Fenster, Gaze)
-4. andere Bauart in anderer Ausführung
+3. Bauart B in anderer Ausführung, in der Ausweichreihenfolge der Packliste (F-2B)
+4. andere Bauart in anderer Ausführung, in derselben Ausweichreihenfolge
 
 Dabei gilt:
 
@@ -155,59 +156,90 @@ Dabei gilt:
 | N-08 | Bedienelemente sind per Tastatur erreichbar und beschriftet.                                                                     |
 | N-09 | Eine Anleitung im Repo beschreibt in wenigen Schritten, wie ein Zelttyp oder eine Dachkonfiguration ergänzt wird.                |
 
-## 7. Zelttypen
+## 7. Zelttypen und Stücklisten
 
-Herkunft der Angaben: **S** = vom Stamm genannt, **T** = Tortuga-Webseite,
-**?** = unbekannt, bitte ergänzen.
+Herkunft: **S** = vom Stamm genannt · **T** = Tortuga-Webseite bzw. Komplettangebote auf
+kohten.com · **A** = abgeleitet oder angenommen, als Platzhalter markiert.
 
-| Zelttyp          | Dachkonfigurationen                                                      | Wandsegmente | Wandoptionen                                 | Dächle            |
-| ---------------- | ------------------------------------------------------------------------ | ------------ | -------------------------------------------- | ----------------- |
-| Kohte            | 4 Kohtenblätter (T)                                                      | –            | ohne Erdstreifen · mit Erdstreifen (S)       | Kohtendächle      |
-| Hochkohte        | 4 Kohtenblätter (T)                                                      | 8 (T)        | nur Erweiterungsstreifen (S) · normal · hoch | Kohtendächle      |
-| Jurte            | Jurtendach **oder** 6 Kohtenblätter (S)                                  | 12 (T)       | keine · normal · hoch                        | Jurtendächle      |
-| Großjurte        | Großjurtendach (S)                                                       | 16 (S, T)    | keine · normal · hoch                        | Großjurtendächle  |
-| Gigajurte 9 m    | Gigajurtendach (S)                                                       | 18 (S, T)    | keine · normal · hoch                        | Gigajurtendächle  |
-| Gigajurte 12 m   | Gigajurtendach + 12 Zwischendachteile + 12 Kohtenblätter (S)             | ?            | keine · normal · hoch                        | Gigajurtendächle  |
-| Ovaljurte        | ? (laut T: 2 Halbjurtendächer oder 6 Kohtenblätter, + 2 Zwischendachteile) | ? (14?)      | keine · normal · hoch                        | ?                 |
-| Dreierjurtenburg | ? (laut T: 3 Jurtendächer ohne Traufkante + Dreieckzeltbahn)             | ?            | ?                                            | ? (3 Jurtendächle?) |
-| Sudan            | Zelthaut                                                                 | –            | –                                            | –                 |
-| Yellowstone      | Zelthaut                                                                 | –            | –                                            | –                 |
+### 7.1 Dach, Wand, Dächle
+
+| Zelttyp          | Dachkonfigurationen                                                                               | Wandsegmente | Wandoptionen                             | Dächle               |
+| ---------------- | ------------------------------------------------------------------------------------------------- | ------------ | ---------------------------------------- | -------------------- |
+| Kohte            | 4 Kohtenblätter (T)                                                                               | –            | ohne Erdstreifen · mit Erdstreifen (S)   | Kohtendächle         |
+| Hochkohte        | 4 Kohtenblätter (T)                                                                               | 8 (T)        | nur Erweiterungsstreifen · normal · hoch | Kohtendächle         |
+| Jurte            | Jurtendach **oder** 6 Kohtenblätter (S)                                                           | 12 (T)       | keine · normal · hoch                    | Jurtendächle         |
+| Großjurte        | Großjurtendach (S)                                                                                | 16 (S, T)    | keine · normal · hoch                    | Großjurtendächle     |
+| Gigajurte 9 m    | Gigajurtendach (S)                                                                                | 18 (S, T)    | keine · normal · hoch                    | Gigajurtendächle     |
+| Gigajurte 12 m   | Gigajurtendach + 12 Zwischendachteile + 6 Kohtenblätter (S)                                       | 24 (S)       | keine · normal · hoch                    | Gigajurtendächle     |
+| Ovaljurte        | 2 Halbjurtendächer + 2 Zwischendachteile (T) **oder** 6 Kohtenblätter + 2 Zwischendachteile (A)   | 14 (T)       | keine · normal · hoch                    | Jurtendächle (A)     |
+| Dreierjurtenburg | 3 Jurtendächer + 1 Dreiecksdachteil (S) **oder** 18 Kohtenblätter + 1 Dreiecksdachteil (A)        | 27 (A)       | keine · normal · hoch                    | 3 Jurtendächle (A)   |
+| Sudan            | Zelthaut (A)                                                                                      | –            | –                                        | –                    |
+| Yellowstone      | Zelthaut, Pyramidenzelt 410 × 410 cm (T)                                                          | –            | –                                        | –                    |
+
+Zur Dreierjurtenburg: Jedes der drei zwölfeckigen Dächer gibt eine Kante an das Dreieck und
+je eine an die beiden Nachbardächer ab; es bleiben 3 × 9 = 27 Außenkanten.
 
 Je Wandsegment:
 
-| Wandoption               | Bauarten                                                          | Seitenstange |
-| ------------------------ | ----------------------------------------------------------------- | ------------ |
-| keine                    | –                                                                 | kurz? (?)    |
-| nur Erweiterungsstreifen | Erweiterungsstreifen                                              | ?            |
-| normal                   | Normalbahn                                                        | ?            |
-| hoch                     | Superbahn **oder** Normalbahn + Erweiterungsstreifen (T: gleich hoch) | ?        |
+| Wandoption               | Bauarten                                                     |
+| ------------------------ | ------------------------------------------------------------ |
+| keine                    | –                                                            |
+| mit Erdstreifen (Kohte)  | 1 Erdstreifen je Kohte (A)                                   |
+| nur Erweiterungsstreifen | Erweiterungsstreifen                                         |
+| normal                   | Normalbahn                                                   |
+| hoch                     | Superbahn **oder** Normalbahn + Erweiterungsstreifen (S, T)  |
 
-Bekannte feste Teile (T): Kohte braucht 1 Kohtenkreuz, 2 Kohtenstangen ca. 390 cm, Seil und
-Heringe. Alles Weitere steht in O-3.
+### 7.2 Feste Teile
+
+Die Mengen der Jurten stammen aus den Komplettangeboten (T). Werte mit (A) sind daraus
+hochgerechnete Platzhalter.
+
+| Zelttyp          | Aufhängung                   | Mittelmast (schlagbar)       | Seitenstangen (schlagbar) | Abspannseile | Heringe | Bodennägel¹ | Sonstiges                    |
+| ---------------- | ---------------------------- | ---------------------------- | ------------------------- | ------------ | ------- | ----------- | ---------------------------- |
+| Kohte            | Kohtenkreuz                  | 2 × 375 cm                   | –                         | –            | 8       | –           | Aufzugseil                   |
+| Hochkohte        | Kohtenkreuz                  | 2 × 500 cm (A)               | 8                         | 8 (A)        | 8 (A)   | 16 (A)      | Aufzugseil                   |
+| Jurte            | Jurtenspinne 6er             | 3 × 375 cm                   | 12                        | 12           | 12      | 24          | Blockseilrolle, Aufzugseil   |
+| Großjurte        | Jurtenspinne 8er             | 3 × 500 cm                   | 16                        | 16           | 16      | 32          | Blockseilrolle, Aufzugseil   |
+| Gigajurte 9 m    | Jurtenspinne 9er             | 3 × 500 cm (A)               | 18                        | 18 (A)       | 18 (A)  | 36 (A)      | Blockseilrolle, Aufzugseil   |
+| Gigajurte 12 m   | Jurtenspinne 9er (A)         | 3 × 500 cm (A)               | 24                        | 24 (A)       | 24 (A)  | 48 (A)      | Blockseilrolle, Aufzugseil   |
+| Ovaljurte        | Ovaljurtenspinne 1-Feld      | 2 × 375 cm                   | 14                        | 14           | 14      | 28          | 2 Blockseilrollen, Aufzugseil |
+| Dreierjurtenburg | 3 Jurtenspinnen 6er (A)      | 9 × 375 cm (A)               | 27 (A)                    | 27 (A)       | 27 (A)  | 54 (A)      | 3 Blockseilrollen (A)        |
+| Sudan            | –                            | Gestängesatz (A)             | –                         | –            | 16 (A)  | –           | Bodenplane rund (A)          |
+| Yellowstone      | –                            | 1 Mittelmast (T)             | –                         | –            | 16 (A)  | –           | Bodenplane eckig (T, A)      |
+
+¹ Bodennägel nur, wenn eine Seitenwand gewählt ist (2 je Wandsegment).
+
+Seitenstangen sind bei Tortuga längenverstellbar (ca. 155–245 cm). Es gibt deshalb nur
+einen Artikel „Seitenstange“ für alle Wandhöhen (A).
 
 ## 8. Geklärt
 
-| Thema                                    | Ergebnis                                                              |
-| ---------------------------------------- | --------------------------------------------------------------------- |
-| Normalbahn + Streifen so hoch wie Super? | Ja.                                                                   |
-| Normalbahnen mit Fenster oder Gaze?      | Nein, nur blanko.                                                     |
-| Doppelbahnen, Doppelstreifen?            | Ja, jeweils einzel und doppelt vorhanden.                             |
+| Thema                                    | Ergebnis                                                                     |
+| ---------------------------------------- | ---------------------------------------------------------------------------- |
+| Normalbahn + Streifen so hoch wie Super? | Ja.                                                                          |
+| Normalbahnen mit Fenster oder Gaze?      | Nein, nur blanko.                                                            |
+| Doppelbahnen, Doppelstreifen?            | Ja, jeweils einzel und doppelt vorhanden.                                    |
 | Kohte / Hochkohte Varianten              | Kohte mit und ohne Erdstreifen; Hochkohte auch nur mit Erweiterungsstreifen. |
-| Stangen aus dem Bestand?                 | Teils, teils – siehe F-2A.                                            |
-| Ablageort                                | Space „Material Team“.                                                |
-| Stücklisten als Daten oder Code?         | Code, kommt mit dem App-Update.                                       |
+| Stangen aus dem Bestand?                 | Teils, teils – siehe F-2A.                                                   |
+| Ablageort                                | Space „Material Team“.                                                       |
+| Stücklisten als Daten oder Code?         | Code, kommt mit dem App-Update.                                              |
+| Ausweichreihenfolge der Ausführungen     | Gaze, Fenster, Blanko; je Packliste änderbar.                                |
+| Gigajurte 12 m                           | Gigajurtendach (9 m) + 6 Kohtenblätter + 12 Zwischendachteile, 24 Wandsegmente. |
+| Dreierjurtenburg                         | 3 Jurtendächer + Dreiecksdachteil, außen herum Bahnen.                       |
 
-## 9. Offene Punkte
+## 9. Platzhalter und offene Punkte
 
-Keiner dieser Punkte blockiert den Bau der App; sie betreffen nur die Inhalte der
-Zelttyp-Dateien.
+Keiner dieser Punkte blockiert den Bau der App. Alle mit (A) markierten Werte aus
+Abschnitt 7 stehen als gekennzeichnete Platzhalter in den Zelttyp-Dateien und lassen sich
+dort korrigieren.
 
-| ID  | Frage                                                                                                                                                              | Annahme bis zur Klärung                            |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
-| O-1 | Gigajurte 12 m, Ovaljurte, Dreierjurtenburg: Dach, Zahl der Wandsegmente und Seitenstangen, Dächle (Zeilen mit „?“ in Abschnitt 7).                                | Werte der Tortuga-Seite, Rest leer.                |
-| O-2 | Erdstreifen der Kohte: ein anknüpfbarer Streifen pro Kohte, oder eigene Kohtenblätter mit angenähtem Erdstreifen?                                                  | Ein anknüpfbarer Streifen pro Kohte.               |
-| O-3 | Feste Teile je Zelttyp: Kreuz bzw. Ring, Mittelmast (Zweibein, Dreibein, Länge), Zahl der Heringe und Abspannseile, Länge der Seitenstangen je Wandoption.         | Nur die Kohten-Angaben der Tortuga-Seite.          |
-| O-4 | Welche Stangen werden vor Ort geschlagen, welche sind immer im Bestand?                                                                                            | Alle Holzstangen dürfen geschlagen werden.         |
-| O-5 | Sudan und Yellowstone: Teile (Zelthaut, Gestänge, Heringe) und welche Bodenplane (rund/eckig) zu welchem Zelt gehört. Gibt es mehrere passende Bodenplanen je Zelt? | Je Zelt eine Bodenplane.                           |
-| O-6 | Soll an jedem Zelt ein Segment für den Eingang bewusst als Einzelbahn bleiben (Tortuga nennt z. B. 5 Doppel + 2 Einzel bei der Jurte)?                              | Nein, Doppelteile zuerst, Einzelteile füllen auf.  |
-| O-7 | In welchem Ordner im Space „Material Team“ sollen die Dateien liegen?                                                                                              | Ordner „Zeltkonfigurator“.                         |
+| ID  | Thema                                                                                                                         | Platzhalter                                         |
+| --- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| O-1 | Sudan: auf der Tortuga-Seite nicht (mehr) zu finden. Teile, Gestänge, Heringe.                                                 | Zelthaut, Gestängesatz, 16 Heringe, Bodenplane rund. |
+| O-2 | Yellowstone: Zahl der Heringe und Seitenstäbe.                                                                                | 1 Mittelmast, 16 Heringe, Bodenplane eckig.         |
+| O-3 | Dreierjurtenburg: 27 Wandsegmente sind geometrisch abgeleitet; Masten und Dächle geschätzt.                                   | siehe 7.2.                                          |
+| O-4 | Ovaljurte: eigenes Dächle (Tortuga hat eine Ovaljurtenabdeckplane) oder Jurtendächle?                                         | Jurtendächle.                                       |
+| O-5 | Erdstreifen der Kohte: anknüpfbarer Streifen oder eigene Kohtenblätter?                                                       | Ein anknüpfbarer Streifen pro Kohte.                |
+| O-6 | Welche Stangen werden vor Ort geschlagen?                                                                                     | Mittelmasten und Seitenstangen der Schwarzzelte.    |
+| O-7 | Soll je Zelt ein Segment für den Eingang Einzelbahn bleiben (Tortuga liefert z. B. 5 Doppel + 2 Einzel)?                      | Nein, Doppelteile zuerst, Einzelteile füllen auf.   |
+| O-8 | Ordner im Space „Material Team“.                                                                                              | „Zeltkonfigurator“.                                 |
