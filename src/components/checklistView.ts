@@ -86,14 +86,22 @@ export interface TentDescriptionLine {
 /** Konfiguration in Worten; unbekannte Kennungen werden unverändert ausgegeben. */
 export function describeTent(tent: TentConfig, catalog: Catalog): TentDescriptionLine[] {
   const type = catalog.tentTypes.find((t) => t.id === tent.typeId)
-  const roof = type?.roofs.find((r) => r.id === tent.roofId)
   const wall = type?.walls.find((w) => w.id === tent.wallId)
   const build = wall?.builds.find((b) => b.id === tent.buildId)
   const lines: TentDescriptionLine[] = [{ label: 'Zelttyp', value: type?.name ?? tent.typeId }]
   if (tent.label?.trim()) {
     lines.push({ label: 'Bezeichnung', value: tent.label.trim() })
   }
-  lines.push({ label: 'Dach', value: roof?.label ?? tent.roofId })
+  tent.roofs.forEach((pick, i) => {
+    const module = type?.modules[i]
+    const roof = module?.roofs.find((r) => r.id === pick.roofId)
+    const setup = module?.setups.find((s) => s.id === pick.setupId)
+    const many = (type?.modules.length ?? 0) > 1
+    const label = many && module ? `Dach ${i + 1} (${module.name})` : 'Dach'
+    let value = roof?.label ?? pick.roofId
+    if (module && module.setups.length > 1) value += `, ${setup?.label ?? pick.setupId}`
+    lines.push({ label, value })
+  })
   lines.push({ label: 'Seitenwand', value: wall?.label ?? tent.wallId })
   if (tent.buildId) {
     lines.push({ label: 'Bauart', value: build?.label ?? tent.buildId })

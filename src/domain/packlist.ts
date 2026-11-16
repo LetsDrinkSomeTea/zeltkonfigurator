@@ -6,6 +6,7 @@ import {
   type PacklistFile,
   type Stock,
   type TentConfig,
+  type TentRoof,
   type TentType
 } from './types'
 
@@ -25,16 +26,20 @@ export function createPacklist(name: string, catalog: Catalog, stock: Stock): Pa
   }
 }
 
-export type TentOptions = Pick<TentConfig, 'roofId' | 'wallId' | 'buildId' | 'finish'>
+export type TentOptions = Pick<TentConfig, 'roofs' | 'wallId' | 'buildId' | 'finish'>
+
+/** Vorgabe je Baustein: erstes Dach, erster Aufbau. */
+export function defaultTentRoofs(type: TentType): TentRoof[] {
+  return type.modules.map((m) => ({ roofId: m.roofs[0].id, setupId: m.setups[0].id }))
+}
 
 /** Standardkonfiguration des Zelttyps: `defaults`, sonst jeweils die erste Möglichkeit. */
 export function defaultTentOptions(type: TentType): TentOptions {
   const d = type.defaults ?? {}
-  const roof = type.roofs.find((r) => r.id === d.roofId) ?? type.roofs[0]
   const wall = type.walls.find((w) => w.id === d.wallId) ?? type.walls[0]
   const build = wall.builds.find((b) => b.id === d.buildId) ?? wall.builds[0]
   return {
-    roofId: roof.id,
+    roofs: defaultTentRoofs(type),
     wallId: wall.id,
     buildId: build?.id ?? '',
     finish: d.finish ?? 'blanko'
@@ -45,7 +50,10 @@ export function defaultTentOptions(type: TentType): TentOptions {
 export function hasDefaultOptions(tent: TentConfig, type: TentType): boolean {
   const d = defaultTentOptions(type)
   return (
-    tent.roofId === d.roofId &&
+    tent.roofs.length === d.roofs.length &&
+    tent.roofs.every(
+      (r, i) => r.roofId === d.roofs[i].roofId && r.setupId === d.roofs[i].setupId
+    ) &&
     tent.wallId === d.wallId &&
     tent.buildId === d.buildId &&
     tent.finish === d.finish

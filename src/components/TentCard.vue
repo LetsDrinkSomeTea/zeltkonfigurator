@@ -89,16 +89,28 @@
             @update:model-value="onLabel"
           />
 
-          <oc-select
-            v-if="type.roofs.length > 1"
-            :id="`${uid}-roof`"
-            :label="$gettext('Dach')"
-            :options="type.roofs"
-            :model-value="roof"
-            :clearable="false"
-            :searchable="false"
-            @update:model-value="(o: { id: string }) => pl.updateTent(tent.id, { roofId: o.id })"
-          />
+          <template v-for="r in roofRows" :key="r.index">
+            <oc-select
+              v-if="r.module.roofs.length > 1"
+              :id="`${uid}-roof-${r.index}`"
+              :label="r.roofLabel"
+              :options="r.module.roofs"
+              :model-value="r.roof"
+              :clearable="false"
+              :searchable="false"
+              @update:model-value="(o: { id: string }) => setRoof(r.index, { roofId: o.id })"
+            />
+            <oc-select
+              v-if="r.module.setups.length > 1"
+              :id="`${uid}-setup-${r.index}`"
+              :label="r.setupLabel"
+              :options="r.module.setups"
+              :model-value="r.setup"
+              :clearable="false"
+              :searchable="false"
+              @update:model-value="(o: { id: string }) => setRoof(r.index, { setupId: o.id })"
+            />
+          </template>
 
           <oc-select
             v-if="type.walls.length > 1"
@@ -171,8 +183,8 @@ import { computed, ref } from 'vue'
 import { useGettext } from 'vue3-gettext'
 import type { UsePacklist } from '../composables/usePacklist'
 import { catalog } from '../domain/catalog'
-import { hasDefaultOptions } from '../domain/packlist'
-import type { Finish, TentConfig } from '../domain/types'
+import { defaultTentRoofs, hasDefaultOptions } from '../domain/packlist'
+import type { Finish, TentConfig, TentRoof } from '../domain/types'
 import { describeDeviation } from '../domain/view/deviations'
 import { hasFinishLayer } from '../domain/walls'
 import ConfirmDialog from './ConfirmDialog.vue'
@@ -201,7 +213,35 @@ function onRemove() {
 const uid = computed(() => `zk-tent-${props.tent.id}`)
 const type = computed(() => catalog.tentTypes.find((t) => t.id === props.tent.typeId))
 const wall = computed(() => type.value?.walls.find((w) => w.id === props.tent.wallId))
-const roof = computed(() => type.value?.roofs.find((r) => r.id === props.tent.roofId))
+/** Je Dach-Baustein: gewähltes Dach und Aufbau samt Beschriftung. */
+const roofRows = computed(() => {
+  const t = type.value
+  if (!t) return []
+  const many = t.modules.length > 1
+  const roofs =
+    props.tent.roofs.length === t.modules.length ? props.tent.roofs : defaultTentRoofs(t)
+  return t.modules.map((module, index) => {
+    const pick = roofs[index]
+    const prefix = many ? `${module.name} ${index + 1}: ` : ''
+    return {
+      index,
+      module,
+      roof: module.roofs.find((r) => r.id === pick.roofId),
+      setup: module.setups.find((s) => s.id === pick.setupId),
+      roofLabel: prefix + $gettext('Dach'),
+      setupLabel: prefix + $gettext('Aufbau')
+    }
+  })
+})
+
+function setRoof(index: number, patch: Partial<TentRoof>) {
+  const t = type.value
+  if (!t) return
+  const current =
+    props.tent.roofs.length === t.modules.length ? props.tent.roofs : defaultTentRoofs(t)
+  const roofs = current.map((r, i) => (i === index ? { ...r, ...patch } : r))
+  props.pl.updateTent(props.tent.id, { roofs })
+}
 const build = computed(() => wall.value?.builds.find((b) => b.id === props.tent.buildId))
 const showFinish = computed(() => !!build.value && hasFinishLayer(build.value))
 const isDefault = computed(() => !type.value || hasDefaultOptions(props.tent, type.value))
@@ -223,7 +263,16 @@ const finishes = computed<{ id: Finish; label: string }[]>(() => [
 
 /** Die Konfiguration in einer Zeile, z. B. „Jurtendach · Hoch · Superbahn · Gaze“. */
 const summary = computed(() => {
-  const parts = [roof.value?.label, wall.value?.label]
+  const roofParts = roofRows.value.map((r) => {
+    const label = r.roof?.label ?? ''
+    // Nicht-Standard-Aufbau (z. B. „Gehängt“) mit nennen
+    return r.setup && r.setup.id !== r.module.setups[0].id ? `${label} (${r.setup.label})` : label
+  })
+  // Gleiche Dächer zusammenfassen: „3 × Jurtendach“
+  const counted = new Map<string, number>()
+  for (const p of roofParts) counted.set(p, (counted.get(p) ?? 0) + 1)
+  const roofText = [...counted].map(([p, n]) => (n > 1 ? `${n} × ${p}` : p))
+  const parts = [...roofText, wall.value?.label]
   if (wall.value && wall.value.builds.length > 1) {
     parts.push(build.value?.label)
   }

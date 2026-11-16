@@ -92,7 +92,13 @@ function parseTent(v: unknown, path: string): TentConfig {
     id: nonEmptyStr(t.id, `${path}.id`),
     typeId: nonEmptyStr(t.typeId, `${path}.typeId`),
     ...(label !== undefined && { label }),
-    roofId: nonEmptyStr(t.roofId, `${path}.roofId`),
+    roofs: arr(t.roofs, `${path}.roofs`).map((r, i) => {
+      const roof = obj(r, `${path}.roofs[${i}]`)
+      return {
+        roofId: nonEmptyStr(roof.roofId, `${path}.roofs[${i}].roofId`),
+        setupId: nonEmptyStr(roof.setupId, `${path}.roofs[${i}].setupId`)
+      }
+    }),
     wallId: nonEmptyStr(t.wallId, `${path}.wallId`),
     buildId: str(t.buildId, `${path}.buildId`),
     finish: finish(t.finish, `${path}.finish`)

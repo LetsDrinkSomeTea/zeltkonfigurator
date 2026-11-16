@@ -188,6 +188,7 @@ describe('allocate: unbekannte Konfiguration', () => {
   it.each([
     ['typeId', { typeId: 'x' }, /Zelt "t1".*Zelttyp "x"/],
     ['roofId', { roofId: 'x' }, /Zelt "t1".*Dachkonfiguration "x"/],
+    ['setupId', { setupId: 'x' }, /Zelt "t1".*Aufbau "x"/],
     ['wallId', { wallId: 'x' }, /Zelt "t1".*Wandoption "x"/],
     ['buildId', { buildId: 'x' }, /Zelt "t1".*Bauart "x"/]
   ])('wirft UnknownConfigError bei unbekannter %s', (_n, over, re) => {

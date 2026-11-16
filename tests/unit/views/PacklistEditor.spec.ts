@@ -274,7 +274,7 @@ describe('PacklistEditor configurator', () => {
     expect(toggle().attributes('aria-expanded')).toBe('false')
     await toggle().trigger('click')
     expect(toggle().text()).toBe('Fertig')
-    expect(select(wrapper, 'roof')).toBeDefined()
+    expect(select(wrapper, 'roof-0')).toBeDefined()
     expect(select(wrapper, 'wall')).toBeDefined()
     expect(select(wrapper, 'build')).toBeDefined()
     expect(select(wrapper, 'finish')).toBeDefined()
@@ -303,7 +303,7 @@ describe('PacklistEditor configurator', () => {
   it('shows no roof select for a Kohte', async () => {
     const { wrapper } = await open([tentOf('kohte')], fullStock(100))
     await expandTents(wrapper)
-    expect(select(wrapper, 'roof')).toBeUndefined()
+    expect(select(wrapper, 'roof-0')).toBeUndefined()
     expect(select(wrapper, 'wall')).toBeDefined()
   })
 
@@ -311,17 +311,18 @@ describe('PacklistEditor configurator', () => {
     const { wrapper, store } = await open([tentOf('jurte')], fullStock(100))
     expect(wrapper.find('.zk-tent-custom').exists()).toBe(false)
     await expandTents(wrapper)
-    await choose(select(wrapper, 'roof'), 'kohtenblaetter')
+    await choose(select(wrapper, 'roof-0'), 'kohtenblaetter')
+    await choose(select(wrapper, 'setup-0'), 'gehaengt')
     await choose(select(wrapper, 'finish'), 'fenster')
     await wrapper.find('input[id$="-label"]').setValue('Küche')
     await flushPromises()
-    expect(wrapper.find('.zk-tent-summary').text()).toContain('6 Kohtenblätter · Hoch')
+    expect(wrapper.find('.zk-tent-summary').text()).toContain('6 Kohtenblätter (Gehängt) · Hoch')
     expect(wrapper.find('.zk-tent-custom').exists()).toBe(true)
     await wrapper.unmount()
     await flushPromises()
     const [tent] = (await savedList(store)).tents
     expect(tent).toMatchObject({
-      roofId: 'kohtenblaetter',
+      roofs: [{ roofId: 'kohtenblaetter', setupId: 'gehaengt' }],
       wallId: 'hoch',
       buildId: 'super',
       finish: 'fenster',

@@ -8,9 +8,16 @@ const type = (id: string) => catalog.tentTypes.find((t) => t.id === id)!
 describe('Rechenkern mit echtem Katalog', () => {
   it('jeder Zelttyp lässt sich in jeder Wandoption und Dachkonfiguration berechnen', () => {
     for (const t of catalog.tentTypes) {
-      for (const roof of t.roofs) {
+      // jede Dach-Variante und jeder Aufbau, jeweils für einen Baustein
+      const variants = t.modules.flatMap((m, i) => [
+        ...m.roofs.map((r) => ({ i, patch: { roofId: r.id } })),
+        ...m.setups.map((st) => ({ i, patch: { setupId: st.id } }))
+      ])
+      for (const { i, patch } of variants) {
         for (const wall of t.walls) {
-          const tent = { ...createTentConfig(t), roofId: roof.id, wallId: wall.id, buildId: '' }
+          const base = createTentConfig(t)
+          const roofs = base.roofs.map((r, j) => (j === i ? { ...r, ...patch } : r))
+          const tent = { ...base, roofs, wallId: wall.id, buildId: '' }
           const res = allocate([tent], ['gaze', 'fenster', 'blanko'], catalog, {})
           const wallPieces = res.items
             .filter((i) => i.category === 'wand')
@@ -65,5 +72,25 @@ describe('Rechenkern mit echtem Katalog', () => {
       true
     )
     expect(list.deviations.filter((d) => d.kind === 'wand')).toHaveLength(2)
+  })
+
+  it('Dreierjurtenburg mit einem gehängten Dach: Masten und 60-cm-Profile je Dach', () => {
+    const t = type('dreierjurtenburg')
+    const base = createTentConfig(t)
+    const roofs = base.roofs.map((r, i) => (i === 2 ? { ...r, setupId: 'gehaengt' } : r))
+    const res = allocate([{ ...base, roofs }], ['gaze', 'fenster', 'blanko'], catalog, {})
+    const need = (id: string) => res.items.find((i) => i.articleId === id)?.missing ?? 0
+    // 2 gestellte Jurten: 6 × Mast 375 cm; die gehängte: 2 × Mast 500 cm und 4 × 60 cm
+    expect(need('mast-375')).toBe(6)
+    expect(need('mast-500')).toBe(2)
+    expect(need('t-profil-60')).toBe(4)
+    expect(need('jurtenspinne-6')).toBe(3)
+    expect(need('pacman')).toBe(need('t-profil-30') + need('t-profil-60'))
+    // Abweichung nennt das betroffene Dach
+    expect(res.deviations.filter((d) => d.kind === 'dach').map((d) => d.wanted)).toEqual([
+      'Jurte 1: Jurtendach',
+      'Jurte 2: Jurtendach',
+      'Jurte 3: Jurtendach'
+    ])
   })
 })

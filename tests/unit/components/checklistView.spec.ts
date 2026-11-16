@@ -51,7 +51,10 @@ describe('checklistView', () => {
     const lines = describeTent(list.tents[0], catalog)
     expect(lines[0]).toEqual({ label: 'Zelttyp', value: 'Kohte' })
     expect(lines.find((l) => l.label === 'Dach')?.value).toBe('4 Kohtenblätter')
-    const unknown = describeTent({ ...list.tents[0], typeId: 'xyz', roofId: 'r?' }, catalog)
+    const unknown = describeTent(
+      { ...list.tents[0], typeId: 'xyz', roofs: [{ roofId: 'r?', setupId: 's?' }] },
+      catalog
+    )
     expect(unknown[0].value).toBe('xyz')
     expect(unknown.find((l) => l.label === 'Dach')?.value).toBe('r?')
   })

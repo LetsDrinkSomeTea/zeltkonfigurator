@@ -16,7 +16,7 @@ const validList = () => ({
       id: 't1',
       typeId: 'jurte',
       label: 'Küche',
-      roofId: 'r',
+      roofs: [{ roofId: 'r', setupId: 's' }],
       wallId: 'w',
       buildId: '',
       finish: 'gaze'
@@ -131,7 +131,12 @@ describe('parsePacklistFile', () => {
     ['tents doppelte IDs', (o) => o.tents.push({ ...o.tents[0] }), /tents/],
     ['tent kein Objekt', (o) => (o.tents[0] = 'x'), /tents\[0\]/],
     ['tent.typeId', (o) => delete o.tents[0].typeId, /tents\[0\]\.typeId/],
-    ['tent.roofId', (o) => (o.tents[0].roofId = 1), /tents\[0\]\.roofId/],
+    ['tent.roofs', (o) => (o.tents[0].roofs = 'x'), /tents\[0\]\.roofs/],
+    [
+      'tent.roofs[].setupId',
+      (o) => delete o.tents[0].roofs[0].setupId,
+      /tents\[0\]\.roofs\[0\]\.setupId/
+    ],
     ['tent.wallId', (o) => (o.tents[0].wallId = ''), /tents\[0\]\.wallId/],
     ['tent.buildId', (o) => delete o.tents[0].buildId, /tents\[0\]\.buildId/],
     ['tent.finish', (o) => (o.tents[0].finish = 'rot'), /tents\[0\]\.finish/],

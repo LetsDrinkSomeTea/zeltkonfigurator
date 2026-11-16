@@ -39,6 +39,29 @@ export interface RoofConfig {
   parts: Part[]
 }
 
+/** Wie ein Dach aufgebaut wird, z. B. „Gestellt“ (Masten) oder „Gehängt“ (2 lange Mittelpfosten). */
+export interface RoofSetup {
+  id: string
+  label: string
+  /** Gestänge und Zubehör für diesen Aufbau */
+  parts: Part[]
+}
+
+/**
+ * Ein Dach als Baustein eines Zeltes, z. B. eine Jurte. Ein Zelttyp besteht aus einem oder
+ * mehreren Bausteinen (Dreierjurtenburg: 3 × Jurte); jeder wird im Zelt einzeln eingestellt.
+ */
+export interface RoofModule {
+  id: string
+  name: string
+  /** Dach-Varianten; mindestens eine, erste = Vorgabe */
+  roofs: RoofConfig[]
+  /** Aufbauten; mindestens einer, erster = Vorgabe */
+  setups: RoofSetup[]
+  /** immer nötig, z. B. das Dächle */
+  parts: Part[]
+}
+
 export interface WallBuild {
   id: string
   label: string
@@ -60,20 +83,19 @@ export interface WallOption {
 export interface TentType {
   id: string
   name: string
-  /** mindestens eine; erste = Vorgabe */
-  roofs: RoofConfig[]
+  /** Dächer des Zeltes; mindestens eins */
+  modules: RoofModule[]
   /** mindestens eine; erste = Vorgabe, sofern `defaults` nichts anderes sagt */
   walls: WallOption[]
   fixed: Part[]
   /**
-   * Standardkonfiguration eines neuen Zeltes. Fehlende Angaben: erstes Dach, erste Wandoption,
-   * erste Bauart der Wandoption, Ausführung 'blanko'.
+   * Standardkonfiguration eines neuen Zeltes. Fehlende Angaben: erste Wandoption, erste Bauart
+   * der Wandoption, Ausführung 'blanko'. Dach und Aufbau: jeweils das erste des Bausteins.
    */
   defaults?: TentDefaults
 }
 
 export interface TentDefaults {
-  roofId?: string
   wallId?: string
   buildId?: string
   finish?: Finish
@@ -89,6 +111,11 @@ export type Stock = Record<string, number>
 
 // ---------------------------------------------------------------- Dateien im Space
 
+export interface TentRoof {
+  roofId: string
+  setupId: string
+}
+
 export interface StockFile {
   schemaVersion: 1
   stock: Record<string, { quantity: number; note?: string }>
@@ -99,8 +126,8 @@ export interface TentConfig {
   id: string
   typeId: string
   label?: string
-  /** bevorzugte Dachkonfiguration */
-  roofId: string
+  /** je Baustein des Zelttyps (gleiche Reihenfolge): bevorzugtes Dach und Aufbau */
+  roofs: TentRoof[]
   /** gewählte Wandoption */
   wallId: string
   /** bevorzugte Bauart innerhalb der Wandoption; '' wenn die Option keine Bauarten hat */

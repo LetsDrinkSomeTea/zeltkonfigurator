@@ -1,20 +1,14 @@
 import type { TentType } from '../../types'
 import { heringe } from '../heringe'
+import { yellowstone as yellowstoneDach } from '../modules'
 import { keineWand } from '../walls'
 
 export const yellowstone: TentType = {
   id: 'yellowstone',
   name: 'Yellowstone',
-  roofs: [
-    {
-      id: 'zelthaut',
-      label: 'Zelthaut (Pyramidenzelt 410 × 410 cm)',
-      parts: [{ articleId: 'zelthaut-yellowstone', quantity: 1 }]
-    }
-  ],
+  modules: [yellowstoneDach],
   walls: [keineWand()],
   fixed: [
-    { articleId: 'mittelmast-yellowstone', quantity: 1 }, // PLATZHALTER (O-2)
     ...heringe({ seitenwand: 16 }), // PLATZHALTER
     { articleId: 'bodenplane-eckig', quantity: 1 } // PLATZHALTER
   ]

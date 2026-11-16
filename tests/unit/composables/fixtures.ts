@@ -16,7 +16,15 @@ export const fakeCatalog: Catalog = {
     {
       id: 'kohte',
       name: 'Kohte',
-      roofs: [{ id: 'r1', label: 'Dach', parts: [] }],
+      modules: [
+        {
+          id: 'm1',
+          name: 'Kohte',
+          roofs: [{ id: 'r1', label: 'Dach', parts: [] }],
+          setups: [{ id: 's1', label: 'Gestellt', parts: [] }],
+          parts: []
+        }
+      ],
       walls: [
         { id: 'w0', label: 'Keine Wand', segments: 0, builds: [], parts: [] },
         {
@@ -64,7 +72,7 @@ export function fakeRecalculate(list: PacklistFile, catalog: Catalog, stock: Sto
 
 export function fakeDefaultTentOptions(type: TentType) {
   return {
-    roofId: type.roofs[0].id,
+    roofs: type.modules.map((m) => ({ roofId: m.roofs[0].id, setupId: m.setups[0].id })),
     wallId: type.walls[0].id,
     buildId: type.walls[0].builds[0]?.id ?? '',
     finish: 'blanko' as const
@@ -91,7 +99,14 @@ export function fakeCreatePacklist(name: string, catalog: Catalog, stock: Stock)
 }
 
 export function tent(id: string, wallId = 'w1', buildId = 'a1'): TentConfig {
-  return { id, typeId: 'kohte', roofId: 'r1', wallId, buildId, finish: 'blanko' }
+  return {
+    id,
+    typeId: 'kohte',
+    roofs: [{ roofId: 'r1', setupId: 's1' }],
+    wallId,
+    buildId,
+    finish: 'blanko'
+  }
 }
 
 /** Packliste mit zwei Zelten (t1, t2) und passenden Positionen. */

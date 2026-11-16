@@ -84,12 +84,22 @@ export function allocate(
     if (!type) {
       throw new UnknownConfigError(`Zelt "${tent.id}": unbekannter Zelttyp "${tent.typeId}".`)
     }
-    const preferredRoof = type.roofs.find((r) => r.id === tent.roofId)
-    if (!preferredRoof) {
-      throw new UnknownConfigError(
-        `Zelt "${tent.id}": unbekannte Dachkonfiguration "${tent.roofId}" bei Zelttyp "${type.id}".`
-      )
-    }
+    const roofs = type.modules.map((module, index) => {
+      const pick = tent.roofs[index] ?? { roofId: module.roofs[0].id, setupId: module.setups[0].id }
+      const roof = module.roofs.find((r) => r.id === pick.roofId)
+      if (!roof) {
+        throw new UnknownConfigError(
+          `Zelt "${tent.id}": unbekannte Dachkonfiguration "${pick.roofId}" bei Zelttyp "${type.id}".`
+        )
+      }
+      const setup = module.setups.find((s) => s.id === pick.setupId)
+      if (!setup) {
+        throw new UnknownConfigError(
+          `Zelt "${tent.id}": unbekannter Aufbau "${pick.setupId}" bei Zelttyp "${type.id}".`
+        )
+      }
+      return { module, roof, setup }
+    })
     const wall = type.walls.find((w) => w.id === tent.wallId)
     if (!wall) {
       throw new UnknownConfigError(
@@ -107,18 +117,29 @@ export function allocate(
       }
     }
 
-    // 1. Dach
-    const choice = chooseRoof(type.roofs, preferredRoof, work)
-    for (const part of choice.roof.parts) book(tent, part)
-    if (choice.fallback) {
-      deviations.push({
-        tentId: tent.id,
-        kind: 'dach',
-        wanted: preferredRoof.label,
-        got: choice.roof.label
-      })
-    } else if (!choice.complete) {
-      deviations.push({ tentId: tent.id, kind: 'dach', wanted: preferredRoof.label, got: null })
+    // 1. Dächer: je Baustein Dach (mit Ausweichen), Aufbau und feste Teile des Bausteins
+    for (const [index, { module, roof: preferredRoof, setup }] of roofs.entries()) {
+      // Bei mehreren Dächern sagt die Abweichung, welches gemeint ist.
+      const prefix = roofs.length > 1 ? `${module.name} ${index + 1}: ` : ''
+      const choice = chooseRoof(module.roofs, preferredRoof, work)
+      for (const part of choice.roof.parts) book(tent, part)
+      if (choice.fallback) {
+        deviations.push({
+          tentId: tent.id,
+          kind: 'dach',
+          wanted: prefix + preferredRoof.label,
+          got: choice.roof.label
+        })
+      } else if (!choice.complete) {
+        deviations.push({
+          tentId: tent.id,
+          kind: 'dach',
+          wanted: prefix + preferredRoof.label,
+          got: null
+        })
+      }
+      for (const part of module.parts) book(tent, part)
+      for (const part of setup.parts) book(tent, part)
     }
 
     // 2. feste Teile und Teile der Wandoption

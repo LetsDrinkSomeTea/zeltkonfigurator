@@ -74,7 +74,16 @@ function packlist(id: string, updatedAt: string, checked = false): PacklistFile 
     schemaVersion: 1,
     id,
     name: `Liste ${id}`,
-    tents: [{ id: 't1', typeId: 'x', roofId: 'r', wallId: 'w', buildId: '', finish: 'blanko' }],
+    tents: [
+      {
+        id: 't1',
+        typeId: 'x',
+        roofs: [{ roofId: 'r', setupId: 's' }],
+        wallId: 'w',
+        buildId: '',
+        finish: 'blanko'
+      }
+    ],
     finishOrder: ['gaze', 'fenster', 'blanko'],
     items: [
       {
