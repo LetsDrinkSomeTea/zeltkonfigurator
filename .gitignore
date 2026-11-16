@@ -16,3 +16,6 @@ dist
 # dev setup
 docker-compose.override.yml
 src/config.json
+
+# Installationspaket
+/package/

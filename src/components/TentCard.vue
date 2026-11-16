@@ -36,7 +36,7 @@
       }}
     </p>
 
-    <div v-else class="ext:flex ext:flex-col ext:gap-3">
+    <div v-else class="zk-tent-fields">
       <div class="zk-field">
         <label :for="`${uid}-label`">{{ $gettext('Bezeichnung') }}</label>
         <input
@@ -162,5 +162,12 @@ function onLabel(event: Event) {
 .zk-deviations {
   color: var(--oc-role-on-surface-variant, inherit);
   list-style: disc inside;
+}
+
+/* Auswahlfelder: am Handy untereinander, auf breiten Bildschirmen nebeneinander */
+.zk-tent-fields {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
 }
 </style>

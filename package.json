@@ -15,7 +15,8 @@
     "format:check": "prettier . --check",
     "format:write": "prettier . --write",
     "test:unit": "NODE_OPTIONS=--unhandled-rejections=throw vitest",
-    "preview": "vite --config dev/preview/vite.config.ts"
+    "preview": "vite --config dev/preview/vite.config.ts",
+    "package": "pnpm build && rm -rf package && mkdir -p package/zeltkonfigurator && cp -r dist/. package/zeltkonfigurator/ && (cd package && zip -qr zeltkonfigurator.zip zeltkonfigurator)"
   },
   "devDependencies": {
     "@opencloud-eu/design-system": "^8.2.2",

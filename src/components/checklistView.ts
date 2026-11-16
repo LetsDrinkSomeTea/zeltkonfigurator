@@ -1,3 +1,4 @@
+import { hasFinishLayer } from '../domain/walls'
 import type { Catalog, Category, Finish, PackItem, PacklistFile, TentConfig } from '../domain/types'
 import { CATEGORIES } from '../domain/types'
 
@@ -97,7 +98,12 @@ export function describeTent(tent: TentConfig, catalog: Catalog): TentDescriptio
   if (tent.buildId) {
     lines.push({ label: 'Bauart', value: build?.label ?? tent.buildId })
   }
-  lines.push({ label: 'Ausführung', value: FINISH_TITLES[tent.finish] ?? tent.finish })
+  // Ausführung nur nennen, wenn die Bauart eine Lage mit wählbarer Ausführung hat.
+  if (!build || hasFinishLayer(build)) {
+    if (build || !wall || wall.segments > 0) {
+      lines.push({ label: 'Ausführung', value: FINISH_TITLES[tent.finish] ?? tent.finish })
+    }
+  }
   return lines
 }
 
