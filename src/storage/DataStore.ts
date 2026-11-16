@@ -38,5 +38,5 @@ export class NotFoundError extends DataStoreError {}
 export class ForbiddenError extends DataStoreError {}
 /** Die Datei wurde seit dem letzten Lesen geändert (ETag passt nicht). */
 export class ConflictError extends DataStoreError {}
-/** Datei ist kein gültiges JSON oder passt nicht zum Schema. */
+/** Datei ist kein gültiges YAML oder passt nicht zum Schema. */
 export class InvalidFileError extends DataStoreError {}

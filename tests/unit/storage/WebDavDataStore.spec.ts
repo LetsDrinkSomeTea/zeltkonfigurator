@@ -1,3 +1,4 @@
+import { parse as parseYaml } from 'yaml'
 /* eslint-disable require-await -- Fakes müssen asynchrone Signaturen haben */
 import { beforeEach, describe, expect, it } from 'vitest'
 import { parsePacklistFile, parseStockFile } from '../../../src/domain/schema'
@@ -134,8 +135,9 @@ describe('stock', () => {
     const etag = await store.saveStock(stock, null)
     expect(etag).toBeTruthy()
     expect([...files.folders]).toEqual(['Zeltkonfigurator', 'Zeltkonfigurator/packlisten'])
-    const raw = files.files.get('Zeltkonfigurator/bestand.json')!.content
-    expect(raw).toBe(JSON.stringify(stock, null, 2) + '\n')
+    const raw = files.files.get('Zeltkonfigurator/bestand.yaml')!.content
+    expect(parseYaml(raw)).toEqual(stock)
+    expect(raw.trimStart().startsWith('{')).toBe(false)
     expect(await store.loadStock()).toEqual({ data: stock, etag })
   })
 
@@ -165,13 +167,13 @@ describe('stock', () => {
   it('re-reads the etag when the write does not return one', async () => {
     files.omitEtagOnWrite = true
     const etag = await store.saveStock(stock, null)
-    expect(etag).toBe(files.files.get('Zeltkonfigurator/bestand.json')!.etag)
+    expect(etag).toBe(files.files.get('Zeltkonfigurator/bestand.yaml')!.etag)
   })
 
   it('maps 403 to ForbiddenError', async () => {
-    files.failWith['write Zeltkonfigurator/bestand.json'] = 403
+    files.failWith['write Zeltkonfigurator/bestand.yaml'] = 403
     await expect(store.saveStock(stock, null)).rejects.toBeInstanceOf(ForbiddenError)
-    files.failWith['read Zeltkonfigurator/bestand.json'] = 401
+    files.failWith['read Zeltkonfigurator/bestand.yaml'] = 401
     await expect(store.loadStock()).rejects.toBeInstanceOf(ForbiddenError)
   })
 
@@ -179,13 +181,13 @@ describe('stock', () => {
     await expect(store.saveStock(stock, 'old')).rejects.toBeInstanceOf(NotFoundError)
   })
 
-  it('rejects invalid JSON with InvalidFileError', async () => {
-    files.put('Zeltkonfigurator/bestand.json', '{ nicht json')
+  it('rejects invalid YAML with InvalidFileError', async () => {
+    files.put('Zeltkonfigurator/bestand.yaml', '{ nicht json')
     await expect(store.loadStock()).rejects.toBeInstanceOf(InvalidFileError)
   })
 
   it('rejects an unknown schema version with InvalidFileError', async () => {
-    files.put('Zeltkonfigurator/bestand.json', JSON.stringify({ schemaVersion: 2, stock: {} }))
+    files.put('Zeltkonfigurator/bestand.yaml', JSON.stringify({ schemaVersion: 2, stock: {} }))
     await expect(store.loadStock()).rejects.toBeInstanceOf(InvalidFileError)
   })
 
@@ -199,12 +201,12 @@ describe('stock', () => {
       },
       parsePacklistFile
     })
-    files.put('Z/bestand.json', '{}')
+    files.put('Z/bestand.yaml', '{}')
     await expect(strict.loadStock()).rejects.toBeInstanceOf(InvalidFileError)
   })
 
   it('does not swallow unrelated errors', async () => {
-    files.failWith['read Zeltkonfigurator/bestand.json'] = 500
+    files.failWith['read Zeltkonfigurator/bestand.yaml'] = 500
     await expect(store.loadStock()).rejects.toBeInstanceOf(HttpErr)
   })
 })
@@ -229,7 +231,7 @@ describe('packlists', () => {
   it('lists summaries sorted by updatedAt desc and skips broken files', async () => {
     await store.savePacklist(packlist('alt', '2026-01-01T00:00:00Z'), null)
     await store.savePacklist(packlist('neu', '2026-03-01T00:00:00Z', true), null)
-    files.put('Zeltkonfigurator/packlisten/kaputt.json', '{ nope')
+    files.put('Zeltkonfigurator/packlisten/kaputt.yaml', '{ nope')
     files.put('Zeltkonfigurator/packlisten/readme.txt', 'ignored')
 
     const list = await store.listPacklists()
@@ -254,7 +256,7 @@ describe('packlists', () => {
   it('deletes a packlist; deleting a missing one throws NotFoundError', async () => {
     await store.savePacklist(packlist('p1', '2026-01-01T00:00:00Z'), null)
     await store.deletePacklist('p1')
-    expect(files.files.has('Zeltkonfigurator/packlisten/p1.json')).toBe(false)
+    expect(files.files.has('Zeltkonfigurator/packlisten/p1.yaml')).toBe(false)
     await expect(store.deletePacklist('p1')).rejects.toBeInstanceOf(NotFoundError)
   })
 

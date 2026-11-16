@@ -44,8 +44,8 @@ Die App legt ihre Dateien beim ersten Speichern selbst an:
 ```
 Material Team/
   Zeltkonfigurator/
-    bestand.json
-    packlisten/<id>.json
+    bestand.yaml
+    packlisten/<id>.yaml
 ```
 
 ### Anderer Space oder Ordner

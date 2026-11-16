@@ -1,3 +1,4 @@
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml'
 import type { PacklistFile, PacklistSummary, StockFile } from '../domain/types'
 import {
   ConflictError,
@@ -32,7 +33,8 @@ export interface WebDavDataStoreOptions {
   parsePacklistFile: (json: unknown) => PacklistFile
 }
 
-const STOCK_FILE = 'bestand.json'
+const EXT = '.yaml'
+const STOCK_FILE = 'bestand.yaml'
 const PACKLIST_DIR = 'packlisten'
 const ID_PATTERN = /^[A-Za-z0-9_-]+$/
 
@@ -95,9 +97,9 @@ export class WebDavDataStore implements DataStore {
       throw mapError(e, 'Der Ordner der Packlisten')
     }
     const summaries: PacklistSummary[] = []
-    for (const name of names.filter((n) => n.endsWith('.json'))) {
+    for (const name of names.filter((n) => n.endsWith(EXT))) {
       try {
-        const { data } = await this.loadPacklist(name.slice(0, -'.json'.length))
+        const { data } = await this.loadPacklist(name.slice(0, -EXT.length))
         summaries.push(summarize(data))
       } catch (e) {
         // Defekte oder zwischenzeitlich gelöschte Dateien überspringen, alles andere melden.
@@ -142,16 +144,16 @@ export class WebDavDataStore implements DataStore {
 
   private packlistPath(id: string): string {
     if (!ID_PATTERN.test(id)) throw new InvalidFileError(`Ungültige Packlisten-ID „${id}“.`)
-    return `${this.packlistDir()}/${id}.json`
+    return `${this.packlistDir()}/${id}${EXT}`
   }
 
   private parse<T>(body: unknown, parser: (json: unknown) => T, what: string): T {
     let json: unknown = body
     if (typeof body === 'string') {
       try {
-        json = JSON.parse(body)
+        json = parseYaml(body)
       } catch (e) {
-        throw new InvalidFileError(`${what} enthält kein gültiges JSON.`, { cause: e })
+        throw new InvalidFileError(`${what} enthält kein gültiges YAML.`, { cause: e })
       }
     }
     try {
@@ -168,7 +170,7 @@ export class WebDavDataStore implements DataStore {
     etag: string | null,
     what: string
   ): Promise<string> {
-    const content = JSON.stringify(file, null, 2) + '\n'
+    const content = stringifyYaml(file, { lineWidth: 0 })
     try {
       await this.ensureFolders()
       const result = await this.options.files.write(path, content, etag)

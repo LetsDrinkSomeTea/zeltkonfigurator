@@ -152,7 +152,7 @@ Dabei gilt:
 | N-04 | Optik und Bedienelemente folgen dem OpenCloud-Design-System, inklusive Dunkelmodus.                                              |
 | N-05 | Alle Dateien tragen eine Schema-Version. Unbekannte oder defekte Dateien werden abgewiesen, nicht stillschweigend überschrieben. |
 | N-06 | Die Berechnungslogik ist vollständig durch automatische Tests abgedeckt.                                                         |
-| N-07 | Die Dateien sind lesbares JSON, damit sie notfalls von Hand korrigiert werden können.                                            |
+| N-07 | Die Dateien sind lesbares YAML, damit sie notfalls von Hand korrigiert werden können.                                            |
 | N-08 | Bedienelemente sind per Tastatur erreichbar und beschriftet.                                                                     |
 | N-09 | Eine Anleitung im Repo beschreibt in wenigen Schritten, wie ein Zelttyp oder eine Dachkonfiguration ergänzt wird.                |
 

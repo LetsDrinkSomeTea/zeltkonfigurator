@@ -82,22 +82,21 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
-import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { useGettext } from 'vue3-gettext'
 import AppLayout from '../components/AppLayout.vue'
 import ChecklistTab from '../components/ChecklistTab.vue'
 import PerTentTab from '../components/PerTentTab.vue'
 import StatusBanner from '../components/StatusBanner.vue'
 import TentsTab from '../components/TentsTab.vue'
+import { useAppRouter } from '../composables/useAppRouter'
 import { usePacklist } from '../composables/usePacklist'
 import { derivePacklistStatus } from '../domain/view/status'
 
 type TabId = 'zelte' | 'material' | 'packliste'
 
 const { $gettext } = useGettext()
-const route = useRoute()
-const router = useRouter()
-const pl = usePacklist(() => route.params.id as string)
+const { router, route } = useAppRouter()
+const pl = usePacklist(() => route.value.params.id as string)
 
 const tabs = computed<{ id: TabId; label: string }[]>(() => [
   { id: 'zelte', label: $gettext('Zelte') },
@@ -106,7 +105,7 @@ const tabs = computed<{ id: TabId; label: string }[]>(() => [
 ])
 
 const activeTab = computed<TabId>(() => {
-  const q = route.query.tab
+  const q = route.value.query.tab
   return q === 'material' || q === 'packliste' ? q : 'zelte'
 })
 
@@ -115,7 +114,7 @@ const status = computed(() =>
 )
 
 function select(id: TabId) {
-  void router.replace({ query: { ...route.query, tab: id } })
+  void router.replace({ query: { ...route.value.query, tab: id } })
 }
 
 async function onKey(event: KeyboardEvent, id: TabId) {
@@ -146,9 +145,6 @@ async function onKey(event: KeyboardEvent, id: TabId) {
 
 onMounted(() => {
   void pl.load()
-})
-onBeforeRouteLeave(async (): Promise<void> => {
-  await pl.flush()
 })
 onBeforeUnmount(() => {
   void pl.flush()

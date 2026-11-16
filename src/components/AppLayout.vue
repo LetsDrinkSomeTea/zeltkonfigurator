@@ -1,16 +1,20 @@
 <template>
-  <main class="zk-app ext:p-4 ext:mx-auto ext:max-w-5xl">
-    <header class="ext:flex ext:flex-wrap ext:items-center ext:gap-2 ext:mb-4">
-      <h1 class="ext:text-xl ext:font-bold ext:grow">{{ title }}</h1>
-      <slot name="actions" />
-    </header>
-    <p v-if="error" class="zk-error ext:mb-4" role="alert">{{ errorMessage(error) }}</p>
-    <oc-spinner v-if="loading" :aria-label="$gettext('Wird geladen')" />
-    <slot v-else />
-  </main>
+  <!-- OpenCloud schneidet den App-Bereich ab, statt ihn zu scrollen; die App scrollt selbst. -->
+  <div ref="scroller" class="zk-scroll ext:overflow-y-auto" :style="{ height }">
+    <main class="zk-app ext:p-4 ext:mx-auto ext:max-w-5xl">
+      <header class="ext:flex ext:flex-wrap ext:items-center ext:gap-2 ext:mb-4">
+        <h1 class="ext:text-xl ext:font-bold ext:grow">{{ title }}</h1>
+        <slot name="actions" />
+      </header>
+      <p v-if="error" class="zk-error ext:mb-4" role="alert">{{ errorMessage(error) }}</p>
+      <oc-spinner v-if="loading" :aria-label="$gettext('Wird geladen')" />
+      <slot v-else />
+    </main>
+  </div>
 </template>
 
 <script setup lang="ts">
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useGettext } from 'vue3-gettext'
 import {
   ConflictError,
@@ -23,6 +27,20 @@ import {
 defineProps<{ title: string; loading?: boolean; error?: Error | null }>()
 
 const { $gettext } = useGettext()
+
+// Höhe = sichtbarer Rest des Fensters unterhalb der OpenCloud-Leiste. Bewusst gemessen statt
+// „100 %“, damit es nicht davon abhängt, wie der umgebende Container seine Höhe festlegt.
+const scroller = ref<HTMLElement | null>(null)
+const height = ref('100%')
+function measure() {
+  const top = scroller.value?.getBoundingClientRect().top ?? 0
+  height.value = `calc(100dvh - ${Math.max(0, Math.round(top))}px)`
+}
+onMounted(() => {
+  measure()
+  window.addEventListener('resize', measure)
+})
+onBeforeUnmount(() => window.removeEventListener('resize', measure))
 
 /** Übersetzt Speicherfehler in verständliche Meldungen (F-42, N-05). */
 function errorMessage(e: Error): string {
@@ -54,6 +72,10 @@ function errorMessage(e: Error): string {
   color: var(--oc-role-error, #b3261e);
 }
 @media print {
+  .zk-scroll {
+    height: auto !important;
+    overflow: visible !important;
+  }
   .zk-no-print {
     display: none !important;
   }
