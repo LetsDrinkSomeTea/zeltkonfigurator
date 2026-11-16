@@ -1,0 +1,14 @@
+.zk-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.zk-field select,
+.zk-field input {
+  min-height: 2.5rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--oc-role-outline, #888);
+  border-radius: 0.25rem;
+  background: var(--oc-role-surface, #fff);
+  color: var(--oc-role-on-surface, inherit);
+}

@@ -1,5 +1,133 @@
 <template>
-  <main class="ext:p-4">
-    <h1>{{ $gettext('Packlisten') }}</h1>
-  </main>
+  <AppLayout :title="$gettext('Packlisten')" :loading="loading" :error="error">
+    <form
+      v-if="canWrite"
+      class="zk-no-print ext:flex ext:flex-wrap ext:items-end ext:gap-2 ext:mb-4"
+      @submit.prevent="onCreate"
+    >
+      <div class="zk-field ext:grow">
+        <label for="zk-new-list-name">{{ $gettext('Name der neuen Packliste') }}</label>
+        <input id="zk-new-list-name" v-model="newName" type="text" required />
+      </div>
+      <oc-button submit="submit" appearance="filled" color-role="primary">{{
+        $gettext('Neue Packliste')
+      }}</oc-button>
+    </form>
+    <p v-if="actionError" class="zk-error ext:mb-4" role="alert">{{ actionError }}</p>
+
+    <p v-if="!loading && summaries.length === 0">
+      {{ $gettext('Es gibt noch keine Packlisten. Lege die erste an.') }}
+    </p>
+    <ul v-else class="ext:flex ext:flex-col ext:gap-3">
+      <li v-for="s in summaries" :key="s.id" class="zk-list-card ext:p-3 ext:rounded">
+        <h2 class="ext:font-bold">
+          <router-link :to="{ name: 'zeltkonfigurator-liste', params: { id: s.id } }">{{
+            s.name
+          }}</router-link>
+        </h2>
+        <p v-if="s.date">{{ formatDate(s.date) }}</p>
+        <p>{{ $gettext('%{n} Zelte', { n: s.tentCount }) }}</p>
+        <p>
+          <progress :max="s.itemCount" :value="s.checkedCount" :aria-label="progressText(s)" />
+          <span class="ext:ml-2">{{ progressText(s) }}</span>
+        </p>
+        <div v-if="canWrite" class="zk-no-print ext:flex ext:gap-2 ext:mt-2">
+          <template v-if="confirmId === s.id">
+            <span>{{ $gettext('Packliste wirklich löschen?') }}</span>
+            <oc-button size="small" @click="onRemove(s.id)">{{
+              $gettext('Ja, löschen')
+            }}</oc-button>
+            <oc-button size="small" @click="confirmId = null">{{
+              $gettext('Abbrechen')
+            }}</oc-button>
+          </template>
+          <template v-else>
+            <oc-button size="small" @click="onDuplicate(s.id)">{{
+              $gettext('Duplizieren')
+            }}</oc-button>
+            <oc-button size="small" @click="confirmId = s.id">{{ $gettext('Löschen') }}</oc-button>
+          </template>
+        </div>
+      </li>
+    </ul>
+  </AppLayout>
 </template>
+
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useGettext } from 'vue3-gettext'
+import AppLayout from '../components/AppLayout.vue'
+import '../components/forms.css'
+import { usePacklists } from '../composables/usePacklists'
+import type { PacklistSummary } from '../domain/types'
+
+const { $gettext } = useGettext()
+const router = useRouter()
+const { summaries, loading, error, canWrite, load, create, duplicate, remove } = usePacklists()
+
+const newName = ref('')
+const confirmId = ref<string | null>(null)
+const actionError = ref('')
+
+onMounted(() => {
+  void load()
+})
+
+function formatDate(date: string): string {
+  const parsed = new Date(date)
+  if (Number.isNaN(parsed.getTime())) {
+    return date
+  }
+  return parsed.toLocaleDateString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    // reine Datumsangaben (JJJJ-MM-TT) gelten als UTC und dürfen nicht verrutschen
+    ...(/^\d{4}-\d{2}-\d{2}$/.test(date) ? { timeZone: 'UTC' } : {})
+  })
+}
+
+function progressText(s: PacklistSummary): string {
+  return $gettext('%{done} von %{total} abgehakt', { done: s.checkedCount, total: s.itemCount })
+}
+
+async function run(action: () => Promise<void>) {
+  actionError.value = ''
+  try {
+    await action()
+  } catch (e) {
+    actionError.value = e instanceof Error ? e.message : String(e)
+  }
+}
+
+async function onCreate() {
+  const name = newName.value.trim()
+  if (!name) {
+    return
+  }
+  await run(async () => {
+    const id = await create(name)
+    newName.value = ''
+    await router.push({ name: 'zeltkonfigurator-liste', params: { id } })
+  })
+}
+
+async function onDuplicate(id: string) {
+  await run(async () => {
+    await duplicate(id)
+  })
+}
+
+async function onRemove(id: string) {
+  confirmId.value = null
+  await run(() => remove(id))
+}
+</script>
+
+<style>
+.zk-list-card {
+  border: 1px solid var(--oc-role-outline-variant, #bbb);
+  background: var(--oc-role-surface-container-low, transparent);
+}
+</style>
