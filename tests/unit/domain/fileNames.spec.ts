@@ -50,7 +50,7 @@ describe('matchAppFile', () => {
     ).toEqual({ kind: 'packliste', id: 'Sommerlager 2027' })
   })
   it('erkennt den Bestand', () => {
-    expect(matchAppFile('project/x/Zeltkonfigurator/bestand.zeltbestand', folder)).toEqual({
+    expect(matchAppFile('project/x/Zeltkonfigurator/Zeltmaterial.bestand', folder)).toEqual({
       kind: 'bestand'
     })
   })
@@ -63,7 +63,7 @@ describe('matchAppFile', () => {
   it('lehnt Dateien an anderer Stelle ab', () => {
     expect(matchAppFile('project/x/Anderswo/A.packliste', folder)).toBeNull()
     expect(matchAppFile('project/x/Zeltkonfigurator/packlisten/A.yaml', folder)).toBeNull()
-    expect(matchAppFile('project/x/Kopie/bestand.zeltbestand', folder)).toBeNull()
+    expect(matchAppFile('project/x/Kopie/Zeltmaterial.bestand', folder)).toBeNull()
     expect(matchAppFile('', folder)).toBeNull()
   })
 })

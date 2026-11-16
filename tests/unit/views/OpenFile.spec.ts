@@ -32,7 +32,7 @@ describe('OpenFile', () => {
   })
 
   it('leitet die Bestandsdatei zum Bestand weiter', async () => {
-    const { router } = await open('project/material-team/Zeltkonfigurator/bestand.zeltbestand')
+    const { router } = await open('project/material-team/Zeltkonfigurator/Zeltmaterial.bestand')
     expect(router.currentRoute.value.name).toBe('zeltkonfigurator-bestand')
   })
 

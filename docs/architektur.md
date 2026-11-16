@@ -20,7 +20,7 @@ Die App ist eine OpenCloud-Web-Erweiterung auf Basis des `web-app-skeleton`
 └──────────────────────────────────────────────────────┼───────────────────────────┘
                                                        │ WebDAV (Client aus web-pkg)
                                               ┌────────▼─────────┐
-                                              │ Space            │  bestand.zeltbestand
+                                              │ Space            │  Zeltmaterial.bestand
                                               │ „Material Team“  │  packlisten/*.packliste
                                               └──────────────────┘
 ```
@@ -174,7 +174,7 @@ Wandrolle hat mindestens einen Artikel (F-17).
 
 ## 4. Dateien im Space
 
-### 4.1 `bestand.zeltbestand`
+### 4.1 `Zeltmaterial.bestand`
 
 ```ts
 interface StockFile {

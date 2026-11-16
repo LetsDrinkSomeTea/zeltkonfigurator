@@ -20,7 +20,7 @@ import { readStorageConfig } from '../storage/location'
 
 /**
  * Wird von OpenCloud aufgerufen, wenn in der Dateiansicht eine .packliste- oder
- * .zeltbestand-Datei geöffnet wird, und leitet zur passenden Ansicht der App weiter.
+ * .bestand-Datei geöffnet wird, und leitet zur passenden Ansicht der App weiter.
  */
 const { $gettext } = useGettext()
 const { router, route } = useAppRouter()

@@ -47,7 +47,7 @@ der Liste mit umbenannt.
 ```
 Material Team/
   Zeltkonfigurator/
-    bestand.zeltbestand
+    Zeltmaterial.bestand
     packlisten/<Name>.packliste
 ```
 

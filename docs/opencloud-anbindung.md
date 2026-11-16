@@ -82,7 +82,7 @@ Anlegen ohne Überschreiben: `saveX(file, null)` ruft `putFileContents` ohne `pr
 | `src/storage/appConfig.ts`       | Hält `applicationConfig` zwischen `setup()` der App und `createStore()`.                                                                                            |
 | `src/domain/schema.ts`           | Platzhalter (Objekt + `schemaVersion === 1`), wird beim Merge ersetzt.                                                                                              |
 
-Verhalten: Dateien `<folder>/bestand.zeltbestand` und `<folder>/packlisten/<Name>.packliste`, JSON mit 2 Leerzeichen und
+Verhalten: Dateien `<folder>/Zeltmaterial.bestand` und `<folder>/packlisten/<Name>.packliste`, JSON mit 2 Leerzeichen und
 abschließendem Zeilenumbruch. Fehlende Ordner werden vor dem ersten Schreiben per MKCOL angelegt (405 =
 existiert schon). `listPacklists` überspringt defekte oder zwischenzeitlich gelöschte Dateien;
 Berechtigungs- und Netzwerkfehler werden weitergereicht. Packlisten-IDs dürfen nur `A–Z a–z 0–9 _ -` enthalten

@@ -30,7 +30,7 @@ export default defineWebApplication({
           icon: 'list-check'
         },
         {
-          extension: 'zeltbestand',
+          extension: 'bestand',
           routeName: 'zeltkonfigurator-datei',
           label: $gettext('Im Zeltkonfigurator öffnen'),
           icon: 'archive'

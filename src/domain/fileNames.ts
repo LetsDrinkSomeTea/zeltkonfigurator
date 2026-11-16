@@ -1,7 +1,7 @@
 /** Dateiendungen der App. Der Inhalt ist YAML; die eigenen Endungen verknüpfen die Dateien mit der App. */
 export const PACKLIST_EXT = '.packliste'
-export const STOCK_EXT = '.zeltbestand'
-export const STOCK_FILE = `bestand${STOCK_EXT}`
+export const STOCK_EXT = '.bestand'
+export const STOCK_FILE = `Zeltmaterial${STOCK_EXT}`
 export const PACKLIST_DIR = 'packlisten'
 
 const MAX_LENGTH = 80
