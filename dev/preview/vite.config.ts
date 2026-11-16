@@ -7,6 +7,10 @@ import { defineConfig } from 'vite'
 // Speicher im Arbeitsspeicher mit Beispieldaten. Start: pnpm preview
 export default defineConfig({
   root: fileURLToPath(new URL('.', import.meta.url)),
+  // liefert die Icons des Design-Systems unter /icons/ aus
+  publicDir: fileURLToPath(
+    new URL('../../node_modules/@opencloud-eu/design-system/dist', import.meta.url)
+  ),
   plugins: [vue(), tailwindcss()],
   resolve: {
     alias: [

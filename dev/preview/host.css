@@ -1,0 +1,10 @@
+/*
+ * Stellt nach, was OpenCloud Web selbst mitbringt: Tailwind samt Reset (Preflight), die
+ * Farbrollen und die Klassen, die die Komponenten des Design-Systems intern verwenden.
+ */
+@import '@opencloud-eu/design-system/tailwind';
+@source '../../node_modules/@opencloud-eu/design-system/dist';
+
+:root {
+  --oc-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}

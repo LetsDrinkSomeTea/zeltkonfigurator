@@ -1,4 +1,5 @@
 import '@opencloud-eu/design-system/dist/design-system.css'
+import './host.css'
 import './preview.css'
 import DesignSystem from '@opencloud-eu/design-system'
 import { createPinia } from 'pinia'
