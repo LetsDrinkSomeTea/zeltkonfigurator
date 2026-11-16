@@ -1,5 +1,6 @@
 import { coverWalls, hasFinishLayer, variantLabel } from './walls'
 import { chooseRoof } from './roof'
+import { roofNames } from './view/roofNames'
 import {
   type AllocationResult,
   type AllocationStatus,
@@ -122,23 +123,26 @@ export function allocate(
     }
 
     // 1. Dächer: je Baustein Dach (mit Ausweichen), Aufbau und feste Teile des Bausteins
+    const names = roofNames(type.modules)
     for (const [index, { module, roof: preferredRoof, setup }] of roofs.entries()) {
-      // Bei mehreren Dächern sagt die Abweichung, welches gemeint ist.
-      const prefix = roofs.length > 1 ? `${module.name} ${index + 1}: ` : ''
+      // Bei mehreren Dächern nennt die Abweichung, welches gemeint ist.
+      const roof = names[index] ? { roof: names[index] } : {}
       const choice = chooseRoof(module.roofs, preferredRoof, work)
       for (const part of choice.roof.parts) book(tent, part)
       if (choice.fallback) {
         deviations.push({
           tentId: tent.id,
           kind: 'dach',
-          wanted: prefix + preferredRoof.label,
+          wanted: preferredRoof.label,
+          ...roof,
           got: choice.roof.label
         })
       } else if (!choice.complete) {
         deviations.push({
           tentId: tent.id,
           kind: 'dach',
-          wanted: prefix + preferredRoof.label,
+          wanted: preferredRoof.label,
+          ...roof,
           got: null
         })
       }

@@ -106,3 +106,20 @@ describe('Materialliste bearbeiten (applyFileOp)', () => {
     expect(f.catalog?.tentTypes.some((t) => t.id === 'kleine-jurte')).toBe(false)
   })
 })
+
+describe('roofNames', () => {
+  it('nummeriert nur mehrfach vorkommende Dächer', async () => {
+    const { roofNames } = await import('../../../src/domain/view/roofNames')
+    expect(roofNames([{ name: 'Jurte' }])).toEqual([''])
+    expect(roofNames([{ name: 'Jurte' }, { name: 'Jurte' }, { name: 'Jurte' }])).toEqual([
+      'Jurte 1',
+      'Jurte 2',
+      'Jurte 3'
+    ])
+    expect(roofNames([{ name: 'Großjurte' }, { name: 'Jurte' }, { name: 'Kohte' }])).toEqual([
+      'Großjurte',
+      'Jurte',
+      'Kohte'
+    ])
+  })
+})

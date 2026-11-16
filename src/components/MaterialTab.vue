@@ -162,7 +162,7 @@
       <p class="zk-hint ext:mb-2">
         {{
           $gettext(
-            'Diese Einträge stehen in der Bestandsdatei, die App kennt die Artikel aber nicht. Sie bleiben beim Speichern erhalten.'
+            'Diese Einträge stehen in der Datei der Materialliste, gehören aber zu keinem bekannten Material. Sie bleiben beim Speichern erhalten.'
           )
         }}
       </p>

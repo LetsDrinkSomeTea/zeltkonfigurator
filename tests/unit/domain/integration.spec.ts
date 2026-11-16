@@ -87,10 +87,10 @@ describe('Rechenkern mit echtem Katalog', () => {
     expect(need('jurtenspinne-6')).toBe(3)
     expect(need('pacman')).toBe(need('t-profil-30') + need('t-profil-60'))
     // Abweichung nennt das betroffene Dach
-    expect(res.deviations.filter((d) => d.kind === 'dach').map((d) => d.wanted)).toEqual([
-      'Jurte 1: Jurtendach',
-      'Jurte 2: Jurtendach',
-      'Jurte 3: Jurtendach'
+    expect(res.deviations.filter((d) => d.kind === 'dach').map((d) => d.roof)).toEqual([
+      'Jurte 1',
+      'Jurte 2',
+      'Jurte 3'
     ])
   })
 })

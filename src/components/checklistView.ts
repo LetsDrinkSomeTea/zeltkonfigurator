@@ -1,3 +1,4 @@
+import { roofNames } from '../domain/view/roofNames'
 import { hasFinishLayer } from '../domain/walls'
 import type {
   Catalog,
@@ -101,8 +102,8 @@ export function describeTent(tent: TentConfig, catalog: Catalog): TentDescriptio
     const module = type?.modules[i]
     const roof = module?.roofs.find((r) => r.id === pick.roofId)
     const setup = module?.setups.find((s) => s.id === pick.setupId)
-    const many = (type?.modules.length ?? 0) > 1
-    const label = many && module ? `Dach ${i + 1} (${module.name})` : 'Dach'
+    const name = type ? roofNames(type.modules)[i] : ''
+    const label = name ? `Dach ${name}` : 'Dach'
     let value = roof?.label ?? pick.roofId
     if (module && module.setups.length > 1) value += `, ${setup?.label ?? pick.setupId}`
     lines.push({ label, value })

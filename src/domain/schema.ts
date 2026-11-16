@@ -282,6 +282,7 @@ function parseDeviation(v: unknown, path: string): Deviation {
     kind: d.kind,
     wanted: str(d.wanted, `${path}.wanted`),
     got,
+    ...(d.roof !== undefined && { roof: str(d.roof, `${path}.roof`) }),
     ...(d.segments !== undefined && { segments: count(d.segments, `${path}.segments`) })
   }
 }

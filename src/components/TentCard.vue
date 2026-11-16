@@ -172,6 +172,7 @@ import type { UsePacklist } from '../composables/usePacklist'
 import { defaultTentRoofs, hasDefaultOptions } from '../domain/packlist'
 import type { Finish, TentConfig, TentRoof } from '../domain/types'
 import { describeDeviation } from '../domain/view/deviations'
+import { roofNames } from '../domain/view/roofNames'
 import { hasFinishLayer } from '../domain/walls'
 import ChoiceGroup from './ChoiceGroup.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
@@ -228,12 +229,12 @@ const wall = computed(() => type.value?.walls.find((w) => w.id === tent.value.wa
 const roofRows = computed(() => {
   const t = type.value
   if (!t) return []
-  const many = t.modules.length > 1
+  const names = roofNames(t.modules)
   const roofs =
     tent.value.roofs.length === t.modules.length ? tent.value.roofs : defaultTentRoofs(t)
   return t.modules.map((module, index) => {
     const pick = roofs[index]
-    const prefix = many ? `${module.name} ${index + 1}: ` : ''
+    const prefix = names[index] ? `${names[index]}: ` : ''
     return {
       index,
       module,

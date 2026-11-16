@@ -194,6 +194,8 @@ export interface PackItem {
 export interface Deviation {
   tentId: string
   kind: 'dach' | 'wand'
+  /** bei Zelten mit mehreren Dächern: welches, z. B. „Jurte 2“ */
+  roof?: string
   /** lesbar, z. B. "Superbahn Fenster" */
   wanted: string
   /** lesbar; null = fehlt */

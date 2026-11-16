@@ -115,7 +115,7 @@ describe('PacklistEditor status banner', () => {
 })
 
 describe('PacklistEditor stale notice', () => {
-  const NOTICE = 'Der Bestand oder die Zelt-Daten haben sich geändert'
+  const NOTICE = 'Die Materialliste (Bestand, Material oder Zelttypen) hat sich geändert'
 
   it('recalculates silently when nothing is checked', async () => {
     const { wrapper, store } = await open([tentOf('kohte')], fullStock(100), {
@@ -221,7 +221,7 @@ describe('PacklistEditor header', () => {
     const { wrapper, router } = await open([tentOf('kohte')], fullStock(100))
     await wrapper
       .findAll('button')
-      .find((b) => b.text() === 'Bestand')!
+      .find((b) => b.text() === 'Materialliste')!
       .trigger('click')
     expect(opener).toHaveBeenCalledWith('/bestand', '_blank', 'noopener')
     expect(router.currentRoute.value.name).toBe('zeltkonfigurator-liste')
