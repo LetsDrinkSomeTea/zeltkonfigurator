@@ -1,15 +1,11 @@
-import {
-  useClientService,
-  useSpacesLoading,
-  useSpacesStore,
-  useUserStore
-} from '@opencloud-eu/web-pkg'
+import { useClientService, useSpacesStore, useUserStore } from '@opencloud-eu/web-pkg'
 import type { SpaceResource } from '@opencloud-eu/web-client'
-import { parsePacklistFile, parseStockFile } from '../domain/schema'
-import type { PacklistFile, PacklistSummary, StockFile } from '../domain/types'
+import { parseStockFile } from '../domain/schema'
+import type { StockFile } from '../domain/types'
 import { getAppConfig } from './appConfig'
 import type { DataStore, Versioned } from './DataStore'
 import { readStorageConfig, resolveLocation } from './location'
+import { useSpacesReady } from './spaces'
 import { createWebDavFiles, WebDavDataStore } from './WebDavDataStore'
 
 /**
@@ -21,17 +17,14 @@ export function createStore(): DataStore {
   const clientService = useClientService()
   const spacesStore = useSpacesStore()
   const userStore = useUserStore()
-  const { waitForSpaces } = useSpacesLoading()
+  const spacesReady = useSpacesReady()
 
   let pending: Promise<WebDavDataStore> | undefined
 
   async function build(): Promise<WebDavDataStore> {
     const config = readStorageConfig(getAppConfig())
-    if (!spacesStore.spacesInitialized && !spacesStore.spacesLoading) {
-      await spacesStore.loadSpaces({ graphClient: clientService.graphAuthenticated })
-    }
-    await waitForSpaces()
-    const { space, folder } = resolveLocation<SpaceResource>(config, spacesStore.spaces)
+    await spacesReady()
+    const { space, path } = resolveLocation<SpaceResource>(config, spacesStore.spaces)
 
     const canWrite = async (): Promise<boolean> => {
       // Die Berechtigungen eines Space werden erst beim Öffnen geladen.
@@ -45,10 +38,9 @@ export function createStore(): DataStore {
 
     return new WebDavDataStore({
       files: createWebDavFiles(clientService.webdav, space),
-      folder,
+      path,
       canWrite,
-      parseStockFile,
-      parsePacklistFile
+      parseStockFile
     })
   }
 
@@ -63,10 +55,6 @@ export function createStore(): DataStore {
   return {
     canWrite: async () => (await store()).canWrite(),
     loadStock: async (): Promise<Versioned<StockFile>> => (await store()).loadStock(),
-    saveStock: async (file, etag) => (await store()).saveStock(file, etag),
-    listPacklists: async (): Promise<PacklistSummary[]> => (await store()).listPacklists(),
-    loadPacklist: async (id): Promise<Versioned<PacklistFile>> => (await store()).loadPacklist(id),
-    savePacklist: async (file, etag) => (await store()).savePacklist(file, etag),
-    deletePacklist: async (id) => (await store()).deletePacklist(id)
+    saveStock: async (file, etag) => (await store()).saveStock(file, etag)
   }
 }

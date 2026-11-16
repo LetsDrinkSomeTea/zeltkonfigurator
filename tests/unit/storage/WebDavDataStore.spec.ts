@@ -12,7 +12,8 @@ import {
 import {
   createWebDavFiles,
   normalizeEtag,
-  WebDavDataStore
+  WebDavDataStore,
+  WebDavPacklistDocument
 } from '../../../src/storage/WebDavDataStore'
 import type { WebDavApi, WebDavFiles } from '../../../src/storage/WebDavDataStore'
 
@@ -59,23 +60,10 @@ class FakeFiles implements WebDavFiles {
     return { etag: this.omitEtagOnWrite ? null : this.files.get(path)!.etag }
   }
 
-  async list(path: string) {
-    this.check('list', path)
-    if (!this.folders.has(path)) throw new HttpErr(404)
-    return [...this.files.keys()]
-      .filter((p) => p.startsWith(path + '/') && !p.slice(path.length + 1).includes('/'))
-      .map((p) => p.slice(path.length + 1))
-  }
-
   async mkdir(path: string) {
     this.check('mkdir', path)
     if (this.folders.has(path)) throw new HttpErr(405)
     this.folders.add(path)
-  }
-
-  async remove(path: string) {
-    this.check('remove', path)
-    if (!this.files.delete(path)) throw new HttpErr(404)
   }
 }
 
@@ -116,10 +104,9 @@ beforeEach(() => {
   writable = true
   store = new WebDavDataStore({
     files,
-    folder: 'Zeltkonfigurator',
+    path: 'Zeltkonfigurator/Zeltmaterial.bestand',
     canWrite: async () => writable,
-    parseStockFile,
-    parsePacklistFile
+    parseStockFile
   })
 })
 
@@ -134,17 +121,41 @@ describe('stock', () => {
   it('creates folders and the file on first save and returns the new etag', async () => {
     const etag = await store.saveStock(stock, null)
     expect(etag).toBeTruthy()
-    expect([...files.folders]).toEqual(['Zeltkonfigurator', 'Zeltkonfigurator/packlisten'])
+    expect([...files.folders]).toEqual(['Zeltkonfigurator'])
     const raw = files.files.get('Zeltkonfigurator/Zeltmaterial.bestand')!.content
     expect(parseYaml(raw)).toEqual(stock)
     expect(raw.trimStart().startsWith('{')).toBe(false)
     expect(await store.loadStock()).toEqual({ data: stock, etag })
   })
 
+  it('creates no folders for a file on the top level and uses the configured file name', async () => {
+    const top = new WebDavDataStore({
+      files,
+      path: 'Material.bestand',
+      canWrite: async () => true,
+      parseStockFile
+    })
+    await top.saveStock(stock, null)
+    expect(files.calls.filter((c) => c.startsWith('mkdir'))).toEqual([])
+    expect(files.files.has('Material.bestand')).toBe(true)
+    expect((await top.loadStock()).data).toEqual(stock)
+  })
+
+  it('creates all parent folders of a nested file', async () => {
+    const nested = new WebDavDataStore({
+      files,
+      path: 'Lager/Zelte/Material.bestand',
+      canWrite: async () => true,
+      parseStockFile
+    })
+    await nested.saveStock(stock, null)
+    expect([...files.folders]).toEqual(['Lager', 'Lager/Zelte'])
+  })
+
   it('only creates folders once', async () => {
     const etag = await store.saveStock(stock, null)
     await store.saveStock(stock, etag)
-    expect(files.calls.filter((c) => c.startsWith('mkdir')).length).toBe(2)
+    expect(files.calls.filter((c) => c.startsWith('mkdir')).length).toBe(1)
   })
 
   it('saves with the previous etag', async () => {
@@ -197,12 +208,11 @@ describe('stock', () => {
   it('wraps unexpected parser errors in InvalidFileError', async () => {
     const strict = new WebDavDataStore({
       files,
-      folder: 'Z',
+      path: 'Z/Zeltmaterial.bestand',
       canWrite: async () => true,
       parseStockFile: () => {
         throw new TypeError('kaputt')
-      },
-      parsePacklistFile
+      }
     })
     files.put('Z/Zeltmaterial.bestand', '{}')
     await expect(strict.loadStock()).rejects.toBeInstanceOf(InvalidFileError)
@@ -214,61 +224,60 @@ describe('stock', () => {
   })
 })
 
-describe('packlists', () => {
-  it('loads a packlist and maps a missing one to NotFoundError', async () => {
-    const etag = await store.savePacklist(packlist('p1', '2026-01-01T00:00:00Z'), null)
-    const loaded = await store.loadPacklist('p1')
-    expect(loaded.etag).toBe(etag)
-    expect(loaded.data.id).toBe('p1')
-    await expect(store.loadPacklist('nope')).rejects.toBeInstanceOf(NotFoundError)
-  })
-
-  it('rejects ids that are not safe path segments', async () => {
-    await expect(store.loadPacklist('../bestand')).rejects.toBeInstanceOf(InvalidFileError)
-  })
-
-  it('returns an empty list when the folder does not exist', async () => {
-    expect(await store.listPacklists()).toEqual([])
-  })
-
-  it('lists summaries sorted by updatedAt desc and skips broken files', async () => {
-    await store.savePacklist(packlist('alt', '2026-01-01T00:00:00Z'), null)
-    await store.savePacklist(packlist('neu', '2026-03-01T00:00:00Z', true), null)
-    files.put('Zeltkonfigurator/packlisten/kaputt.packliste', '{ nope')
-    files.put('Zeltkonfigurator/packlisten/readme.txt', 'ignored')
-
-    const list = await store.listPacklists()
-    expect(list.map((s) => s.id)).toEqual(['neu', 'alt'])
-    expect(list[0]).toEqual({
-      id: 'neu',
-      name: 'Liste neu',
-      tentCount: 1,
-      itemCount: 2,
-      checkedCount: 2,
-      updatedAt: '2026-03-01T00:00:00Z'
+describe('packlist document', () => {
+  const PATH = 'Lager/2027/Sommerlager.packliste'
+  const doc = (path = PATH) =>
+    new WebDavPacklistDocument({
+      files,
+      path,
+      canWrite: async () => writable,
+      parsePacklistFile
     })
-    expect(list[1].checkedCount).toBe(1)
+
+  it('is named after the file', () => {
+    expect(doc().name).toBe('Sommerlager')
   })
 
-  it('propagates permission errors while listing', async () => {
-    files.folders.add('Zeltkonfigurator/packlisten')
-    files.failWith['list Zeltkonfigurator/packlisten'] = 403
-    await expect(store.listPacklists()).rejects.toBeInstanceOf(ForbiddenError)
+  it('reports an empty file as data = null with its etag', async () => {
+    files.put(PATH, '')
+    expect(await doc().load()).toEqual({ data: null, etag: 'e1' })
   })
 
-  it('deletes a packlist; deleting a missing one throws NotFoundError', async () => {
-    await store.savePacklist(packlist('p1', '2026-01-01T00:00:00Z'), null)
-    await store.deletePacklist('p1')
-    expect(files.files.has('Zeltkonfigurator/packlisten/p1.packliste')).toBe(false)
-    await expect(store.deletePacklist('p1')).rejects.toBeInstanceOf(NotFoundError)
+  it('saves in place and loads with the file name as list name', async () => {
+    files.put(PATH, '')
+    const etag = await doc().save(packlist('p1', '2026-01-01T00:00:00Z'), 'e1')
+    expect(files.calls.filter((c) => c.startsWith('mkdir'))).toEqual([])
+    expect(parseYaml(files.files.get(PATH)!.content).name).toBe('Liste p1')
+    const loaded = await doc().load()
+    expect(loaded.etag).toBe(etag)
+    expect(loaded.data?.name).toBe('Sommerlager')
+    expect(loaded.data?.items).toHaveLength(1)
   })
 
-  it('detects conflicting packlist saves', async () => {
-    const first = await store.savePacklist(packlist('p1', '2026-01-01T00:00:00Z'), null)
-    await store.savePacklist(packlist('p1', '2026-01-02T00:00:00Z'), first)
-    await expect(
-      store.savePacklist(packlist('p1', '2026-01-03T00:00:00Z'), first)
-    ).rejects.toBeInstanceOf(ConflictError)
+  it('maps a missing file to NotFoundError', async () => {
+    await expect(doc('nope.packliste').load()).rejects.toBeInstanceOf(NotFoundError)
+  })
+
+  it('rejects broken files with InvalidFileError', async () => {
+    files.put(PATH, '{ nope')
+    await expect(doc().load()).rejects.toBeInstanceOf(InvalidFileError)
+  })
+
+  it('detects conflicting saves', async () => {
+    files.put(PATH, '')
+    const first = await doc().save(packlist('p1', '2026-01-01T00:00:00Z'), 'e1')
+    await doc().save(packlist('p1', '2026-01-02T00:00:00Z'), first)
+    await expect(doc().save(packlist('p1', '2026-01-03T00:00:00Z'), first)).rejects.toBeInstanceOf(
+      ConflictError
+    )
+  })
+
+  it('maps 403 to ForbiddenError and delegates canWrite', async () => {
+    files.put(PATH, '')
+    files.failWith[`write ${PATH}`] = 403
+    await expect(doc().save(packlist('p1', 'x'), 'e1')).rejects.toBeInstanceOf(ForbiddenError)
+    writable = false
+    expect(await doc().canWrite()).toBe(false)
   })
 })
 
@@ -299,24 +308,15 @@ describe('createWebDavFiles adapter', () => {
         calls.push(['put', ...a])
         return { etag: '"x2"' }
       },
-      listFiles: async (...a) => {
-        calls.push(['list', ...a])
-        return { children: [{ name: 'a.json' }, {}] }
-      },
       createFolder: async (...a) => {
         calls.push(['mkdir', ...a])
-      },
-      deleteFile: async (...a) => {
-        calls.push(['rm', ...a])
       }
     }
     const f = createWebDavFiles(api, 'space')
     expect(await f.read('d/a.json')).toEqual({ body: '{}', etag: 'x1' })
     expect(await f.write('d/a.json', 'c', 'x1')).toEqual({ etag: 'x2' })
     expect(await f.write('d/b.json', 'c', null)).toEqual({ etag: 'x2' })
-    expect(await f.list('d')).toEqual(['a.json'])
     await f.mkdir('d')
-    await f.remove('d/a.json')
 
     expect(calls[1]).toEqual([
       'put',
@@ -324,6 +324,6 @@ describe('createWebDavFiles adapter', () => {
       { path: 'd/a.json', content: 'c', previousEntityTag: '"x1"' }
     ])
     expect(calls[2]).toEqual(['put', 'space', { path: 'd/b.json', content: 'c', overwrite: false }])
-    expect(calls[4]).toEqual(['mkdir', 'space', { path: 'd', fetchFolder: false }])
+    expect(calls[3]).toEqual(['mkdir', 'space', { path: 'd', fetchFolder: false }])
   })
 })

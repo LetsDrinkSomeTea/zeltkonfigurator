@@ -43,8 +43,22 @@ Reihenfolge der übrigen bestimmt, in welcher Folge ausgewichen wird (5.4).
 2. Für eine neue Form in `walls.ts` eine Funktion ergänzen, die eine `WallOption` liefert:
    stabile `id`, `label`, `segments`, `builds` (jeweils `layers` mit Wandrollen) und `parts`
    (z. B. Bodennägel, 2 je Segment).
-3. Die Option in `walls` des Zelttyps eintragen. Die erste Option ist die Vorgabe.
+3. Die Option in `walls` des Zelttyps eintragen. Die erste Option ist die Vorgabe, sofern
+   `defaults` nichts anderes festlegt.
 4. Bei `segments: 0` darf es keine `builds` geben, sonst muss es mindestens eine geben.
+
+## Standardkonfiguration
+
+Ein neues Zelt startet in der Standardkonfiguration seines Typs. Ohne weitere Angabe ist das
+jeweils die erste Möglichkeit (erstes Dach, erste Wandoption, erste Bauart) in Blanko. Mit
+`defaults` im Zelttyp lässt sich das festlegen, z. B. für eine Jurte:
+
+```ts
+defaults: { wallId: 'hoch', buildId: 'super', finish: 'gaze' }
+```
+
+Alle Angaben sind optional (`roofId`, `wallId`, `buildId`, `finish`). Der Katalog-Test prüft,
+dass sie auf vorhandene Dächer, Wandoptionen und Bauarten verweisen.
 
 ## Platzhalter
 

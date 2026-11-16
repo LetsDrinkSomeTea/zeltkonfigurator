@@ -12,6 +12,8 @@ export const hochkohte: TentType = {
     }
   ],
   walls: [nurStreifen({ segmente: 8 }), normaleWand({ segmente: 8 }), hoheWand({ segmente: 8 })],
+  // Standard: normale Wand aus Normalbahnen (gibt es nur blanko)
+  defaults: { wallId: 'normal' },
   fixed: [
     { articleId: 'kohtendaechle', quantity: 1 },
     { articleId: 'kohtenkreuz', quantity: 1 },

@@ -8,7 +8,6 @@ import type { Catalog, ExtraItem, Finish, PacklistFile, Stock, TentConfig } from
  * können. Haken tragen den Zielwert, nicht "umschalten".
  */
 export type PacklistOp =
-  | { type: 'setName'; name: string }
   | { type: 'setDate'; date: string | undefined }
   | { type: 'setFinishOrder'; order: Finish[] }
   | { type: 'addTent'; tent: TentConfig }
@@ -56,10 +55,6 @@ export function applyOp(list: PacklistFile, op: PacklistOp, ctx: OpContext): Pac
   let result: PacklistFile
 
   switch (op.type) {
-    case 'setName':
-      next.name = op.name
-      result = next
-      break
     case 'setDate':
       if (op.date === undefined || op.date === '') {
         delete next.date

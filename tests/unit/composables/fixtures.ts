@@ -62,15 +62,17 @@ export function fakeRecalculate(list: PacklistFile, catalog: Catalog, stock: Sto
   return { ...list, items, fingerprint: fakeFingerprint(catalog, stock) }
 }
 
-export function fakeCreateTentConfig(type: TentType): TentConfig {
+export function fakeDefaultTentOptions(type: TentType) {
   return {
-    id: 'tent-fake',
-    typeId: type.id,
     roofId: type.roofs[0].id,
     wallId: type.walls[0].id,
     buildId: type.walls[0].builds[0]?.id ?? '',
-    finish: 'blanko'
+    finish: 'blanko' as const
   }
+}
+
+export function fakeCreateTentConfig(type: TentType): TentConfig {
+  return { id: 'tent-fake', typeId: type.id, ...fakeDefaultTentOptions(type) }
 }
 
 export function fakeCreatePacklist(name: string, catalog: Catalog, stock: Stock): PacklistFile {

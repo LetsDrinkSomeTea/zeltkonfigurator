@@ -22,24 +22,14 @@ if (params.get('dark') !== null) {
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
-    { path: '/', redirect: '/listen' },
+    { path: '/', redirect: '/liste/Sommerlager.packliste' },
     {
-      path: '/listen',
-      name: 'zeltkonfigurator-listen',
-      component: () => import('../../src/views/PacklistOverview.vue')
-    },
-    {
-      path: '/listen/:id',
+      path: '/liste/:driveAliasAndItem(.*)?',
       name: 'zeltkonfigurator-liste',
       component: () => import('../../src/views/PacklistEditor.vue')
     },
     {
-      path: '/datei/:driveAliasAndItem(.*)?',
-      name: 'zeltkonfigurator-datei',
-      component: () => import('../../src/views/OpenFile.vue')
-    },
-    {
-      path: '/bestand',
+      path: '/bestand/:driveAliasAndItem(.*)?',
       name: 'zeltkonfigurator-bestand',
       component: () => import('../../src/views/InventoryView.vue')
     }

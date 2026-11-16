@@ -23,6 +23,8 @@ export const ovaljurte: TentType = {
     }
   ],
   walls: [keineWand(), normaleWand({ segmente: 14 }), hoheWand({ segmente: 14 })],
+  // Standard: hohe Wand aus Superbahnen mit Gaze
+  defaults: { wallId: 'hoch', buildId: 'super', finish: 'gaze' },
   fixed: [
     { articleId: 'jurtendaechle', quantity: 1 }, // PLATZHALTER
     { articleId: 'ovaljurtenspinne', quantity: 1 },

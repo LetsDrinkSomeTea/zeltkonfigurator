@@ -1,10 +1,11 @@
 /* eslint-disable require-await -- die Schnittstelle ist asynchron, die Umsetzung im Speicher nicht */
-import type { PacklistFile, PacklistSummary, StockFile } from '../domain/types'
+import type { PacklistFile, StockFile } from '../domain/types'
 import {
   ConflictError,
   ForbiddenError,
   NotFoundError,
   type DataStore,
+  type PacklistDocument,
   type Versioned
 } from './DataStore'
 
@@ -24,7 +25,8 @@ interface Entry<T> {
 export class MemoryDataStore implements DataStore {
   private readonly writable: boolean
   private stock: Entry<StockFile> | null = null
-  private readonly packlists = new Map<string, Entry<PacklistFile>>()
+  /** data = null: leere Datei */
+  private readonly packlists = new Map<string, Entry<PacklistFile | null>>()
   private counter = 0
 
   constructor(options: MemoryDataStoreOptions = {}) {
@@ -69,29 +71,9 @@ export class MemoryDataStore implements DataStore {
     return next
   }
 
-  async listPacklists(): Promise<PacklistSummary[]> {
-    return [...this.packlists.values()]
-      .map(({ data }) => {
-        const all = [...data.items, ...data.extraItems]
-        const summary: PacklistSummary = {
-          id: data.id,
-          name: data.name,
-          tentCount: data.tents.length,
-          itemCount: all.length,
-          checkedCount: all.filter((item) => item.checked).length,
-          updatedAt: data.updatedAt
-        }
-        if (data.date !== undefined) {
-          summary.date = data.date
-        }
-        return summary
-      })
-      .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0))
-  }
-
   async loadPacklist(id: string): Promise<Versioned<PacklistFile>> {
     const entry = this.packlists.get(id)
-    if (!entry) {
+    if (!entry?.data) {
       throw new NotFoundError(`Packliste ${id} nicht gefunden`)
     }
     return { data: structuredClone(entry.data), etag: entry.etag }
@@ -108,10 +90,26 @@ export class MemoryDataStore implements DataStore {
     return next
   }
 
-  async deletePacklist(id: string): Promise<void> {
-    this.assertWritable()
-    if (!this.packlists.delete(id)) {
-      throw new NotFoundError(`Packliste ${id} nicht gefunden`)
+  /** Legt eine leere Datei an, wie es „Neu“ in der Dateiansicht tut. */
+  createEmptyFile(id: string): void {
+    if (!this.packlists.has(id)) {
+      this.packlists.set(id, { data: null, etag: this.nextEtag() })
+    }
+  }
+
+  /** Die Packliste `id` als geöffnete Datei; `id` ist zugleich der Dateiname. */
+  document(id: string): PacklistDocument {
+    return {
+      name: id,
+      canWrite: () => this.canWrite(),
+      load: async () => {
+        const entry = this.packlists.get(id)
+        if (!entry) {
+          throw new NotFoundError(`Packliste ${id} nicht gefunden`)
+        }
+        return { data: structuredClone(entry.data), etag: entry.etag }
+      },
+      save: (file, etag) => this.savePacklist({ ...file, id }, etag)
     }
   }
 }

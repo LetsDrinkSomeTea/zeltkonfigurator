@@ -28,7 +28,7 @@ export async function setup(options: { list?: PacklistFile; writable?: boolean }
     },
     packlists: [list]
   })
-  const pl = withStore(store, () => usePacklist('p1'))
+  const pl = withStore(store, () => usePacklist(store.document('p1')))
   await pl.load()
   return { store, pl, list }
 }

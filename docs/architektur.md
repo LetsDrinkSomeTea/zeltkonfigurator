@@ -20,8 +20,8 @@ Die App ist eine OpenCloud-Web-Erweiterung auf Basis des `web-app-skeleton`
 └──────────────────────────────────────────────────────┼───────────────────────────┘
                                                        │ WebDAV (Client aus web-pkg)
                                               ┌────────▼─────────┐
-                                              │ Space            │  Zeltmaterial.bestand
-                                              │ „Material Team“  │  packlisten/*.packliste
+                                              │ Space            │  Zeltmaterial.bestand (fester Ort)
+                                              │ „Material-Team“  │  *.packliste (beliebiger Ort, auch andere Spaces)
                                               └──────────────────┘
 ```
 
@@ -66,12 +66,11 @@ src/
     DataStore.ts            Schnittstelle + Fehlerklassen
     WebDavDataStore.ts      Umsetzung über den WebDAV-Client von web-pkg
     MemoryDataStore.ts      Umsetzung im Speicher für Tests und Entwicklung
-    location.ts             Space und Ordner aus der App-Konfiguration auflösen
+    location.ts             Space und Pfad der Bestandsdatei aus der App-Konfiguration
   composables/
     useStore.ts  useStock.ts  usePacklist.ts
   views/
-    PacklistOverview.vue    /listen
-    PacklistEditor.vue      /listen/:id   (Reiter: Zelte · Material pro Zelt · Packliste)
+    PacklistEditor.vue      /liste/<Space und Pfad der Datei>   (Reiter: Zelte · Material pro Zelt · Packliste)
     InventoryView.vue       /bestand
   components/               TentCard, TentOptions, ItemRow, StatusBanner, PrintLayout …
 tests/unit/                 spiegelt src/
@@ -134,6 +133,8 @@ interface TentType {
   roofs: RoofConfig[] // erste = Vorgabe
   walls: WallOption[] // erste = Vorgabe
   fixed: Part[] // Dächle, Kreuz, Mast, Heringe, Abspannung, Bodenplane
+  // Standardkonfiguration neuer Zelte (F-2C); fehlende Angaben = jeweils die erste Möglichkeit
+  defaults?: { roofId?: string; wallId?: string; buildId?: string; finish?: Finish }
 }
 ```
 
@@ -185,7 +186,7 @@ interface StockFile {
 
 Einträge zu unbekannten Artikel-IDs bleiben beim Speichern erhalten (F-07).
 
-### 4.2 `packlisten/<Name>.packliste`
+### 4.2 `<Name>.packliste` (beliebiger Ort)
 
 ```ts
 interface TentConfig {
@@ -293,12 +294,22 @@ interface DataStore {
   canWrite(): Promise<boolean>
   loadStock(): Promise<Versioned<StockFile>>
   saveStock(file: StockFile, etag: string | null): Promise<string> // neuer ETag
-  listPacklists(): Promise<PacklistSummary[]>
-  loadPacklist(id: string): Promise<Versioned<PacklistFile>>
-  savePacklist(file: PacklistFile, etag: string | null): Promise<string>
-  deletePacklist(id: string): Promise<void>
+}
+
+// Eine geöffnete Packlisten-Datei; Ort und Name kommen von der Datei.
+interface PacklistDocument {
+  readonly name: string // Dateiname ohne Endung
+  canWrite(): Promise<boolean>
+  load(): Promise<Versioned<PacklistFile | null>> // null = leere Datei, frisch über „Neu“ angelegt
+  save(file: PacklistFile, etag: string | null): Promise<string>
+  close?(): void // zurück zur Dateiansicht
 }
 ```
+
+`DataStore` ist der Bestand am festen Ablageort. Eine Packliste ist dagegen ein
+`PacklistDocument`: In OpenCloud baut `createDocument()` es aus der Adresse (Space und Pfad,
+`useAppDefaults`), in Tests und Vorschau liefert `MemoryDataStore.document(id)` eines. Eine
+leere Datei füllt `usePacklist` beim ersten Laden mit einer leeren Packliste.
 
 Fehlerklassen: `NotConfiguredError`, `NotFoundError`, `ForbiddenError`, `ConflictError`,
 `InvalidFileError`. Die Oberfläche übersetzt sie in Meldungen (F-42, N-05).
@@ -316,11 +327,12 @@ Haken werden gebündelt gespeichert (ca. 1 s Verzögerung).
 Aus der App-Konfiguration des Servers (F-41), mit Vorgabe:
 
 ```json
-{ "space": "Material Team", "folder": "Zeltkonfigurator" }
+{ "space": "Material-Team", "path": "Zeltmaterial.bestand" }
 ```
 
 `location.ts` sucht den Space unter den Spaces des Nutzers und liefert die WebDAV-Basis.
-Schreibrecht wird aus den Berechtigungen des Space abgeleitet.
+Schreibrecht wird aus den Berechtigungen des Space abgeleitet. Das gilt nur für den Bestand;
+Packlisten liegen dort, wo ihre Datei liegt, und ihr Schreibrecht kommt von der Datei.
 
 **Zu klären im ersten Arbeitspaket:** wie die Konfiguration die App erreicht
 (`manifest.json` / `apps.yaml` → `applicationConfig`) und welche Aufrufe von
@@ -330,13 +342,16 @@ technischem Risiko und wird deshalb zuerst und einzeln geklärt.
 
 ## 7. Oberfläche
 
-| Route         | Ansicht          | Inhalt                                                                                        |
-| ------------- | ---------------- | --------------------------------------------------------------------------------------------- |
-| `/listen`     | PacklistOverview | Karten der Packlisten mit Fortschritt; anlegen, duplizieren, löschen                          |
-| `/listen/:id` | PacklistEditor   | Statusbanner; Reiter **Zelte** (Konfigurator), **Material pro Zelt**, **Packliste** (abhaken) |
-| `/bestand`    | InventoryView    | Artikel nach Kategorie, Suche, Stückzahlen bearbeiten                                         |
+| Route      | Ansicht        | Inhalt                                                                                        |
+| ---------- | -------------- | --------------------------------------------------------------------------------------------- |
+| `/liste/…` | PacklistEditor | Statusbanner; Reiter **Zelte** (Konfigurator), **Material pro Zelt**, **Packliste** (abhaken) |
+| `/bestand` | InventoryView  | Artikel nach Kategorie, Suche, Stückzahlen bearbeiten                                         |
 
-- Die Zeltkarte baut ihre Auswahlfelder aus dem Zelttyp: Dach nur bei mehreren
+- Einstieg ist die Dateiansicht: `appInfo.extensions` verknüpft `.packliste` und `.bestand` mit
+  den Routen und trägt „Packliste“ ins „Neu“-Menü ein (`newFileMenu`). Einen Eintrag im
+  App-Umschalter und eine Seitenleiste gibt es nicht.
+- Die Zeltkarte zeigt die Konfiguration in einer Zeile; die Auswahlfelder stehen hinter
+  „Anpassen“ (F-2C). Sie baut ihre Auswahlfelder aus dem Zelttyp: Dach nur bei mehreren
   Dachkonfigurationen, Bauart nur bei mehreren Bauarten, Ausführung nur, wenn die gewählte
   Bauart eine Lage mit Ausführungen hat. Neue Zelttypen brauchen keine Änderung an der
   Oberfläche.

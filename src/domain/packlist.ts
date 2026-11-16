@@ -4,7 +4,6 @@ import {
   type Catalog,
   type PackItem,
   type PacklistFile,
-  type PacklistSummary,
   type Stock,
   type TentConfig,
   type TentType
@@ -26,17 +25,36 @@ export function createPacklist(name: string, catalog: Catalog, stock: Stock): Pa
   }
 }
 
-/** Neues Zelt mit den Vorgaben des Zelttyps (erstes Dach, erste Wandoption, erste Bauart). */
-export function createTentConfig(type: TentType): TentConfig {
-  const wall = type.walls[0]
+export type TentOptions = Pick<TentConfig, 'roofId' | 'wallId' | 'buildId' | 'finish'>
+
+/** Standardkonfiguration des Zelttyps: `defaults`, sonst jeweils die erste Möglichkeit. */
+export function defaultTentOptions(type: TentType): TentOptions {
+  const d = type.defaults ?? {}
+  const roof = type.roofs.find((r) => r.id === d.roofId) ?? type.roofs[0]
+  const wall = type.walls.find((w) => w.id === d.wallId) ?? type.walls[0]
+  const build = wall.builds.find((b) => b.id === d.buildId) ?? wall.builds[0]
   return {
-    id: crypto.randomUUID(),
-    typeId: type.id,
-    roofId: type.roofs[0].id,
+    roofId: roof.id,
     wallId: wall.id,
-    buildId: wall.builds[0]?.id ?? '',
-    finish: 'blanko'
+    buildId: build?.id ?? '',
+    finish: d.finish ?? 'blanko'
   }
+}
+
+/** Entspricht das Zelt der Standardkonfiguration seines Typs? */
+export function hasDefaultOptions(tent: TentConfig, type: TentType): boolean {
+  const d = defaultTentOptions(type)
+  return (
+    tent.roofId === d.roofId &&
+    tent.wallId === d.wallId &&
+    tent.buildId === d.buildId &&
+    tent.finish === d.finish
+  )
+}
+
+/** Neues Zelt in der Standardkonfiguration des Zelttyps. */
+export function createTentConfig(type: TentType): TentConfig {
+  return { id: crypto.randomUUID(), typeId: type.id, ...defaultTentOptions(type) }
 }
 
 /** Rechnet items/deviations/fingerprint neu und übernimmt Haken nach F-36. */
@@ -89,17 +107,4 @@ export function fingerprint(catalog: Catalog, stock: Stock): string {
   const relevant: Record<string, number> = {}
   for (const a of catalog.articles) relevant[a.id] = stock[a.id] ?? 0
   return hash53(canonical({ catalog, stock: relevant }))
-}
-
-export function summarize(list: PacklistFile): PacklistSummary {
-  const rows = [...list.items, ...list.extraItems]
-  return {
-    id: list.id,
-    name: list.name,
-    ...(list.date !== undefined ? { date: list.date } : {}),
-    tentCount: list.tents.length,
-    itemCount: rows.length,
-    checkedCount: rows.filter((r) => r.checked).length,
-    updatedAt: list.updatedAt
-  }
 }

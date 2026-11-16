@@ -1,4 +1,4 @@
-import type { PacklistFile, PacklistSummary, StockFile } from '../domain/types'
+import type { PacklistFile, StockFile } from '../domain/types'
 
 export interface Versioned<T> {
   data: T
@@ -7,8 +7,8 @@ export interface Versioned<T> {
 }
 
 /**
- * Zugriff auf die Dateien im Space. Einzige Stelle, an der die Oberfläche Daten liest
- * oder schreibt. Umsetzungen: WebDavDataStore (OpenCloud), MemoryDataStore (Tests, Entwicklung).
+ * Zugriff auf den Bestand. Er liegt immer am selben Ort (Space und Ordner aus der
+ * App-Konfiguration). Umsetzungen: WebDavDataStore (OpenCloud), MemoryDataStore (Tests, Vorschau).
  */
 export interface DataStore {
   canWrite(): Promise<boolean>
@@ -17,12 +17,22 @@ export interface DataStore {
   loadStock(): Promise<Versioned<StockFile>>
   /** etag = zuletzt gelesener Stand, null = neu anlegen. Liefert den neuen ETag. */
   saveStock(file: StockFile, etag: string | null): Promise<string>
+}
 
-  listPacklists(): Promise<PacklistSummary[]>
-  loadPacklist(id: string): Promise<Versioned<PacklistFile>>
-  /** etag = zuletzt gelesener Stand, null = neu anlegen. Liefert den neuen ETag. */
-  savePacklist(file: PacklistFile, etag: string | null): Promise<string>
-  deletePacklist(id: string): Promise<void>
+/**
+ * Eine geöffnete Packlisten-Datei. Packlisten sind gewöhnliche Dateien und können überall
+ * liegen; die Datei bestimmt Ort und Namen der Liste.
+ */
+export interface PacklistDocument {
+  /** Name der Liste = Dateiname ohne Endung. */
+  readonly name: string
+  canWrite(): Promise<boolean>
+  /** data = null: Die Datei ist leer (frisch über „Neu“ angelegt). */
+  load(): Promise<Versioned<PacklistFile | null>>
+  /** etag = zuletzt gelesener Stand. Liefert den neuen ETag. */
+  save(file: PacklistFile, etag: string | null): Promise<string>
+  /** Zurück zur Dateiansicht, sofern die Umgebung das anbietet. */
+  close?(): void
 }
 
 export class DataStoreError extends Error {

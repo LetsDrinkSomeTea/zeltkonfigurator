@@ -21,16 +21,16 @@ kein OpenCloud-Server; alles Unbelegte steht im Abschnitt „Nicht verifiziert�
   (also auch ein `config`) aus `src/manifest.json` werden unverändert übernommen. Es gibt dafür
   keine Option in `defineConfig` (nur `name`, `opencloudWebHostUrl` und Vite-Optionen).
 - Umsetzung: `src/index.ts` ruft `setAppConfig(applicationConfig)` (neues Modul
-  `src/storage/appConfig.ts`); `createStore()` liest `{ space, folder }` daraus mit den Vorgaben
-  `Material Team` / `Zeltkonfigurator`.
+  `src/storage/appConfig.ts`); `createStore()` liest `{ space, path }` daraus mit den Vorgaben
+  `Material-Team` / `Zeltmaterial.bestand`.
 
 Beispiel `apps.yaml` (Schema aus dem Gedächtnis, nicht belegt):
 
 ```yaml
 zeltkonfigurator:
   config:
-    space: Material Team
-    folder: Zeltkonfigurator
+    space: Material-Team
+    path: Zeltmaterial.bestand
 ```
 
 ## 2. WebDAV (`useClientService().webdav`)
@@ -82,11 +82,13 @@ Anlegen ohne Überschreiben: `saveX(file, null)` ruft `putFileContents` ohne `pr
 | `src/storage/appConfig.ts`       | Hält `applicationConfig` zwischen `setup()` der App und `createStore()`.                                                                                            |
 | `src/domain/schema.ts`           | Platzhalter (Objekt + `schemaVersion === 1`), wird beim Merge ersetzt.                                                                                              |
 
-Verhalten: Dateien `<folder>/Zeltmaterial.bestand` und `<folder>/packlisten/<Name>.packliste`, JSON mit 2 Leerzeichen und
-abschließendem Zeilenumbruch. Fehlende Ordner werden vor dem ersten Schreiben per MKCOL angelegt (405 =
-existiert schon). `listPacklists` überspringt defekte oder zwischenzeitlich gelöschte Dateien;
-Berechtigungs- und Netzwerkfehler werden weitergereicht. Packlisten-IDs dürfen nur `A–Z a–z 0–9 _ -` enthalten
-(Schutz vor Pfadtricks), sonst `InvalidFileError`.
+Verhalten: Der Bestand liegt in der Datei `<path>` des konfigurierten Space (Vorgabe: oberste
+Ebene); fehlende Ordner oberhalb der Datei werden vor dem
+ersten Schreiben per MKCOL angelegt (405 = existiert schon). Packlisten (`<Name>.packliste`)
+liegen an beliebiger Stelle: `src/storage/createDocument.ts` löst Space und Pfad über
+`useAppDefaults` aus der Adresse auf und liest und schreibt die Datei an Ort und Stelle
+(`WebDavPacklistDocument`). Schreibrecht einer Packliste = DAV-Berechtigung der Datei. Beide
+Dateiarten sind YAML. Eine leere Datei (frisch über „Neu“ angelegt) gilt als neue Packliste.
 
 ## 5. Nicht verifiziert (ohne laufenden Server)
 
@@ -122,8 +124,8 @@ Admin-Dokumentation „Web Applications“:
   ```yaml
   zeltkonfigurator:
     config:
-      space: 'Material Team'
-      folder: 'Zeltkonfigurator'
+      space: 'Material-Team'
+      path: 'Zeltmaterial.bestand'
   ```
 
   Alternativ über eine `config.json` im App-Ordner (`{ "config": { … } }`).
@@ -133,5 +135,11 @@ Admin-Dokumentation „Web Applications“:
   Dokumentation geklärt, aber nicht gegen einen laufenden Server getestet.
 - **Installation:** Der Ordner im Web-App-Verzeichnis muss wie die App-ID heißen
   (`zeltkonfigurator`) und den Inhalt von `dist/` enthalten.
-- **Navigation:** `navItems` erscheinen in der linken Seitenleiste, sobald es mehr als einen
+- **Navigation:** Die App registriert weder `navItems` noch einen Eintrag im App-Umschalter.
+  Sie hängt über `appInfo.extensions` an den Endungen `.packliste` (mit `newFileMenu`) und
+  `.bestand`. Im Browser gegen OpenCloud 9.0.0 geprüft: „Neu → Packliste“, Öffnen per Klick,
+  Schließen zurück in den Ordner, Nur-Lese-Ansicht für Mitglieder mit Leserecht.
+- **Neustart nötig:** OpenCloud liest das `manifest.json` einer App nur beim Start. Da der
+  Dateiname des Einstiegspunkts bei jedem Build wechselt, muss der Server nach jedem Build neu
+  gestartet werden, sonst lädt die App nicht (404 auf `remoteEntry-….mjs`).
   Eintrag gibt; die App nutzt das für „Packlisten“ und „Bestand“.

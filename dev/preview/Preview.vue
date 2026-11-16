@@ -2,7 +2,7 @@
   <div class="preview">
     <nav class="preview-nav zk-no-print">
       <strong>Vorschau</strong>
-      <router-link :to="{ name: 'zeltkonfigurator-listen' }">Packlisten</router-link>
+      <router-link to="/liste/Sommerlager.packliste">Packliste</router-link>
       <router-link :to="{ name: 'zeltkonfigurator-bestand' }">Bestand</router-link>
     </nav>
     <router-view />
@@ -10,11 +10,23 @@
 </template>
 
 <script setup lang="ts">
-import { provideStore } from '../../src/composables/useStore'
-import type { DataStore } from '../../src/storage/DataStore'
+import { provide } from 'vue'
+import { useRoute } from 'vue-router'
+import { documentKey, provideStore } from '../../src/composables/useStore'
+import { packlistName } from '../../src/domain/fileNames'
+import type { MemoryDataStore } from '../../src/storage/MemoryDataStore'
 
-const props = defineProps<{ store: DataStore }>()
+const props = defineProps<{ store: MemoryDataStore }>()
 provideStore(props.store)
+
+// In der Vorschau ist jede Adresse unter /liste/ eine Packliste; fehlt sie, entsteht sie leer –
+// so wie über „Neu“ in der Dateiansicht.
+const route = useRoute()
+provide(documentKey, () => {
+  const id = packlistName(String(route.params.driveAliasAndItem ?? ''))
+  props.store.createEmptyFile(id)
+  return props.store.document(id)
+})
 </script>
 
 <style>

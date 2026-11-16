@@ -15,6 +15,7 @@ vi.mock('../../../src/domain/packlist', async () => {
     recalculate: f.fakeRecalculate,
     fingerprint: f.fakeFingerprint,
     createTentConfig: f.fakeCreateTentConfig,
+    defaultTentOptions: f.fakeDefaultTentOptions,
     createPacklist: f.fakeCreatePacklist
   }
 })
@@ -23,7 +24,7 @@ const stored = (store: MemoryDataStore) => store.loadPacklist('p1').then((r) => 
 
 async function setup(options: ConstructorParameters<typeof MemoryDataStore>[0] = {}) {
   const store = new MemoryDataStore({ packlists: [makeList()], ...options })
-  const pl = withStore(store, () => usePacklist('p1'))
+  const pl = withStore(store, () => usePacklist(store.document('p1')))
   await pl.load()
   return { store, pl }
 }
@@ -45,7 +46,7 @@ describe('usePacklist', () => {
 
   it('puts load errors into error instead of throwing', async () => {
     const store = new MemoryDataStore()
-    const pl = withStore(store, () => usePacklist('missing'))
+    const pl = withStore(store, () => usePacklist(store.document('missing')))
     await expect(pl.load()).resolves.toBeUndefined()
     expect(pl.error.value).toBeInstanceOf(NotFoundError)
     expect(pl.list.value).toBeNull()
@@ -67,15 +68,15 @@ describe('usePacklist', () => {
 
   it('flush saves immediately', async () => {
     const { store, pl } = await setup()
-    pl.setName('Neu')
+    pl.setDate('2026-08-01')
     await pl.flush()
-    expect((await stored(store)).name).toBe('Neu')
+    expect((await stored(store)).date).toBe('2026-08-01')
   })
 
   it('does not lose a check set by someone else on conflict (F-38)', async () => {
     const store = new MemoryDataStore({ packlists: [makeList()] })
-    const a = withStore(store, () => usePacklist('p1'))
-    const b = withStore(store, () => usePacklist('p1'))
+    const a = withStore(store, () => usePacklist(store.document('p1')))
+    const b = withStore(store, () => usePacklist(store.document('p1')))
     await Promise.all([a.load(), b.load()])
     a.toggleItem('art-t1')
     b.toggleItem('art-t2')
@@ -90,7 +91,7 @@ describe('usePacklist', () => {
   it('gives up after 3 conflict retries and sets error', async () => {
     const { store, pl } = await setup()
     const spy = vi.spyOn(store, 'savePacklist').mockRejectedValue(new ConflictError('x'))
-    pl.setName('x')
+    pl.setDate('2026-08-01')
     await pl.flush()
     expect(spy).toHaveBeenCalledTimes(4)
     expect(pl.error.value).toBeInstanceOf(ConflictError)
@@ -141,7 +142,7 @@ describe('usePacklist', () => {
     expect((await stored(store)).tents).toHaveLength(3)
   })
 
-  it('manages finishOrder, name, date and extras', async () => {
+  it('manages finishOrder, date and extras', async () => {
     const { store, pl } = await setup()
     pl.setFinishOrder(['blanko', 'fenster', 'gaze'])
     pl.setDate('2026-07-01')
@@ -179,18 +180,54 @@ describe('usePacklist', () => {
     const spy = vi.spyOn(store, 'savePacklist')
     expect(pl.canWrite.value).toBe(false)
     pl.toggleItem('art-t1')
-    pl.setName('x')
+    pl.setDate('2026-08-01')
     pl.addTent('kohte')
     await vi.advanceTimersByTimeAsync(PACKLIST_SAVE_DELAY_MS * 2)
-    expect(pl.list.value?.name).toBe('Sommerlager')
+    expect(pl.list.value?.date).toBeUndefined()
     expect(pl.list.value?.tents).toHaveLength(2)
     expect(spy).not.toHaveBeenCalled()
   })
 
   it('does not mutate stored state through the loaded list', async () => {
     const { store, pl } = await setup()
-    pl.setName('lokal')
-    expect((await stored(store)).name).toBe('Sommerlager')
+    pl.setDate('2026-08-01')
+    expect((await stored(store)).date).toBeUndefined()
+  })
+
+  it('fills an empty file with a new list named after the file', async () => {
+    const store = new MemoryDataStore()
+    store.createEmptyFile('Pfila')
+    const pl = withStore(store, () => usePacklist(store.document('Pfila')))
+    await pl.load()
+    expect(pl.error.value).toBeNull()
+    expect(pl.list.value).toMatchObject({ name: 'Pfila', tents: [] })
+    expect((await store.loadPacklist('Pfila')).data.name).toBe('Pfila')
+    pl.addTent('kohte')
+    await pl.flush()
+    expect(pl.error.value).toBeNull()
+    expect((await store.loadPacklist('Pfila')).data.tents).toHaveLength(1)
+  })
+
+  it('shows an empty file as an empty list without saving when read-only', async () => {
+    const store = new MemoryDataStore({ writable: false })
+    store.createEmptyFile('Pfila')
+    const pl = withStore(store, () => usePacklist(store.document('Pfila')))
+    await pl.load()
+    expect(pl.error.value).toBeNull()
+    expect(pl.list.value?.tents).toEqual([])
+    await expect(store.loadPacklist('Pfila')).rejects.toBeInstanceOf(NotFoundError)
+  })
+
+  it('resets a tent to the default configuration of its type', async () => {
+    const { pl } = await setup()
+    pl.updateTent('t1', { wallId: 'w2', finish: 'gaze', label: 'Küche' })
+    pl.resetTent('t1')
+    expect(pl.list.value?.tents[0]).toMatchObject({
+      wallId: 'w0',
+      buildId: '',
+      finish: 'blanko',
+      label: 'Küche'
+    })
   })
 
   it('uses the catalog for wall options', () => {

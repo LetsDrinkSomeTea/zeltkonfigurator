@@ -16,24 +16,40 @@ const spaces = [
 describe('readStorageConfig', () => {
   it('uses defaults for missing or invalid config', () => {
     expect(readStorageConfig(undefined)).toEqual(DEFAULT_CONFIG)
-    expect(readStorageConfig({ space: 5, folder: '  ' })).toEqual(DEFAULT_CONFIG)
+    expect(readStorageConfig({ space: 5, path: '  ' })).toEqual(DEFAULT_CONFIG)
+    expect(DEFAULT_CONFIG).toEqual({ space: 'Material-Team', path: 'Zeltmaterial.bestand' })
   })
 
   it('trims values and slashes', () => {
-    expect(readStorageConfig({ space: ' Lager ', folder: '/Zelte/Packlisten/' })).toEqual({
+    expect(readStorageConfig({ space: ' Lager ', path: '/Zelte/Material.bestand' })).toEqual({
       space: 'Lager',
-      folder: 'Zelte/Packlisten'
+      path: 'Zelte/Material.bestand'
     })
   })
 
   it('rejects path traversal', () => {
-    expect(() => readStorageConfig({ folder: '../x' })).toThrow(NotConfiguredError)
+    expect(() => readStorageConfig({ path: '../x.bestand' })).toThrow(NotConfiguredError)
+    expect(() => readStorageConfig({ path: 'a//x.bestand' })).toThrow(NotConfiguredError)
   })
 })
 
 describe('findSpace / resolveLocation', () => {
   it('finds by name case-insensitively with trim', () => {
     expect(findSpace(spaces, '  material TEAM ')?.id).toBe('b2')
+  })
+
+  it('treats spaces, hyphens and underscores in names alike', () => {
+    expect(findSpace(spaces, 'Material-Team')?.id).toBe('b2')
+    expect(findSpace(spaces, 'material_team')?.id).toBe('b2')
+  })
+
+  it('prefers the exactly matching name', () => {
+    const list = [
+      { id: 'x', name: 'Material Team', driveType: 'project' },
+      { id: 'y', name: 'Material-Team', driveType: 'project' }
+    ]
+    expect(findSpace(list, 'Material-Team')?.id).toBe('y')
+    expect(findSpace(list, 'material team')?.id).toBe('x')
   })
 
   it('finds by id', () => {
@@ -51,14 +67,14 @@ describe('findSpace / resolveLocation', () => {
   it('resolves the configured location', () => {
     const loc = resolveLocation(DEFAULT_CONFIG, spaces)
     expect(loc.space.id).toBe('b2')
-    expect(loc.folder).toBe('Zeltkonfigurator')
+    expect(loc.path).toBe('Zeltmaterial.bestand')
   })
 
   it('throws NotConfiguredError with a German message when missing', () => {
-    expect(() => resolveLocation({ space: 'Gibt es nicht', folder: 'x' }, spaces)).toThrow(
+    expect(() => resolveLocation({ space: 'Gibt es nicht', path: 'x' }, spaces)).toThrow(
       NotConfiguredError
     )
-    expect(() => resolveLocation({ space: 'Gibt es nicht', folder: 'x' }, spaces)).toThrow(
+    expect(() => resolveLocation({ space: 'Gibt es nicht', path: 'x' }, spaces)).toThrow(
       /Space „Gibt es nicht“ wurde nicht gefunden/
     )
   })

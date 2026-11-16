@@ -24,6 +24,8 @@ export const dreierjurtenburg: TentType = {
   ],
   // PLATZHALTER: 27 Wandsegmente (geometrisch abgeleitet)
   walls: [keineWand(), normaleWand({ segmente: 27 }), hoheWand({ segmente: 27 })],
+  // Standard: hohe Wand aus Superbahnen mit Gaze
+  defaults: { wallId: 'hoch', buildId: 'super', finish: 'gaze' },
   fixed: [
     { articleId: 'jurtendaechle', quantity: 3 }, // PLATZHALTER
     { articleId: 'jurtenspinne-6', quantity: 3 }, // PLATZHALTER

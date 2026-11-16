@@ -1,40 +1,29 @@
 <template>
-  <AppLayout
-    :title="pl.list.value?.name || $gettext('Packliste')"
-    :loading="pl.loading.value"
-    :error="pl.error.value"
-  >
+  <AppLayout :title="doc.name" :loading="pl.loading.value" :error="pl.error.value">
     <template #actions>
-      <router-link class="zk-no-print ext:underline" :to="{ name: 'zeltkonfigurator-listen' }">{{
-        $gettext('Zurück zu den Packlisten')
-      }}</router-link>
       <span v-if="pl.saving.value" class="zk-no-print" role="status">{{
         $gettext('Wird gespeichert …')
       }}</span>
+      <router-link class="zk-no-print ext:underline" :to="{ name: 'zeltkonfigurator-bestand' }">{{
+        $gettext('Bestand')
+      }}</router-link>
+      <oc-button v-if="doc.close" class="zk-no-print" size="small" @click="close">{{
+        $gettext('Schließen')
+      }}</oc-button>
     </template>
 
     <template v-if="pl.list.value">
       <section class="ext:flex ext:flex-wrap ext:gap-3 ext:mb-4">
-        <template v-if="pl.canWrite.value">
-          <oc-text-input
-            id="zk-list-name"
-            class="ext:grow"
-            :label="$gettext('Name')"
-            :model-value="pl.list.value.name"
-            @update:model-value="pl.setName"
-            @change="onRename"
-          />
-          <oc-text-input
-            id="zk-list-date"
-            type="date"
-            :label="$gettext('Datum')"
-            :model-value="pl.list.value.date ?? ''"
-            @update:model-value="(v: string) => pl.setDate(v || undefined)"
-          />
-        </template>
-        <p v-else>
-          {{ pl.list.value.name }}<span v-if="pl.list.value.date"> · {{ pl.list.value.date }}</span>
-        </p>
+        <oc-text-input
+          v-if="pl.canWrite.value"
+          id="zk-list-date"
+          type="date"
+          :label="$gettext('Datum')"
+          :model-value="pl.list.value.date ?? ''"
+          @update:model-value="(v: string) => pl.setDate(v || undefined)"
+        />
+        <p v-else-if="pl.list.value.date">{{ pl.list.value.date }}</p>
+        <p v-if="!pl.canWrite.value" class="zk-hint">{{ $gettext('Nur Lesezugriff') }}</p>
       </section>
 
       <StatusBanner :status="status" />
@@ -91,13 +80,16 @@ import StatusBanner from '../components/StatusBanner.vue'
 import TentsTab from '../components/TentsTab.vue'
 import { useAppRouter } from '../composables/useAppRouter'
 import { usePacklist } from '../composables/usePacklist'
+import { usePacklistDocument } from '../composables/useStore'
 import { derivePacklistStatus } from '../domain/view/status'
 
 type TabId = 'zelte' | 'material' | 'packliste'
 
 const { $gettext } = useGettext()
 const { router, route } = useAppRouter()
-const pl = usePacklist(() => route.value.params.id as string)
+// Die Datei bestimmt Ort und Namen der Liste; umbenannt wird sie in der Dateiansicht.
+const doc = usePacklistDocument()
+const pl = usePacklist(doc)
 
 const tabs = computed<{ id: TabId; label: string }[]>(() => [
   { id: 'zelte', label: $gettext('Zelte') },
@@ -115,19 +107,6 @@ const status = computed(() =>
 )
 
 // Nach dem Bearbeiten des Namens die Datei nachziehen und zur neuen Adresse wechseln.
-async function onRename() {
-  const name = pl.list.value?.name ?? ''
-  const before = route.value.params.id as string
-  const id = await pl.rename(name)
-  if (id !== before) {
-    await router.replace({
-      name: 'zeltkonfigurator-liste',
-      params: { id },
-      query: route.value.query
-    })
-  }
-}
-
 function select(id: TabId) {
   void router.replace({ query: { ...route.value.query, tab: id } })
 }
@@ -156,6 +135,11 @@ async function onKey(event: KeyboardEvent, id: TabId) {
   select(ids[target])
   await nextTick()
   document.getElementById(`zk-tab-${ids[target]}`)?.focus()
+}
+
+async function close() {
+  await pl.flush()
+  doc.close?.()
 }
 
 onMounted(() => {
