@@ -1,3 +1,4 @@
+import { UnknownConfigError } from '../domain/allocation'
 import { recalculate } from '../domain/packlist'
 import type { Catalog, ExtraItem, Finish, PacklistFile, Stock, TentConfig } from '../domain/types'
 
@@ -42,7 +43,16 @@ function clone<T>(value: T): T {
 /** Wendet eine Operation an und liefert eine neue Packliste (die Eingabe bleibt unverändert). */
 export function applyOp(list: PacklistFile, op: PacklistOp, ctx: OpContext): PacklistFile {
   const next = clone(list)
-  const recalc = () => recalculate(next, ctx.catalog, ctx.stock)
+  // Kennt der Katalog ein Zelt der Liste nicht mehr (nach einem App-Update), bleibt das
+  // festgeschriebene Material stehen, bis das betroffene Zelt entfernt oder neu gewählt ist.
+  const recalc = () => {
+    try {
+      return recalculate(next, ctx.catalog, ctx.stock)
+    } catch (e) {
+      if (e instanceof UnknownConfigError) return next
+      throw e
+    }
+  }
   let result: PacklistFile
 
   switch (op.type) {
