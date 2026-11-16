@@ -17,7 +17,7 @@ export const kohte: TentType = {
     { articleId: 'kohtendaechle', quantity: 1 },
     { articleId: 'kohtenkreuz', quantity: 1 },
     { articleId: 'mast-375', quantity: 2 },
-    { articleId: 'hering', quantity: 8 },
+    { articleId: 't-profil', quantity: 8 },
     { articleId: 'aufzugseil', quantity: 1 }
   ]
 }

@@ -54,15 +54,15 @@ Nicht Teil der App:
 
 ### 5.1 Material und Bestand
 
-| ID   | Anforderung                                                                                                                                                          |
-| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| F-01 | Die App zeigt den Bestand als Liste, gruppiert nach Kategorie: Dächer und Planen, Seitenwand, Stangen und Gestänge, Heringe und Abspannung, Kleinteile, Bodenplanen. |
-| F-02 | Bearbeiter können je Artikel Stückzahl und Notiz ändern.                                                                                                             |
-| F-03 | Die Artikelliste selbst ist Teil der App und kommt mit dem App-Update. Im Space gespeichert werden nur Stückzahlen und Notizen.                                      |
-| F-04 | Fehlt die Bestandsdatei, legt die App sie beim ersten Speichern an; bis dahin gilt Stückzahl 0.                                                                      |
-| F-05 | Betrachter sehen den Bestand ohne Bearbeitungselemente.                                                                                                              |
-| F-06 | Die Bestandsliste ist durchsuchbar.                                                                                                                                  |
-| F-07 | Enthält die Bestandsdatei Einträge zu Artikeln, die die App nicht (mehr) kennt, bleiben sie beim Speichern erhalten und werden als „unbekannt“ angezeigt.            |
+| ID   | Anforderung                                                                                                                                                                      |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F-01 | Die App zeigt den Bestand als Liste, gruppiert nach Kategorie: Dächer und Planen, Seitenwand, Stangen und Gestänge, Heringe und Abspannung, Kleinteile, Bodenplanen.             |
+| F-02 | Bearbeiter können je Artikel Stückzahl und Notiz ändern.                                                                                                                         |
+| F-03 | Die Artikelliste selbst ist Teil der App und kommt mit dem App-Update. Im Space gespeichert werden nur Stückzahlen und Notizen.                                                  |
+| F-04 | Fehlt die Bestandsdatei, legt die App sie beim ersten Speichern an; bis dahin gilt Stückzahl 0.                                                                                  |
+| F-05 | Betrachter sehen den Bestand ohne Bearbeitungselemente.                                                                                                                          |
+| F-06 | Die Bestandsliste ist durchsuchbar.                                                                                                                                              |
+| F-07 | Enthält die Bestandsdatei Einträge zu Artikeln, die die App nicht (mehr) kennt, bleiben sie beim Speichern erhalten, werden als „unbekannt“ angezeigt und lassen sich entfernen. |
 
 ### 5.2 Zelttypen und Stücklisten
 
@@ -81,7 +81,7 @@ Nicht Teil der App:
 
 | ID   | Anforderung                                                                                                                                                                                                                                                                     |
 | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| F-20 | In einer Packliste lassen sich beliebig viele Zelte hinzufügen, entfernen und duplizieren. Jedes Zelt kann eine Bezeichnung bekommen (z. B. „Küchenjurte“).                                                                                                                     |
+| F-20 | In einer Packliste lassen sich beliebig viele Zelte hinzufügen (auch mehrere auf einmal), entfernen (mit Rückfrage) und duplizieren. Jedes Zelt kann eine Bezeichnung bekommen (z. B. „Küchenjurte“).                                                                           |
 | F-21 | Hat ein Zelttyp mehrere Dachkonfigurationen, wird die bevorzugte gewählt (Vorgabe: die Standardkonfiguration des Zelttyps, sonst die erste).                                                                                                                                    |
 | F-22 | Pro Zelt wird eine Wandoption gewählt, einheitlich für das ganze Zelt. Welche es gibt, bestimmt der Zelttyp (Abschnitt 7).                                                                                                                                                      |
 | F-23 | Lässt eine Wandoption mehrere Bauarten zu („hoch“: Superbahn oder Normalbahn + Erweiterungsstreifen), wird die bevorzugte gewählt (Vorgabe: Superbahn).                                                                                                                         |
@@ -90,9 +90,9 @@ Nicht Teil der App:
 | F-25 | Die App berechnet sofort nach jeder Änderung die Materialliste pro Zelt und die Gesamtliste und gleicht sie mit dem Bestand ab: benötigt, vorhanden, fehlend.                                                                                                                   |
 | F-26 | Reicht der Bestand für den Wunsch nicht, weicht die App in fester Reihenfolge aus (5.4) und kennzeichnet jede Abweichung am betroffenen Zelt.                                                                                                                                   |
 | F-27 | Was auf keinem Weg gedeckt werden kann, wird als fehlend ausgewiesen – gezählt in der Wunsch-Variante.                                                                                                                                                                          |
-| F-28 | Zelte werden in Listenreihenfolge bedient: Das erste Zelt bekommt seine Wünsche zuerst. Die Reihenfolge ist änderbar.                                                                                                                                                           |
-| F-29 | Eine Zusammenfassung oben zeigt: „alles vorhanden“, „mit Ausweichmaterial machbar“ oder „es fehlt Material“.                                                                                                                                                                    |
-| F-2A | Stangen, die laut Artikelliste auch vor Ort geschlagen werden können, zählen nicht als fehlend. Was der Bestand nicht deckt, erscheint als „vor Ort schlagen“ mit Anzahl und Länge.                                                                                             |
+| F-28 | Zelte werden in Listenreihenfolge bedient: Das erste Zelt bekommt seine Wünsche zuerst. Die Reihenfolge ist änderbar (Pfeile oder Ziehen).                                                                                                                                      |
+| F-29 | Eine Zusammenfassung oben zeigt: „alles vorhanden“, „mit Ausweichmaterial machbar“ oder „n Artikel fehlen“ mit Sprung zum Reiter „Bedarf“. Am Zelt steht, wie viele Teile dort fehlen.                                                                                          |
+| F-2A | Entfällt. Stangen, die der Bestand nicht deckt, zählen wie jedes andere Material als fehlend.                                                                                                                                                                                   |
 | F-2B | Die Ausweichreihenfolge der Ausführungen ist je Packliste einstellbar (drei Einträge umsortieren). Vorgabe: Gaze, Fenster, Blanko.                                                                                                                                              |
 
 ### 5.4 Ausweichregeln
@@ -121,27 +121,29 @@ Dabei gilt:
 
 ### 5.5 Packlisten
 
-| ID   | Anforderung                                                                                                                                                               |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| F-30 | Entfällt: Es gibt keine eigene Übersicht. Packlisten werden in der Dateiansicht von OpenCloud gefunden.                                                                   |
-| F-31 | Packlisten werden über „Neu → Packliste“ in einem beliebigen Ordner angelegt. Umbenennen, Duplizieren, Verschieben und Löschen übernimmt die Dateiansicht.                |
-| F-32 | Jede Packliste ist eine eigene Datei an beliebiger Stelle und enthält Zelte, berechnetes Material und Abhak-Stand. Die Liste heißt wie die Datei.                         |
-| F-33 | Jede Zeile der Packliste ist abhakbar. Der Stand wird automatisch gespeichert und ist für alle mit Zugriff derselbe.                                                      |
-| F-34 | Bearbeiter können freie Zeilen ergänzen (Text, Stückzahl), die ebenfalls abhakbar sind.                                                                                   |
-| F-35 | Die Packliste lässt sich umschalten zwischen „Gesamt“ (summiert, nach Kategorie) und „Pro Zelt“.                                                                          |
-| F-36 | Wird die Zeltzusammenstellung geändert, bleibt ein Haken erhalten, wenn Artikel und Stückzahl der Zeile gleich bleiben; sonst wird er entfernt.                           |
-| F-37 | Die Packliste speichert das berechnete Material fest. Ändern sich später Bestand oder App-Version, weist die App darauf hin und bietet „Neu berechnen“ an.                |
-| F-38 | Bearbeiten zwei Personen gleichzeitig dieselbe Packliste, geht kein Haken verloren: Bei einem Speicherkonflikt lädt die App neu und wendet die eigene Änderung erneut an. |
-| F-39 | Eine Druckansicht gibt die Packliste mit Kästchen zum Abhaken aus (Gesamt und pro Zelt, gesetzte Haken sichtbar). PDF entsteht über den Druckdialog des Browsers.         |
+| ID   | Anforderung                                                                                                                                                                                                    |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F-30 | Entfällt: Es gibt keine eigene Übersicht. Packlisten werden in der Dateiansicht von OpenCloud gefunden.                                                                                                        |
+| F-31 | Packlisten werden über „Neu → Packliste“ in einem beliebigen Ordner angelegt. Umbenennen, Duplizieren, Verschieben und Löschen übernimmt die Dateiansicht.                                                     |
+| F-32 | Jede Packliste ist eine eigene Datei an beliebiger Stelle und enthält Zelte, berechnetes Material und Abhak-Stand. Die Liste heißt wie die Datei.                                                              |
+| F-33 | Jede Zeile der Packliste ist abhakbar. Der Stand wird automatisch gespeichert und ist für alle mit Zugriff derselbe.                                                                                           |
+| F-34 | Bearbeiter können freie Zeilen ergänzen (Text, Stückzahl), die ebenfalls abhakbar sind.                                                                                                                        |
+| F-35 | Die Packliste lässt sich umschalten zwischen „Gesamt“ (summiert, nach Kategorie) und „Pro Zelt“; „Pro Zelt“ ist nur zur Ansicht, abgehakt wird in „Gesamt“.                                                    |
+| F-36 | Wird die Zeltzusammenstellung geändert, bleibt ein Haken erhalten, wenn Artikel und Stückzahl der Zeile gleich bleiben; sonst wird er entfernt.                                                                |
+| F-37 | Die Packliste speichert das berechnete Material fest. Ändern sich später Bestand oder App-Version, weist die App darauf hin und bietet „Neu berechnen“ an.                                                     |
+| F-38 | Bearbeiten zwei Personen gleichzeitig dieselbe Packliste, geht kein Haken verloren: Bei einem Speicherkonflikt lädt die App neu und wendet die eigene Änderung erneut an.                                      |
+| F-39 | Eine Druckansicht gibt die Packliste mit Kästchen zum Abhaken aus (Gesamt und pro Zelt, gesetzte Haken sichtbar). PDF entsteht über den Druckdialog des Browsers. Der Knopf „Drucken“ steht in der Kopfleiste. |
+| F-3A | Ist die Packliste veraltet und noch nichts abgehakt, rechnet die App beim Öffnen still neu; sonst bietet sie „Neu berechnen“ an (F-37).                                                                        |
+| F-3B | Gespeichert wird sofort; die Oberfläche meldet nur Fehler. Ohne Schreibrecht zeigt die Kopfleiste „Schreibgeschützt“.                                                                                          |
 
 ### 5.6 Einbindung in OpenCloud
 
-| ID   | Anforderung                                                                                                                                                                                      |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| F-40 | Die App hat keinen Eintrag im App-Umschalter. Sie wird über ihre Dateien und den Eintrag „Packliste“ im „Neu“-Menü geöffnet.                                                                     |
-| F-41 | Der Ablageort des Bestands (Space und Pfad der Datei) wird einmal in der App-Konfiguration des Servers festgelegt. Vorgabe: `Zeltmaterial.bestand` auf oberster Ebene des Space „Material-Team“. |
-| F-42 | Fehlt die Konfiguration, der Space oder der Zugriff, zeigt die App eine verständliche Meldung statt einer leeren Seite.                                                                          |
-| F-43 | Packlisten (`.packliste`) und der Bestand (`.bestand`) lassen sich aus der Dateiansicht heraus mit der App öffnen. Jede Packliste verlinkt auf den Bestand.                                      |
+| ID   | Anforderung                                                                                                                                                                                                                 |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F-40 | Die App hat keinen Eintrag im App-Umschalter. Sie wird über ihre Dateien und den Eintrag „Packliste“ im „Neu“-Menü geöffnet.                                                                                                |
+| F-41 | Der Ablageort des Bestands (Space und Pfad der Datei) wird einmal in der App-Konfiguration des Servers festgelegt. Vorgabe: `Zeltmaterial.bestand` auf oberster Ebene des Space „Material-Team“.                            |
+| F-42 | Fehlt die Konfiguration, der Space oder der Zugriff, zeigt die App eine verständliche Meldung statt einer leeren Seite.                                                                                                     |
+| F-43 | Packlisten (`.packliste`) und der Bestand (`.bestand`) lassen sich aus der Dateiansicht heraus mit der App öffnen. Jede Packliste verlinkt auf den Bestand; er öffnet in einem neuen Tab, damit die Packliste offen bleibt. |
 
 ## 6. Nichtfunktionale Anforderungen
 
@@ -195,18 +197,18 @@ Je Wandsegment:
 Die Mengen der Jurten stammen aus den Komplettangeboten (T). Werte mit (A) sind daraus
 hochgerechnete Platzhalter.
 
-| Zelttyp          | Aufhängung              | Mittelmast (schlagbar) | Seitenstangen (schlagbar) | Abspannseile | Heringe | Bodennägel¹ | Sonstiges                     |
-| ---------------- | ----------------------- | ---------------------- | ------------------------- | ------------ | ------- | ----------- | ----------------------------- |
-| Kohte            | Kohtenkreuz             | 2 × 375 cm             | –                         | –            | 8       | –           | Aufzugseil                    |
-| Hochkohte        | Kohtenkreuz             | 2 × 500 cm (A)         | 8                         | 8 (A)        | 8 (A)   | 16 (A)      | Aufzugseil                    |
-| Jurte            | Jurtenspinne 6er        | 3 × 375 cm             | 12                        | 12           | 12      | 24          | Blockseilrolle, Aufzugseil    |
-| Großjurte        | Jurtenspinne 8er        | 3 × 500 cm             | 16                        | 16           | 16      | 32          | Blockseilrolle, Aufzugseil    |
-| Gigajurte 9 m    | Jurtenspinne 9er        | 3 × 500 cm (A)         | 18                        | 18 (A)       | 18 (A)  | 36 (A)      | Blockseilrolle, Aufzugseil    |
-| Gigajurte 12 m   | Jurtenspinne 9er (A)    | 3 × 500 cm (A)         | 24                        | 24 (A)       | 24 (A)  | 48 (A)      | Blockseilrolle, Aufzugseil    |
-| Ovaljurte        | Ovaljurtenspinne 1-Feld | 2 × 375 cm             | 14                        | 14           | 14      | 28          | 2 Blockseilrollen, Aufzugseil |
-| Dreierjurtenburg | 3 Jurtenspinnen 6er (A) | 9 × 375 cm (A)         | 27 (A)                    | 27 (A)       | 27 (A)  | 54 (A)      | 3 Blockseilrollen (A)         |
-| Sudan            | –                       | Gestängesatz (A)       | –                         | –            | 16 (A)  | –           | Bodenplane rund (A)           |
-| Yellowstone      | –                       | 1 Mittelmast (T)       | –                         | –            | 16 (A)  | –           | Bodenplane eckig (T, A)       |
+| Zelttyp          | Aufhängung              | Mittelmast       | Seitenstangen | Abspannseile | Heringe | Bodennägel¹ | Sonstiges                     |
+| ---------------- | ----------------------- | ---------------- | ------------- | ------------ | ------- | ----------- | ----------------------------- |
+| Kohte            | Kohtenkreuz             | 2 × 375 cm       | –             | –            | 8       | –           | Aufzugseil                    |
+| Hochkohte        | Kohtenkreuz             | 2 × 500 cm (A)   | 8             | 8 (A)        | 8 (A)   | 16 (A)      | Aufzugseil                    |
+| Jurte            | Jurtenspinne 6er        | 3 × 375 cm       | 12            | 12           | 12      | 24          | Blockseilrolle, Aufzugseil    |
+| Großjurte        | Jurtenspinne 8er        | 3 × 500 cm       | 16            | 16           | 16      | 32          | Blockseilrolle, Aufzugseil    |
+| Gigajurte 9 m    | Jurtenspinne 9er        | 3 × 500 cm (A)   | 18            | 18 (A)       | 18 (A)  | 36 (A)      | Blockseilrolle, Aufzugseil    |
+| Gigajurte 12 m   | Jurtenspinne 9er (A)    | 3 × 500 cm (A)   | 24            | 24 (A)       | 24 (A)  | 48 (A)      | Blockseilrolle, Aufzugseil    |
+| Ovaljurte        | Ovaljurtenspinne 1-Feld | 2 × 375 cm       | 14            | 14           | 14      | 28          | 2 Blockseilrollen, Aufzugseil |
+| Dreierjurtenburg | 3 Jurtenspinnen 6er (A) | 9 × 375 cm (A)   | 27 (A)        | 27 (A)       | 27 (A)  | 54 (A)      | 3 Blockseilrollen (A)         |
+| Sudan            | –                       | Gestängesatz (A) | –             | –            | 16 (A)  | –           | Bodenplane rund (A)           |
+| Yellowstone      | –                       | 1 Mittelmast (T) | –             | –            | 16 (A)  | –           | Bodenplane eckig (T, A)       |
 
 ¹ Bodennägel nur, wenn eine Seitenwand gewählt ist (2 je Wandsegment).
 
@@ -241,6 +243,6 @@ dort korrigieren.
 | O-3 | Dreierjurtenburg: 27 Wandsegmente sind geometrisch abgeleitet; Masten und Dächle geschätzt.              | siehe 7.2.                                           |
 | O-4 | Ovaljurte: eigenes Dächle (Tortuga hat eine Ovaljurtenabdeckplane) oder Jurtendächle?                    | Jurtendächle.                                        |
 | O-5 | Erdstreifen der Kohte: anknüpfbarer Streifen oder eigene Kohtenblätter?                                  | Ein anknüpfbarer Streifen pro Kohte.                 |
-| O-6 | Welche Stangen werden vor Ort geschlagen?                                                                | Mittelmasten und Seitenstangen der Schwarzzelte.     |
+| O-6 | Welche Stangen werden vor Ort geschlagen?                                                                | Entfällt: fehlende Stangen gelten als fehlend.       |
 | O-7 | Soll je Zelt ein Segment für den Eingang Einzelbahn bleiben (Tortuga liefert z. B. 5 Doppel + 2 Einzel)? | Nein, Doppelteile zuerst, Einzelteile füllen auf.    |
 | O-8 | Ort der Bestandsdatei.                                                                                   | Frei konfigurierbar (F-41).                          |

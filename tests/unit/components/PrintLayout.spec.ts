@@ -34,7 +34,6 @@ describe('PrintLayout', () => {
     expect(boxes).toContain('☑')
     expect(boxes).toContain('☐')
     expect(wrapper.text()).toMatch(/\d+ fehlen/)
-    expect(wrapper.text()).toMatch(/\d+ vor Ort schlagen/)
   })
 
   it('lists deviations', () => {

@@ -8,7 +8,10 @@ function run(tents: TentConfig[], stock: Stock, order: Finish[] = DEFAULT_ORDER)
   expect(JSON.stringify(stock)).toBe(original) // Eingabe bleibt unverändert
   for (const i of res.items) {
     const sum = Object.values(i.perTent).reduce((a, b) => a + b, 0)
-    expect(sum, i.articleId).toBe(i.quantity + i.missing + i.toCut)
+    expect(sum, i.articleId).toBe(i.quantity + i.missing)
+    const missingSum = Object.values(i.missingPerTent).reduce((a, b) => a + b, 0)
+    expect(missingSum, i.articleId).toBe(i.missing)
+    expect(Object.values(i.missingPerTent).every((n) => n > 0)).toBe(true)
   }
   return res
 }
@@ -56,7 +59,7 @@ describe('allocate: Grundlagen', () => {
       'dach-jurte',
       'sb-2-fenster',
       'mast',
-      'stange-cut',
+      'seitenstange',
       'nagel',
       'daechle'
     ])
@@ -90,6 +93,13 @@ describe('allocate: mehrere Zelte', () => {
     expect(res.status).toBe('fehlt')
   })
 
+  it('führt den Fehlbestand pro Zelt mit', () => {
+    const res = run([tent('a'), tent('b')], stockOf({ nagel: 6, 'sb-2-fenster': 2 }))
+    expect(item(res, 'nagel')!.missingPerTent).toEqual({ b: 2 })
+    expect(item(res, 'sb-2-fenster')!.missingPerTent).toEqual({ b: 2 })
+    expect(item(res, 'mast')!.missingPerTent).toEqual({})
+  })
+
   it('Reihenfolge der Zelte bestimmt, wer die Wunschteile bekommt', () => {
     const stock = stockOf({ 'sb-2-fenster': 2, 'sb-2-gaze': 2 })
     const res = run([tent('a'), tent('b')], stock)
@@ -105,7 +115,6 @@ describe('allocate: mehrere Zelte', () => {
     expect(item(res, 'nagel')).toMatchObject({
       quantity: 6,
       missing: 2,
-      toCut: 0,
       perTent: { a: 4, b: 4 }
     })
     expect(res.status).toBe('fehlt')
@@ -157,26 +166,6 @@ describe('allocate: Dach', () => {
     const res = run([tent('a', { roofId: 'kohten', wallId: 'keine', buildId: '' })], stockOf())
     expect(item(res, 'kohtenblatt')?.quantity).toBe(6)
     expect(res.deviations).toEqual([])
-  })
-})
-
-describe('allocate: Stangen schlagen', () => {
-  it('cuttable-Fehlbestand wird toCut, nicht missing', () => {
-    const res = run([tent('a', { wallId: 'keine', buildId: '' })], stockOf({ 'stange-cut': 1 }))
-    expect(item(res, 'stange-cut')).toMatchObject({ quantity: 1, toCut: 1, missing: 0 })
-    expect(res.status).toBe('ok')
-  })
-
-  it('toCut allein macht den Status nicht zu fehlt', () => {
-    const res = run([tent('a', { wallId: 'keine', buildId: '' })], stockOf({ 'stange-cut': 0 }))
-    expect(item(res, 'stange-cut')).toMatchObject({ quantity: 0, toCut: 2 })
-    expect(res.status).toBe('ok')
-  })
-
-  it('nicht cuttable-Stange fehlt', () => {
-    const res = run([tent('a', { wallId: 'keine', buildId: '' })], stockOf({ mast: 1 }))
-    expect(item(res, 'mast')).toMatchObject({ quantity: 1, missing: 2, toCut: 0 })
-    expect(res.status).toBe('fehlt')
   })
 })
 

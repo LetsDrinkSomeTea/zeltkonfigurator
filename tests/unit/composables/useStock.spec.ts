@@ -95,6 +95,25 @@ describe('useStock', () => {
     expect(s.error.value).toBeInstanceOf(ConflictError)
   })
 
+  it('removes an entry and saves like other changes', async () => {
+    const { store, s } = await setup({
+      stock: { schemaVersion: 1, stock: { a: { quantity: 1 }, b: { quantity: 2, note: 'x' } } }
+    })
+    s.removeEntry('a')
+    expect(s.entries.value).toEqual({ b: { quantity: 2, note: 'x' } })
+    await vi.advanceTimersByTimeAsync(STOCK_SAVE_DELAY_MS)
+    expect((await store.loadStock()).data.stock).toEqual({ b: { quantity: 2, note: 'x' } })
+  })
+
+  it('ignores removal when read-only', async () => {
+    const { s } = await setup({
+      writable: false,
+      stock: { schemaVersion: 1, stock: { a: { quantity: 1 } } }
+    })
+    s.removeEntry('a')
+    expect(s.entries.value).toEqual({ a: { quantity: 1 } })
+  })
+
   it('ignores changes when read-only', async () => {
     const { store, s } = await setup({ writable: false })
     const spy = vi.spyOn(store, 'saveStock')

@@ -24,8 +24,6 @@ export interface Article {
   id: string
   name: string
   category: Category
-  /** Stange darf vor Ort geschlagen werden: Fehlbestand zählt als "toCut", nicht als "missing". */
-  cuttable?: boolean
   /** Nur Wandmaterial. span = Zahl der Wandsegmente, die ein Stück deckt. */
   wall?: { role: WallRole; span: 1 | 2; finish: Finish }
 }
@@ -119,10 +117,10 @@ export interface PackItem {
   quantity: number
   /** nicht gedeckt */
   missing: number
-  /** vor Ort zu schlagen (nur cuttable-Artikel) */
-  toCut: number
-  /** TentConfig.id → Bedarf dieses Zeltes. Summe = quantity + missing + toCut. */
+  /** TentConfig.id → Bedarf dieses Zeltes. Summe = quantity + missing. */
   perTent: Record<string, number>
+  /** TentConfig.id → davon nicht gedeckt (nur Einträge > 0). Summe = missing. */
+  missingPerTent: Record<string, number>
   checked: boolean
 }
 

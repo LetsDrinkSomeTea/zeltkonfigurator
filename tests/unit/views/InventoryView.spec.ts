@@ -5,6 +5,7 @@ import InventoryView from '../../../src/views/InventoryView.vue'
 import { storeKey } from '../../../src/composables/useStore'
 import { MemoryDataStore } from '../../../src/storage/MemoryDataStore'
 import type { DataStore } from '../../../src/storage/DataStore'
+import { STOCK_SAVE_DELAY_MS } from '../../../src/composables/useStock'
 import { catalog } from '../../../src/domain/catalog'
 import type { StockFile } from '../../../src/domain/types'
 
@@ -73,12 +74,14 @@ describe('InventoryView', () => {
   it('labels quantity and note fields with the article name', async () => {
     const wrapper = await mountView(new MemoryDataStore())
     expect(wrapper.find(`label[for="zk-qty-${first.id}"]`).text()).toBe(`${first.name}: Stückzahl`)
+    await wrapper.find(`button[aria-label="${first.name}: Notiz bearbeiten"]`).trigger('click')
     expect(wrapper.find(`label[for="zk-note-${first.id}"]`).text()).toBe(`${first.name}: Notiz`)
   })
 
   it('persists notes', async () => {
     const store = new MemoryDataStore()
     const wrapper = await mountView(store)
+    await wrapper.find(`button[aria-label="${first.name}: Notiz bearbeiten"]`).trigger('click')
     const input = wrapper.find(`#zk-note-${first.id}`)
     await input.setValue('im Keller')
     await input.trigger('change')
@@ -94,8 +97,9 @@ describe('InventoryView', () => {
     })
     const wrapper = await mountView(store)
     expect(wrapper.find('input[type="number"]').exists()).toBe(false)
-    expect(wrapper.find('button').exists()).toBe(false)
-    expect(wrapper.text()).toContain('Nur Lesezugriff')
+    expect(wrapper.find('li input').exists()).toBe(false)
+    expect(wrapper.find('li button').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Entfernen')
     expect(wrapper.text()).toContain('oben')
   })
 
@@ -113,6 +117,120 @@ describe('InventoryView', () => {
     await flushPromises()
     const saved: StockFile = (await store.loadStock()).data
     expect(saved.stock['alt-artikel']).toEqual({ quantity: 5, note: 'weg' })
+  })
+
+  it('shows the note as a button with placeholder and opens the field on click', async () => {
+    const store = new MemoryDataStore({
+      stock: { schemaVersion: 1, stock: { [first.id]: { quantity: 1, note: 'oben' } } }
+    })
+    const wrapper = await mountView(store)
+    expect(wrapper.find(`button[aria-label="${first.name}: Notiz bearbeiten"]`).text()).toBe('oben')
+    expect(wrapper.text()).toContain('Notiz hinzufügen')
+    expect(wrapper.find(`#zk-note-${first.id}`).exists()).toBe(false)
+    await wrapper.find(`button[aria-label="${first.name}: Notiz bearbeiten"]`).trigger('click')
+    expect(wrapper.find(`#zk-note-${first.id}`).exists()).toBe(true)
+  })
+
+  it('discards a note on Escape', async () => {
+    const store = new MemoryDataStore()
+    const wrapper = await mountView(store)
+    await wrapper.find(`button[aria-label="${first.name}: Notiz bearbeiten"]`).trigger('click')
+    const input = wrapper.find(`#zk-note-${first.id}`)
+    // Nur tippen, kein change-Ereignis (das löst der Browser erst beim Verlassen aus).
+    ;(input.element as HTMLInputElement).value = 'verworfen'
+    await input.trigger('input')
+    await input.trigger('keydown', { key: 'Escape' })
+    expect(wrapper.find(`#zk-note-${first.id}`).exists()).toBe(false)
+    wrapper.unmount()
+    await flushPromises()
+    expect((await store.loadStock()).data.stock[first.id]).toBeUndefined()
+  })
+
+  it('saves a note on Enter and closes the field', async () => {
+    const store = new MemoryDataStore()
+    const wrapper = await mountView(store)
+    await wrapper.find(`button[aria-label="${first.name}: Notiz bearbeiten"]`).trigger('click')
+    const input = wrapper.find<HTMLInputElement>(`#zk-note-${first.id}`)
+    await input.setValue('per Enter')
+    await input.trigger('keydown', { key: 'Enter' })
+    expect(wrapper.find(`#zk-note-${first.id}`).exists()).toBe(false)
+    wrapper.unmount()
+    await flushPromises()
+    expect((await store.loadStock()).data.stock[first.id].note).toBe('per Enter')
+  })
+
+  describe('Nur vorhandene', () => {
+    afterEach(() => localStorage.clear())
+
+    it('hides articles with quantity 0 and remembers the setting', async () => {
+      localStorage.clear()
+      const store = new MemoryDataStore({
+        stock: { schemaVersion: 1, stock: { [first.id]: { quantity: 2 } } }
+      })
+      const wrapper = await mountView(store)
+      expect(wrapper.findAll('h2')).toHaveLength(6)
+      await wrapper.find('.zk-filter button[role="switch"]').trigger('click')
+      expect(wrapper.findAll('li.zk-row')).toHaveLength(1)
+      await wrapper.find('#zk-inventory-search').setValue('xyzxyz')
+      expect(wrapper.text()).toContain('keine Treffer')
+      wrapper.unmount()
+      const again = await mountView(store)
+      expect(again.find('.zk-filter button[role="switch"]').attributes('aria-checked')).toBe('true')
+      expect(again.findAll('li.zk-row')).toHaveLength(1)
+    })
+
+    it('shows no-match message when nothing is available', async () => {
+      const wrapper = await mountView(new MemoryDataStore())
+      await wrapper.find('.zk-filter button[role="switch"]').trigger('click')
+      expect(wrapper.findAll('h2')).toHaveLength(0)
+      expect(wrapper.text()).toContain('keine Treffer')
+    })
+  })
+
+  it('removes unknown entries after a second click', async () => {
+    const store = new MemoryDataStore({
+      stock: { schemaVersion: 1, stock: { 'alt-artikel': { quantity: 5 } } }
+    })
+    const wrapper = await mountView(store)
+    await wrapper.find('button[aria-label="alt-artikel entfernen"]').trigger('click')
+    expect(wrapper.text()).toContain('Wirklich entfernen?')
+    expect((await store.loadStock()).data.stock['alt-artikel']).toBeDefined()
+    await wrapper.find('button[aria-label="alt-artikel wirklich entfernen?"]').trigger('click')
+    expect(wrapper.text()).not.toContain('alt-artikel')
+    wrapper.unmount()
+    await flushPromises()
+    expect((await store.loadStock()).data.stock['alt-artikel']).toBeUndefined()
+  })
+
+  it('resets the removal confirmation on blur and Escape', async () => {
+    const store = new MemoryDataStore({
+      stock: { schemaVersion: 1, stock: { 'alt-artikel': { quantity: 5 } } }
+    })
+    const wrapper = await mountView(store)
+    const btn = () => wrapper.find('button.zk-remove')
+    await btn().trigger('click')
+    await btn().trigger('blur')
+    expect(wrapper.text()).not.toContain('Wirklich entfernen?')
+    await btn().trigger('click')
+    await btn().trigger('keydown', { key: 'Escape' })
+    expect(wrapper.text()).not.toContain('Wirklich entfernen?')
+  })
+
+  it('shows save errors', async () => {
+    const store = new MemoryDataStore()
+    store.saveStock = () => Promise.reject(new Error('speichern kaputt'))
+    const wrapper = await mountView(store)
+    vi.useFakeTimers()
+    try {
+      const input = wrapper.find(`#zk-qty-${first.id}`)
+      await input.setValue('2')
+      await input.trigger('change')
+      await vi.advanceTimersByTimeAsync(STOCK_SAVE_DELAY_MS)
+    } finally {
+      vi.useRealTimers()
+    }
+    await flushPromises()
+    expect(wrapper.find('[role="alert"]').text()).toContain('speichern kaputt')
   })
 
   it('shows an error message', async () => {

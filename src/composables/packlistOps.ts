@@ -15,6 +15,7 @@ export type PacklistOp =
   | { type: 'removeTent'; tentId: string }
   | { type: 'duplicateTent'; tentId: string; newId: string }
   | { type: 'moveTent'; tentId: string; direction: -1 | 1 }
+  | { type: 'moveTentTo'; tentId: string; index: number }
   | { type: 'setItemChecked'; articleId: string; checked: boolean }
   | { type: 'setExtraChecked'; extraId: string; checked: boolean }
   | { type: 'addExtra'; extra: ExtraItem }
@@ -116,6 +117,17 @@ export function applyOp(list: PacklistFile, op: PacklistOp, ctx: OpContext): Pac
       }
       const [tent] = next.tents.splice(index, 1)
       next.tents.splice(target, 0, tent)
+      result = recalc()
+      break
+    }
+    case 'moveTentTo': {
+      const from = next.tents.findIndex((t) => t.id === op.tentId)
+      const to = Math.max(0, Math.min(next.tents.length - 1, Math.trunc(op.index)))
+      if (from < 0 || from === to || Number.isNaN(to)) {
+        return list
+      }
+      const [tent] = next.tents.splice(from, 1)
+      next.tents.splice(to, 0, tent)
       result = recalc()
       break
     }

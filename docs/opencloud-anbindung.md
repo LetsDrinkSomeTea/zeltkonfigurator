@@ -99,6 +99,9 @@ verlangt, dass die Ansicht mindestens eine Prop deklariert. Der Bestand hat kein
 Adresse, wenn er über den Link „Bestand“ geöffnet wird: `StockRoute.vue` sucht dann die
 Bestandsdatei und wechselt auf deren Adresse; gibt es die Datei noch nicht, erscheint der
 Bestand ohne Rahmen.
+Der Knopf „Bestand“ in der Packliste öffnet die Adresse per `window.open(…, '_blank', 'noopener')`
+in einem neuen Tab; ob der App-Rahmen dort wie gewünscht geladen wird, ist unter 5 nicht eigens
+geprüft.
 
 ## 5. Nicht verifiziert (ohne laufenden Server)
 

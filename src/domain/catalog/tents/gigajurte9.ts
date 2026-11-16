@@ -20,7 +20,7 @@ export const gigajurte9: TentType = {
     { articleId: 'mast-500', quantity: 3 }, // PLATZHALTER
     { articleId: 'seitenstange', quantity: 18 },
     { articleId: 'abspannseil', quantity: 18 }, // PLATZHALTER
-    { articleId: 'hering', quantity: 18 }, // PLATZHALTER
+    { articleId: 't-profil', quantity: 18 }, // PLATZHALTER
     { articleId: 'blockseilrolle', quantity: 1 },
     { articleId: 'aufzugseil', quantity: 1 }
   ]

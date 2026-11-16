@@ -11,6 +11,7 @@ export type StockEntries = StockFile['stock']
 export type StockOp =
   | { type: 'setQuantity'; articleId: string; quantity: number }
   | { type: 'setNote'; articleId: string; note: string }
+  | { type: 'remove'; articleId: string }
 
 export function normalizeQuantity(quantity: number): number {
   return Number.isFinite(quantity) ? Math.max(0, Math.floor(quantity)) : 0
@@ -19,6 +20,10 @@ export function normalizeQuantity(quantity: number): number {
 /** Rein: wendet eine Operation an und gibt neue Einträge zurück. Unbekannte Artikel bleiben erhalten. */
 export function applyStockOp(entries: StockEntries, op: StockOp): StockEntries {
   const next: StockEntries = { ...entries }
+  if (op.type === 'remove') {
+    delete next[op.articleId]
+    return next
+  }
   const current = next[op.articleId] ?? { quantity: 0 }
   if (op.type === 'setQuantity') {
     next[op.articleId] = { ...current, quantity: normalizeQuantity(op.quantity) }
@@ -51,6 +56,7 @@ export interface UseStock {
   load(): Promise<void>
   setQuantity(articleId: string, quantity: number): void
   setNote(articleId: string, note: string): void
+  removeEntry(articleId: string): void
   flush(): Promise<void>
 }
 
@@ -165,6 +171,7 @@ export function useStock(): UseStock {
     load,
     setQuantity: (articleId, quantity) => push({ type: 'setQuantity', articleId, quantity }),
     setNote: (articleId, note) => push({ type: 'setNote', articleId, note }),
+    removeEntry: (articleId) => push({ type: 'remove', articleId }),
     flush
   }
 }

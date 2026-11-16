@@ -108,14 +108,18 @@ function parseItem(v: unknown, path: string): PackItem {
   const perTentRaw = obj(i.perTent, `${path}.perTent`)
   const perTent: Record<string, number> = {}
   for (const [k, n] of Object.entries(perTentRaw)) perTent[k] = count(n, `${path}.perTent.${k}`)
+  const missingPerTent: Record<string, number> = {}
+  for (const [k, n] of Object.entries(obj(i.missingPerTent, `${path}.missingPerTent`))) {
+    missingPerTent[k] = count(n, `${path}.missingPerTent.${k}`)
+  }
   return {
     articleId: nonEmptyStr(i.articleId, `${path}.articleId`),
     name: str(i.name, `${path}.name`),
     category: category as PackItem['category'],
     quantity: count(i.quantity, `${path}.quantity`),
     missing: count(i.missing, `${path}.missing`),
-    toCut: count(i.toCut, `${path}.toCut`),
     perTent,
+    missingPerTent,
     checked: bool(i.checked, `${path}.checked`)
   }
 }

@@ -2,15 +2,20 @@
   <!-- OpenCloud schneidet den App-Bereich ab, statt ihn zu scrollen; die App scrollt selbst. -->
   <div ref="scroller" class="zk-scroll ext:overflow-y-auto" :style="{ height }">
     <main class="zk-app ext:p-4 ext:mx-auto ext:max-w-5xl">
-      <header class="ext:flex ext:flex-wrap ext:items-center ext:gap-2 ext:mb-4">
-        <!-- Im App-Rahmen steht der Dateiname schon in der Kopfleiste; gedruckt wird er trotzdem. -->
+      <header class="zk-no-print ext:flex ext:flex-wrap ext:items-center ext:gap-2 ext:mb-4">
+        <!-- Im App-Rahmen steht der Dateiname schon in der Kopfleiste; die Druckansicht hat eigenen Titel. -->
         <h1 class="ext:text-xl ext:font-bold ext:grow" :class="{ 'zk-print-only': framed }">
           {{ title }}
         </h1>
         <span v-if="framed" class="zk-no-print ext:grow" />
+        <oc-tag v-if="readOnly" class="zk-readonly-badge zk-no-print" size="small">{{
+          $gettext('Schreibgeschützt')
+        }}</oc-tag>
         <slot name="actions" />
       </header>
-      <p v-if="error" class="zk-error ext:mb-4" role="alert">{{ errorMessage(error) }}</p>
+      <p v-if="error" class="zk-error zk-no-print ext:mb-4" role="alert">
+        {{ errorPrefix ? `${errorPrefix} ` : '' }}{{ errorMessage(error) }}
+      </p>
       <oc-spinner v-if="loading" :aria-label="$gettext('Wird geladen')" />
       <slot v-else />
     </main>
@@ -28,7 +33,16 @@ import {
   NotFoundError
 } from '../storage/DataStore'
 
-defineProps<{ title: string; loading?: boolean; error?: Error | null; framed?: boolean }>()
+defineProps<{
+  title: string
+  loading?: boolean
+  error?: Error | null
+  /** Text vor der Fehlermeldung, z. B. „Nicht gespeichert:“ */
+  errorPrefix?: string
+  /** zeigt das Badge „Schreibgeschützt“ in der Kopfleiste */
+  readOnly?: boolean
+  framed?: boolean
+}>()
 
 const { $gettext } = useGettext()
 

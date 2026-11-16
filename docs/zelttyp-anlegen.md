@@ -13,10 +13,9 @@ Er prüft eindeutige IDs, bekannte Artikel, positive Mengen und passende Wandrol
 
 1. In `src/domain/catalog/articles.ts` einen Eintrag in `articles` ergänzen:
    stabile `id` in kebab-case (z. B. `jurtenspinne-12`), deutscher `name`, `category`.
-2. Stangen, die vor Ort geschlagen werden dürfen: `cuttable: true`.
-3. Wandmaterial (Kategorie `wand`): zusätzlich `wall: { role, span, finish }`. Ein neuer
+2. Wandmaterial (Kategorie `wand`): zusätzlich `wall: { role, span, finish }`. Ein neuer
    Eintrag in der Liste `wand` genügt, die Zuweisung berücksichtigt ihn automatisch.
-4. IDs nie umbenennen: Bestandsdateien im Space verweisen darauf (F-07).
+3. IDs nie umbenennen: Bestandsdateien im Space verweisen darauf (F-07).
 
 ## Neuen Zelttyp anlegen
 

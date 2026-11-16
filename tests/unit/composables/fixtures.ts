@@ -55,8 +55,8 @@ export function fakeRecalculate(list: PacklistFile, catalog: Catalog, stock: Sto
     category: 'dach',
     quantity: 1,
     missing: 0,
-    toCut: 0,
     perTent: { [t.id]: 1 },
+    missingPerTent: {},
     checked: checked.get(`art-${t.id}`) ?? false
   }))
   return { ...list, items, fingerprint: fakeFingerprint(catalog, stock) }

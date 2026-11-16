@@ -25,7 +25,6 @@
             class="zk-filter"
             :label="$gettext('Nur offene anzeigen')"
           />
-          <oc-button class="ext:ml-auto" @click="print">{{ $gettext('Drucken') }}</oc-button>
         </div>
         <p class="zk-progress ext:font-bold" role="status">
           {{
@@ -34,9 +33,6 @@
               total: String(p.total)
             })
           }}
-        </p>
-        <p v-if="!pl.canWrite.value" class="ext:my-2">
-          {{ $gettext('Nur Lesezugriff: Abhaken ist nicht möglich.') }}
         </p>
 
         <template v-if="mode === 'gesamt'">
@@ -51,7 +47,6 @@
                 :checked="item.checked"
                 :checkable="isCheckable(item)"
                 :missing="item.missing"
-                :to-cut="item.toCut"
                 :disabled="!pl.canWrite.value"
                 @toggle="pl.toggleItem(item.articleId)"
               />
@@ -60,13 +55,6 @@
         </template>
 
         <template v-else>
-          <p class="ext:mt-2">
-            {{
-              $gettext(
-                'Der Haken gilt für den Artikel insgesamt: Abhaken in einem Zelt hakt ihn überall ab.'
-              )
-            }}
-          </p>
           <section v-for="t in tentSections" :key="t.tent.id" class="ext:mt-4">
             <h2 class="ext:text-lg ext:font-bold">{{ t.title }}</h2>
             <oc-list raw>
@@ -77,8 +65,7 @@
                 :quantity="entry.quantity"
                 :checked="entry.item.checked"
                 :checkable="isCheckable(entry.item)"
-                :disabled="!pl.canWrite.value"
-                @toggle="pl.toggleItem(entry.item.articleId)"
+                readonly
               />
             </oc-list>
           </section>
@@ -94,7 +81,6 @@
         @add="pl.addExtra"
       />
     </div>
-    <PrintLayout :list="list" />
   </div>
 </template>
 
@@ -106,7 +92,6 @@ import { catalog } from '../domain/catalog'
 import type { PackItem } from '../domain/types'
 import ChecklistRow from './ChecklistRow.vue'
 import ExtraItems from './ExtraItems.vue'
-import PrintLayout from './PrintLayout.vue'
 import {
   groupByCategory,
   isCheckable,
@@ -116,7 +101,7 @@ import {
   type TentItem
 } from './checklistView'
 
-/** Reiter „Packliste“: abhaken, freie Zeilen, Druck. */
+/** Reiter „Packliste“: abhaken (Modus „Gesamt“), Stand pro Zelt (nur lesen), freie Zeilen. */
 const props = defineProps<{ pl: UsePacklist }>()
 const { $gettext } = useGettext()
 
@@ -150,10 +135,6 @@ const tentSections = computed(() => {
     }))
     .filter((s) => s.entries.length > 0)
 })
-
-function print() {
-  window.print()
-}
 </script>
 
 <style>

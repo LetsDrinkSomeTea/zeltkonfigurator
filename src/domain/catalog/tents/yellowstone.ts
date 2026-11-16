@@ -14,7 +14,7 @@ export const yellowstone: TentType = {
   walls: [keineWand()],
   fixed: [
     { articleId: 'mittelmast-yellowstone', quantity: 1 }, // PLATZHALTER (O-2)
-    { articleId: 'hering', quantity: 16 }, // PLATZHALTER
+    { articleId: 't-profil', quantity: 16 }, // PLATZHALTER
     { articleId: 'bodenplane-eckig', quantity: 1 } // PLATZHALTER
   ]
 }

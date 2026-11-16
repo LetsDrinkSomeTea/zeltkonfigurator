@@ -31,7 +31,7 @@ export const ovaljurte: TentType = {
     { articleId: 'mast-375', quantity: 2 },
     { articleId: 'seitenstange', quantity: 14 },
     { articleId: 'abspannseil', quantity: 14 },
-    { articleId: 'hering', quantity: 14 },
+    { articleId: 't-profil', quantity: 14 },
     { articleId: 'blockseilrolle', quantity: 2 },
     { articleId: 'aufzugseil', quantity: 1 }
   ]

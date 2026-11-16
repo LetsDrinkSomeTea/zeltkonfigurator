@@ -5,7 +5,7 @@ import { usePacklist } from '../../../src/composables/usePacklist'
 import { MemoryDataStore } from '../../../src/storage/MemoryDataStore'
 import { withStore } from '../composables/fixtures'
 
-export const STOCK: Stock = { kohtenblatt: 8, hering: 8, 'mast-375': 2 }
+export const STOCK: Stock = { kohtenblatt: 8, 't-profil': 8, 'mast-375': 2 }
 
 export function buildList(extra: Partial<PacklistFile> = {}): PacklistFile {
   const kohte = catalog.tentTypes.find((t) => t.id === 'kohte')!

@@ -20,7 +20,7 @@ export const grossjurte: TentType = {
     { articleId: 'mast-500', quantity: 3 },
     { articleId: 'seitenstange', quantity: 16 },
     { articleId: 'abspannseil', quantity: 16 },
-    { articleId: 'hering', quantity: 16 },
+    { articleId: 't-profil', quantity: 16 },
     { articleId: 'blockseilrolle', quantity: 1 },
     { articleId: 'aufzugseil', quantity: 1 }
   ]

@@ -39,7 +39,7 @@ export const articles: Article[] = [
   { id: 'dach-jurte', name: 'Jurtendach', category: 'dach' },
   { id: 'kohtenblatt', name: 'Kohtenblatt', category: 'dach' },
   { id: 'mast', name: 'Mast', category: 'stange' },
-  { id: 'stange-cut', name: 'Seitenstange', category: 'stange', cuttable: true },
+  { id: 'seitenstange', name: 'Seitenstange', category: 'stange' },
   { id: 'daechle', name: 'Dächle', category: 'kleinteil' },
   { id: 'nagel', name: 'Bodennagel', category: 'kleinteil' },
   ...wallArticles
@@ -83,7 +83,7 @@ export const jurte: TentType = {
   fixed: [
     { articleId: 'daechle', quantity: 1 },
     { articleId: 'mast', quantity: 3 },
-    { articleId: 'stange-cut', quantity: 2 }
+    { articleId: 'seitenstange', quantity: 2 }
   ]
 }
 
@@ -93,7 +93,7 @@ export const catalog: Catalog = { articles, tentTypes: [jurte] }
 export function stockOf(extra: Stock = {}, base = true): Stock {
   return {
     ...(base
-      ? { 'dach-jurte': 10, kohtenblatt: 20, mast: 20, 'stange-cut': 20, daechle: 10, nagel: 100 }
+      ? { 'dach-jurte': 10, kohtenblatt: 20, mast: 20, seitenstange: 20, daechle: 10, nagel: 100 }
       : {}),
     ...extra
   }

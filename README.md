@@ -15,10 +15,13 @@ gegen den Bestand prüfen, Packlisten speichern, abhaken und drucken.
 - **Konfigurator:** Jedes Zelt startet in der Standardkonfiguration seines Typs; über „Anpassen“
   lassen sich Dach, Seitenwand, Bauart und Ausführung ändern. Reicht der Bestand
   nicht, weicht die App in einstellbarer Reihenfolge aus und zeigt die Abweichung am Zelt.
-- **Material:** Bedarf pro Zelt und gesamt, abgeglichen mit dem Bestand (vorhanden, fehlt,
-  vor Ort schlagen).
-- **Abhaken und Drucken:** gemeinsamer Abhak-Stand für alle mit Zugriff, Druckansicht mit Kästchen.
-- **Bestand:** Stückzahlen und Notizen je Artikel bearbeiten.
+- **Bedarf:** Reiter „Bedarf“ mit dem Gesamtbedarf, abgeglichen mit dem Bestand (benötigt, aus
+  Bestand, fehlt). Am Zelt steht, wie viele Teile dort fehlen; Zelte lassen sich per Pfeil oder
+  Ziehen umsortieren, Löschen fragt nach.
+- **Abhaken und Drucken:** gemeinsamer Abhak-Stand für alle mit Zugriff; „Pro Zelt“ zeigt den
+  Stand nur zur Ansicht. „Drucken“ in der Kopfleiste öffnet die Druckansicht mit Kästchen.
+- **Bestand:** Stückzahlen und Notizen je Artikel bearbeiten, nur vorhandene Artikel filtern,
+  unbekannte Einträge entfernen. Ohne Schreibrecht zeigt die Kopfleiste „Schreibgeschützt“.
 
 Zelttypen, Dachkonfigurationen und Artikel sind Code (`src/domain/catalog/`) und kommen mit
 einem App-Update. Im Space liegen nur Stückzahlen und Packlisten.
@@ -52,8 +55,8 @@ einem App-Update. Im Space liegen nur Stückzahlen und Packlisten.
 - **Packliste öffnen:** Klick auf die Datei.
 - **Bestand:** eine einzige Datei an einem konfigurierten Ort, Vorgabe
   `Zeltmaterial.bestand` auf oberster Ebene des Space „Material-Team“. Sie wird beim ersten
-  Speichern angelegt. Geöffnet wird der Bestand über diese Datei oder über den Link „Bestand“
-  in jeder Packliste.
+  Speichern angelegt. Geöffnet wird der Bestand über diese Datei oder über den Knopf „Bestand“
+  in jeder Packliste (er öffnet in einem neuen Tab, die Packliste bleibt offen).
 
 Beide Dateiarten öffnen sich im App-Rahmen von OpenCloud, wie Texteditor oder PDF-Betrachter:
 Kopfleiste mit Dateiname, Schließen und den Dateiaktionen (Umbenennen, Teilen, Herunterladen,

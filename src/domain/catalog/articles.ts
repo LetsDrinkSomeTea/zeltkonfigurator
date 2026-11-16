@@ -72,15 +72,15 @@ export const articles: Article[] = [
   ...wand,
 
   // Stangen und Gestänge
-  { id: 'mast-375', name: 'Kohtenstange / Mast 375 cm', category: 'stange', cuttable: true },
-  { id: 'mast-500', name: 'Mast 500 cm', category: 'stange', cuttable: true },
-  { id: 'seitenstange', name: 'Seitenstange (verstellbar)', category: 'stange', cuttable: true },
+  { id: 'mast-375', name: 'Kohtenstange / Mast 375 cm', category: 'stange' },
+  { id: 'mast-500', name: 'Mast 500 cm', category: 'stange' },
+  { id: 'seitenstange', name: 'Seitenstange (verstellbar)', category: 'stange' },
   { id: 'gestaengesatz-sudan', name: 'Gestängesatz Sudan', category: 'stange' },
   { id: 'mittelmast-yellowstone', name: 'Mittelmast Yellowstone', category: 'stange' },
 
   // Heringe und Abspannung
   { id: 'abspannseil', name: 'Abspannseil', category: 'abspannung' },
-  { id: 'hering', name: 'Hering (T-Eisen)', category: 'abspannung' },
+  { id: 't-profil', name: 'T-Profil', category: 'abspannung' },
   { id: 'bodennagel', name: 'Bodennagel', category: 'abspannung' },
   { id: 'aufzugseil', name: 'Aufzugseil', category: 'abspannung' },
 
