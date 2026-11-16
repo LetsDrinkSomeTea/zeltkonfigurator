@@ -1,4 +1,5 @@
 import type { TentType } from '../../types'
+import { heringe } from '../heringe'
 import { hoheWand, keineWand, normaleWand } from '../walls'
 
 export const gigajurte9: TentType = {
@@ -20,7 +21,7 @@ export const gigajurte9: TentType = {
     { articleId: 'mast-500', quantity: 3 }, // PLATZHALTER
     { articleId: 'seitenstange', quantity: 18 },
     { articleId: 'abspannseil', quantity: 18 }, // PLATZHALTER
-    { articleId: 't-profil', quantity: 18 }, // PLATZHALTER
+    ...heringe({ seitenwand: 18, masten: 3 }), // PLATZHALTER
     { articleId: 'blockseilrolle', quantity: 1 },
     { articleId: 'aufzugseil', quantity: 1 }
   ]

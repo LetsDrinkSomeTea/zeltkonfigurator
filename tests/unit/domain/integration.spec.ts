@@ -22,7 +22,7 @@ describe('Rechenkern mit echtem Katalog', () => {
     }
   })
 
-  it('2 Hochkohten und eine Jurte: Bedarf, Ausweichen und Schlagholz', () => {
+  it('2 Hochkohten und eine Jurte: Bedarf und Ausweichen', () => {
     const stock: Stock = {
       kohtenblatt: 8,
       jurtendach: 1,
@@ -30,7 +30,9 @@ describe('Rechenkern mit echtem Katalog', () => {
       jurtendaechle: 1,
       kohtenkreuz: 2,
       'jurtenspinne-6': 1,
-      't-profil': 40,
+      't-profil-30': 40,
+      't-profil-60': 10,
+      pacman: 50,
       abspannseil: 40,
       bodennagel: 100,
       aufzugseil: 3,

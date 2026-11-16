@@ -166,18 +166,18 @@ kohten.com · **A** = abgeleitet oder angenommen, als Platzhalter markiert.
 
 ### 7.1 Dach, Wand, Dächle
 
-| Zelttyp          | Dachkonfigurationen                                                                             | Wandsegmente | Wandoptionen                             | Dächle             |
-| ---------------- | ----------------------------------------------------------------------------------------------- | ------------ | ---------------------------------------- | ------------------ |
-| Kohte            | 4 Kohtenblätter (T)                                                                             | –            | ohne Erdstreifen · mit Erdstreifen (S)   | Kohtendächle       |
-| Hochkohte        | 4 Kohtenblätter (T)                                                                             | 8 (T)        | nur Erweiterungsstreifen · normal · hoch | Kohtendächle       |
-| Jurte            | Jurtendach **oder** 6 Kohtenblätter (S)                                                         | 12 (T)       | keine · normal · hoch                    | Jurtendächle       |
-| Großjurte        | Großjurtendach (S)                                                                              | 16 (S, T)    | keine · normal · hoch                    | Großjurtendächle   |
-| Gigajurte 9 m    | Gigajurtendach (S)                                                                              | 18 (S, T)    | keine · normal · hoch                    | Gigajurtendächle   |
-| Gigajurte 12 m   | Gigajurtendach + 12 Zwischendachteile + 6 Kohtenblätter (S)                                     | 24 (S)       | keine · normal · hoch                    | Gigajurtendächle   |
-| Ovaljurte        | 2 Halbjurtendächer + 2 Zwischendachteile (T) **oder** 6 Kohtenblätter + 2 Zwischendachteile (A) | 14 (T)       | keine · normal · hoch                    | Jurtendächle (A)   |
-| Dreierjurtenburg | 3 Jurtendächer + 1 Dreiecksdachteil (S) **oder** 18 Kohtenblätter + 1 Dreiecksdachteil (A)      | 27 (A)       | keine · normal · hoch                    | 3 Jurtendächle (A) |
-| Sudan            | Zelthaut (A)                                                                                    | –            | –                                        | –                  |
-| Yellowstone      | Zelthaut, Pyramidenzelt 410 × 410 cm (T)                                                        | –            | –                                        | –                  |
+| Zelttyp          | Dachkonfigurationen                                                                             | Wandsegmente | Wandoptionen                             | Dächle                   |
+| ---------------- | ----------------------------------------------------------------------------------------------- | ------------ | ---------------------------------------- | ------------------------ |
+| Kohte            | 4 Kohtenblätter (T)                                                                             | –            | ohne Erdstreifen · mit Erdstreifen (S)   | Kohtendächle             |
+| Hochkohte        | 4 Kohtenblätter (T)                                                                             | 8 (T)        | nur Erweiterungsstreifen · normal · hoch | Kohtendächle             |
+| Jurte            | Jurtendach **oder** 6 Kohtenblätter (S)                                                         | 12 (T)       | keine · normal · hoch                    | Jurtendächle             |
+| Großjurte        | Großjurtendach (S)                                                                              | 16 (S, T)    | keine · normal · hoch                    | Großjurtendächle         |
+| Gigajurte 9 m    | Gigajurtendach (S)                                                                              | 18 (S, T)    | keine · normal · hoch                    | Gigajurtendächle         |
+| Gigajurte 12 m   | Gigajurtendach + 12 Zwischendachteile + 6 Kohtenblätter (S)                                     | 24 (S)       | keine · normal · hoch                    | Gigajurtendächle         |
+| Theaterjurte     | 2 Halbjurtendächer + 2 Zwischendachteile (T) **oder** 6 Kohtenblätter + 2 Zwischendachteile (A) | 14 (T)       | keine · normal · hoch                    | Theaterjurtenabdeckplane |
+| Dreierjurtenburg | 3 Jurtendächer + 1 Dreiecksdachteil (S) **oder** 18 Kohtenblätter + 1 Dreiecksdachteil (A)      | 27 (A)       | keine · normal · hoch                    | 3 Jurtendächle (A)       |
+| Sudan            | Zelthaut (A)                                                                                    | –            | –                                        | –                        |
+| Yellowstone      | Zelthaut, Pyramidenzelt 410 × 410 cm (T)                                                        | –            | –                                        | –                        |
 
 Zur Dreierjurtenburg: Jedes der drei zwölfeckigen Dächer gibt eine Kante an das Dreieck und
 je eine an die beiden Nachbardächer ab; es bleiben 3 × 9 = 27 Außenkanten.
@@ -197,18 +197,18 @@ Je Wandsegment:
 Die Mengen der Jurten stammen aus den Komplettangeboten (T). Werte mit (A) sind daraus
 hochgerechnete Platzhalter.
 
-| Zelttyp          | Aufhängung              | Mittelmast       | Seitenstangen | Abspannseile | Heringe | Bodennägel¹ | Sonstiges                     |
-| ---------------- | ----------------------- | ---------------- | ------------- | ------------ | ------- | ----------- | ----------------------------- |
-| Kohte            | Kohtenkreuz             | 2 × 375 cm       | –             | –            | 8       | –           | Aufzugseil                    |
-| Hochkohte        | Kohtenkreuz             | 2 × 500 cm (A)   | 8             | 8 (A)        | 8 (A)   | 16 (A)      | Aufzugseil                    |
-| Jurte            | Jurtenspinne 6er        | 3 × 375 cm       | 12            | 12           | 12      | 24          | Blockseilrolle, Aufzugseil    |
-| Großjurte        | Jurtenspinne 8er        | 3 × 500 cm       | 16            | 16           | 16      | 32          | Blockseilrolle, Aufzugseil    |
-| Gigajurte 9 m    | Jurtenspinne 9er        | 3 × 500 cm (A)   | 18            | 18 (A)       | 18 (A)  | 36 (A)      | Blockseilrolle, Aufzugseil    |
-| Gigajurte 12 m   | Jurtenspinne 9er (A)    | 3 × 500 cm (A)   | 24            | 24 (A)       | 24 (A)  | 48 (A)      | Blockseilrolle, Aufzugseil    |
-| Ovaljurte        | Ovaljurtenspinne 1-Feld | 2 × 375 cm       | 14            | 14           | 14      | 28          | 2 Blockseilrollen, Aufzugseil |
-| Dreierjurtenburg | 3 Jurtenspinnen 6er (A) | 9 × 375 cm (A)   | 27 (A)        | 27 (A)       | 27 (A)  | 54 (A)      | 3 Blockseilrollen (A)         |
-| Sudan            | –                       | Gestängesatz (A) | –             | –            | 16 (A)  | –           | Bodenplane rund (A)           |
-| Yellowstone      | –                       | 1 Mittelmast (T) | –             | –            | 16 (A)  | –           | Bodenplane eckig (T, A)       |
+| Zelttyp          | Aufhängung                 | Mittelmast       | Seitenstangen | Abspannseile | Heringe | Bodennägel¹ | Sonstiges                     |
+| ---------------- | -------------------------- | ---------------- | ------------- | ------------ | ------- | ----------- | ----------------------------- |
+| Kohte            | Kohtenkreuz                | 2 × 375 cm       | –             | –            | 8       | –           | Aufzugseil                    |
+| Hochkohte        | Kohtenkreuz                | 2 × 500 cm (A)   | 8             | 8 (A)        | 8 (A)   | 16 (A)      | Aufzugseil                    |
+| Jurte            | Jurtenspinne 6er           | 3 × 375 cm       | 12            | 12           | 12      | 24          | Blockseilrolle, Aufzugseil    |
+| Großjurte        | Jurtenspinne 8er           | 3 × 500 cm       | 16            | 16           | 16      | 32          | Blockseilrolle, Aufzugseil    |
+| Gigajurte 9 m    | Jurtenspinne 9er           | 3 × 500 cm (A)   | 18            | 18 (A)       | 18 (A)  | 36 (A)      | Blockseilrolle, Aufzugseil    |
+| Gigajurte 12 m   | Jurtenspinne 9er (A)       | 3 × 500 cm (A)   | 24            | 24 (A)       | 24 (A)  | 48 (A)      | Blockseilrolle, Aufzugseil    |
+| Theaterjurte     | Theaterjurtenspinne 1-Feld | 2 × 375 cm       | 14            | 14           | 14      | 28          | 2 Blockseilrollen, Aufzugseil |
+| Dreierjurtenburg | 3 Jurtenspinnen 6er (A)    | 9 × 375 cm (A)   | 27 (A)        | 27 (A)       | 27 (A)  | 54 (A)      | 3 Blockseilrollen (A)         |
+| Sudan            | –                          | Gestängesatz (A) | –             | –            | 16 (A)  | –           | Bodenplane rund (A)           |
+| Yellowstone      | –                          | 1 Mittelmast (T) | –             | –            | 16 (A)  | –           | Bodenplane eckig (T, A)       |
 
 ¹ Bodennägel nur, wenn eine Seitenwand gewählt ist (2 je Wandsegment).
 
@@ -241,7 +241,7 @@ dort korrigieren.
 | O-1 | Sudan: auf der Tortuga-Seite nicht (mehr) zu finden. Teile, Gestänge, Heringe.                           | Zelthaut, Gestängesatz, 16 Heringe, Bodenplane rund. |
 | O-2 | Yellowstone: Zahl der Heringe und Seitenstäbe.                                                           | 1 Mittelmast, 16 Heringe, Bodenplane eckig.          |
 | O-3 | Dreierjurtenburg: 27 Wandsegmente sind geometrisch abgeleitet; Masten und Dächle geschätzt.              | siehe 7.2.                                           |
-| O-4 | Ovaljurte: eigenes Dächle (Tortuga hat eine Ovaljurtenabdeckplane) oder Jurtendächle?                    | Jurtendächle.                                        |
+| O-4 | Theaterjurte (= Ovaljurte): eigenes Dächle oder Jurtendächle?                                            | Eigene Theaterjurtenabdeckplane.                     |
 | O-5 | Erdstreifen der Kohte: anknüpfbarer Streifen oder eigene Kohtenblätter?                                  | Ein anknüpfbarer Streifen pro Kohte.                 |
 | O-6 | Welche Stangen werden vor Ort geschlagen?                                                                | Entfällt: fehlende Stangen gelten als fehlend.       |
 | O-7 | Soll je Zelt ein Segment für den Eingang Einzelbahn bleiben (Tortuga liefert z. B. 5 Doppel + 2 Einzel)? | Nein, Doppelteile zuerst, Einzelteile füllen auf.    |

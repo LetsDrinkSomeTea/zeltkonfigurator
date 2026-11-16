@@ -33,11 +33,11 @@ describe('DemandTab', () => {
   })
 
   it('shows totals and highlights missing material', async () => {
-    const { wrapper, list } = await mountTab({ 't-profil': 5 }, 100)
+    const { wrapper, list } = await mountTab({ 't-profil-30': 5 }, 100)
     const total = wrapper
     const headers = total.findAll('th').map((t) => t.text())
     expect(headers).toEqual(['Artikel', 'Benötigt', 'Aus Bestand', 'Fehlt'])
-    const item = list.items.find((i) => i.articleId === 't-profil')!
+    const item = list.items.find((i) => i.articleId === 't-profil-30')!
     expect(item.missing).toBeGreaterThan(0)
     const row = total.findAll('tr').find((r) => r.text().startsWith(item.name))!
     const cells = row.findAll('td').map((c) => c.text())

@@ -1,4 +1,5 @@
 import type { TentType } from '../../types'
+import { heringe } from '../heringe'
 import { keineWand } from '../walls'
 
 export const yellowstone: TentType = {
@@ -14,7 +15,7 @@ export const yellowstone: TentType = {
   walls: [keineWand()],
   fixed: [
     { articleId: 'mittelmast-yellowstone', quantity: 1 }, // PLATZHALTER (O-2)
-    { articleId: 't-profil', quantity: 16 }, // PLATZHALTER
+    ...heringe({ seitenwand: 16 }), // PLATZHALTER
     { articleId: 'bodenplane-eckig', quantity: 1 } // PLATZHALTER
   ]
 }
