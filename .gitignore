@@ -19,3 +19,6 @@ src/config.json
 
 # Installationspaket
 /package/
+
+# Arbeitsdateien
+/tmp/
