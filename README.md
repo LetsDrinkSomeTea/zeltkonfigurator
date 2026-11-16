@@ -1,5 +1,19 @@
-# web-app-skeleton
+# Zeltkonfigurator
 
-This repository provides all the bits and pieces for an easy start to build your own web app for OpenCloud.
+OpenCloud-Web-App für das Zeltmaterial des Stammes: Zelte zusammenstellen, Materialbedarf
+gegen den Bestand prüfen, Packlisten speichern, abhaken und drucken.
 
-See the [developer documentation](https://docs.opencloud.eu/docs/next/dev/web/extension-system/) for setup, development, testing and publishing instructions.
+- [Anforderungen](docs/anforderungen.md)
+- [Architektur](docs/architektur.md)
+
+## Entwicklung
+
+```bash
+pnpm install
+pnpm test:unit --run
+pnpm lint
+pnpm check:types
+pnpm build
+```
+
+Basiert auf dem [web-app-skeleton](https://github.com/opencloud-eu/web-app-skeleton) von OpenCloud.

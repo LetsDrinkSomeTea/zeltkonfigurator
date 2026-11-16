@@ -10,25 +10,34 @@ export default defineWebApplication({
     const { $gettext } = useGettext()
 
     const appInfo = {
-      id: 'skeleton',
-      name: $gettext('Skeleton'),
-      icon: 'cup',
-      color: '#622a0f'
+      id: 'zeltkonfigurator',
+      name: $gettext('Zeltkonfigurator'),
+      icon: 'home-3',
+      color: '#1f3a2d'
     }
 
     const routes: RouteRecordRaw[] = [
       {
         path: '/',
-        redirect: `/${appInfo.id}/hello`
+        redirect: `/${appInfo.id}/listen`
       },
       {
-        path: '/hello',
-        name: 'hello',
-        component: () => import('./views/HelloView.vue'),
-        meta: {
-          authContext: 'user',
-          title: $gettext('Hello')
-        }
+        path: '/listen',
+        name: 'zeltkonfigurator-listen',
+        component: () => import('./views/PacklistOverview.vue'),
+        meta: { authContext: 'user', title: $gettext('Packlisten') }
+      },
+      {
+        path: '/listen/:id',
+        name: 'zeltkonfigurator-liste',
+        component: () => import('./views/PacklistEditor.vue'),
+        meta: { authContext: 'user', title: $gettext('Packliste') }
+      },
+      {
+        path: '/bestand',
+        name: 'zeltkonfigurator-bestand',
+        component: () => import('./views/InventoryView.vue'),
+        meta: { authContext: 'user', title: $gettext('Bestand') }
       }
     ]
 

@@ -1,9 +1,9 @@
 import { defaultPlugins, mount } from '@opencloud-eu/web-test-helpers'
-import HelloView from '../../src/views/HelloView.vue'
+import PacklistOverview from '../../src/views/PacklistOverview.vue'
 
-describe('Skeleton app', () => {
-  it('renders the hello view', () => {
-    const wrapper = mount(HelloView, { global: { plugins: [...defaultPlugins()] } })
-    expect(wrapper.find('h1').text()).toBe('Hello developer!')
+describe('Zeltkonfigurator', () => {
+  it('renders the packlist overview', () => {
+    const wrapper = mount(PacklistOverview, { global: { plugins: [...defaultPlugins()] } })
+    expect(wrapper.find('h1').text()).toBe('Packlisten')
   })
 })
