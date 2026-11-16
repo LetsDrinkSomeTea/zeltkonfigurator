@@ -152,7 +152,7 @@ describe('parsePacklistFile', () => {
     ['items kein Array', (o) => delete o.items, /"items"/],
     ['item.articleId', (o) => delete o.items[0].articleId, /items\[0\]\.articleId/],
     ['item.name', (o) => (o.items[0].name = null), /items\[0\]\.name/],
-    ['item.category', (o) => (o.items[0].category = 'x'), /items\[0\]\.category/],
+    ['item.category', (o) => (o.items[0].category = ''), /items\[0\]\.category/],
     ['item.quantity negativ', (o) => (o.items[0].quantity = -1), /items\[0\]\.quantity/],
     ['item.missing Bruch', (o) => (o.items[0].missing = 0.5), /items\[0\]\.missing/],
     ['item.perTent kein Objekt', (o) => (o.items[0].perTent = []), /items\[0\]\.perTent/],

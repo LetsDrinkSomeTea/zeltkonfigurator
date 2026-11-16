@@ -1,15 +1,13 @@
 import { hasFinishLayer } from '../domain/walls'
-import type { Catalog, Category, Finish, PackItem, PacklistFile, TentConfig } from '../domain/types'
-import { CATEGORIES } from '../domain/types'
-
-export const CATEGORY_TITLES: Record<Category, string> = {
-  dach: 'Dächer und Planen',
-  wand: 'Seitenwand',
-  stange: 'Stangen und Gestänge',
-  abspannung: 'Heringe und Abspannung',
-  kleinteil: 'Kleinteile',
-  boden: 'Bodenplanen'
-}
+import type {
+  Catalog,
+  Category,
+  CategoryDef,
+  Finish,
+  PackItem,
+  PacklistFile,
+  TentConfig
+} from '../domain/types'
 
 export const FINISH_TITLES: Record<Finish, string> = {
   blanko: 'Blanko',
@@ -23,13 +21,20 @@ export interface ItemGroup {
   items: PackItem[]
 }
 
-/** Gruppiert nach Kategorie in der Reihenfolge von CATEGORIES; leere Gruppen entfallen. */
-export function groupByCategory(items: PackItem[]): ItemGroup[] {
-  return CATEGORIES.map((category) => ({
-    category,
-    title: CATEGORY_TITLES[category],
-    items: items.filter((i) => i.category === category)
-  })).filter((g) => g.items.length > 0)
+/**
+ * Gruppiert nach Kategorie in der Reihenfolge des Katalogs; leere Gruppen entfallen. Artikel mit
+ * unbekannter Kategorie folgen am Ende unter ihrer Kennung.
+ */
+export function groupByCategory(items: PackItem[], categories: CategoryDef[]): ItemGroup[] {
+  const known = new Set(categories.map((c) => c.id))
+  const extra = [...new Set(items.map((i) => i.category).filter((c) => !known.has(c)))]
+  return [...categories, ...extra.map((id) => ({ id, name: id }))]
+    .map((c) => ({
+      category: c.id,
+      title: c.name,
+      items: items.filter((i) => i.category === c.id)
+    }))
+    .filter((g) => g.items.length > 0)
 }
 
 /** Abhakbar ist nur, was tatsächlich aus dem Bestand gepackt wird. */

@@ -182,7 +182,6 @@
 import { computed, ref } from 'vue'
 import { useGettext } from 'vue3-gettext'
 import type { UsePacklist } from '../composables/usePacklist'
-import { catalog } from '../domain/catalog'
 import { defaultTentRoofs, hasDefaultOptions } from '../domain/packlist'
 import type { Finish, TentConfig, TentRoof } from '../domain/types'
 import { describeDeviation } from '../domain/view/deviations'
@@ -211,7 +210,9 @@ function onRemove() {
 }
 
 const uid = computed(() => `zk-tent-${props.tent.id}`)
-const type = computed(() => catalog.tentTypes.find((t) => t.id === props.tent.typeId))
+const type = computed(() =>
+  props.pl.catalog.value.tentTypes.find((t) => t.id === props.tent.typeId)
+)
 const wall = computed(() => type.value?.walls.find((w) => w.id === props.tent.wallId))
 /** Je Dach-Baustein: gewähltes Dach und Aufbau samt Beschriftung. */
 const roofRows = computed(() => {

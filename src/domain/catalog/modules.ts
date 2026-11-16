@@ -201,3 +201,16 @@ export const yellowstone: RoofModule = {
   setups: [gestellt([{ articleId: 'mittelmast-yellowstone', quantity: 1 }])], // PLATZHALTER (O-2)
   parts: []
 }
+
+/** Mitgelieferte Dach-Bausteine. */
+export const defaultModules: RoofModule[] = [
+  kohte,
+  hochkohte,
+  jurte,
+  grossjurte,
+  gigajurte9,
+  gigajurte12,
+  theaterjurte,
+  sudan,
+  yellowstone
+]

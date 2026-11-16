@@ -1,5 +1,15 @@
 import { computed, getCurrentScope, onScopeDispose, ref, type ComputedRef, type Ref } from 'vue'
-import type { Stock, StockFile } from '../domain/types'
+import { defaultCatalogData, resolveCatalog } from '../domain/catalog'
+import type {
+  Article,
+  Catalog,
+  CatalogData,
+  CategoryDef,
+  RoofModule,
+  Stock,
+  StockFile,
+  TentTypeData
+} from '../domain/types'
 import { ConflictError } from '../storage/DataStore'
 import { useStore } from './useStore'
 
@@ -12,13 +22,70 @@ export type StockOp =
   | { type: 'setQuantity'; articleId: string; quantity: number }
   | { type: 'setNote'; articleId: string; note: string }
   | { type: 'remove'; articleId: string }
+  // Katalog: anlegen bzw. ersetzen (gleiche id) und löschen
+  | { type: 'upsertCategory'; category: CategoryDef }
+  | { type: 'removeCategory'; id: string }
+  | { type: 'upsertArticle'; article: Article }
+  | { type: 'removeArticle'; id: string }
+  | { type: 'upsertModule'; module: RoofModule }
+  | { type: 'removeModule'; id: string }
+  | { type: 'upsertTentType'; tentType: TentTypeData }
+  | { type: 'removeTentType'; id: string }
 
 export function normalizeQuantity(quantity: number): number {
   return Number.isFinite(quantity) ? Math.max(0, Math.floor(quantity)) : 0
 }
 
-/** Rein: wendet eine Operation an und gibt neue Einträge zurück. Unbekannte Artikel bleiben erhalten. */
+function upsert<T extends { id: string }>(list: T[], item: T): T[] {
+  const i = list.findIndex((x) => x.id === item.id)
+  return i < 0 ? [...list, item] : list.map((x, j) => (j === i ? item : x))
+}
+
+/** Rein: wendet eine Katalog-Operation auf die Katalog-Daten an. */
+export function applyCatalogOp(data: CatalogData, op: StockOp): CatalogData {
+  switch (op.type) {
+    case 'upsertCategory':
+      return { ...data, categories: upsert(data.categories, op.category) }
+    case 'removeCategory':
+      // Wandmaterial braucht seine Kategorie; belegte Kategorien bleiben.
+      if (op.id === 'wand' || data.articles.some((a) => a.category === op.id)) return data
+      return { ...data, categories: data.categories.filter((c) => c.id !== op.id) }
+    case 'upsertArticle':
+      return { ...data, articles: upsert(data.articles, op.article) }
+    case 'removeArticle':
+      return { ...data, articles: data.articles.filter((a) => a.id !== op.id) }
+    case 'upsertModule':
+      return { ...data, modules: upsert(data.modules, op.module) }
+    case 'removeModule':
+      return { ...data, modules: data.modules.filter((m) => m.id !== op.id) }
+    case 'upsertTentType':
+      return { ...data, tentTypes: upsert(data.tentTypes, op.tentType) }
+    case 'removeTentType':
+      return { ...data, tentTypes: data.tentTypes.filter((t) => t.id !== op.id) }
+    default:
+      return data
+  }
+}
+
+/** Rein: wendet eine Operation auf die ganze Datei an. Unbekannte Artikel bleiben erhalten. */
+export function applyFileOp(file: StockFile, op: StockOp): StockFile {
+  if (op.type === 'setQuantity' || op.type === 'setNote' || op.type === 'remove') {
+    return { ...file, stock: applyStockOp(file.stock, op) }
+  }
+  const catalog = applyCatalogOp(file.catalog ?? plain(defaultCatalogData), op)
+  // Ein gelöschter Artikel verschwindet auch aus dem Bestand.
+  const stock =
+    op.type === 'removeArticle'
+      ? applyStockOp(file.stock, { type: 'remove', articleId: op.id })
+      : file.stock
+  return { ...file, stock, catalog }
+}
+
+/** Rein: wendet eine Bestands-Operation an und gibt neue Einträge zurück. */
 export function applyStockOp(entries: StockEntries, op: StockOp): StockEntries {
+  if (op.type !== 'setQuantity' && op.type !== 'setNote' && op.type !== 'remove') {
+    return entries
+  }
   const next: StockEntries = { ...entries }
   if (op.type === 'remove') {
     delete next[op.articleId]
@@ -47,8 +114,12 @@ function plain<T>(value: T): T {
 }
 
 export interface UseStock {
-  entries: Ref<StockEntries>
+  entries: ComputedRef<StockEntries>
   stock: ComputedRef<Stock>
+  /** Katalog-Daten der Materialliste (mitgelieferte, solange keine eigenen gespeichert sind) */
+  catalogData: ComputedRef<CatalogData>
+  /** aufgelöster Katalog zum Rechnen und Anzeigen */
+  catalog: ComputedRef<Catalog>
   loading: Ref<boolean>
   saving: Ref<boolean>
   error: Ref<Error | null>
@@ -57,12 +128,17 @@ export interface UseStock {
   setQuantity(articleId: string, quantity: number): void
   setNote(articleId: string, note: string): void
   removeEntry(articleId: string): void
+  /** Katalog bearbeiten (Kategorien, Artikel, Dächer, Zelttypen) */
+  edit(op: StockOp): void
   flush(): Promise<void>
 }
 
 export function useStock(): UseStock {
   const store = useStore()
-  const entries = ref<StockEntries>({})
+  const file = ref<StockFile>({ schemaVersion: 1, stock: {} })
+  const entries = computed(() => file.value.stock)
+  const catalogData = computed(() => file.value.catalog ?? defaultCatalogData)
+  const catalog = computed(() => resolveCatalog(catalogData.value))
   const loading = ref(false)
   const saving = ref(false)
   const error = ref<Error | null>(null)
@@ -87,7 +163,7 @@ export function useStock(): UseStock {
     try {
       const [writable, loaded] = await Promise.all([store.canWrite(), store.loadStock()])
       canWrite.value = writable
-      entries.value = loaded.data.stock
+      file.value = loaded.data
       etag = loaded.etag
       pending = []
     } catch (e) {
@@ -105,7 +181,7 @@ export function useStock(): UseStock {
     pending = []
     saving.value = true
     try {
-      let snapshot: StockFile = { schemaVersion: 1, stock: plain(entries.value) }
+      let snapshot: StockFile = plain(file.value)
       for (let attempt = 0; ; attempt++) {
         try {
           etag = await store.saveStock(snapshot, etag)
@@ -118,13 +194,13 @@ export function useStock(): UseStock {
           const fresh = await store.loadStock()
           ops = [...ops, ...pending]
           pending = []
-          let next = fresh.data.stock
+          let next = fresh.data
           for (const op of ops) {
-            next = applyStockOp(next, op)
+            next = applyFileOp(next, op)
           }
           etag = fresh.etag
-          entries.value = next
-          snapshot = { schemaVersion: 1, stock: plain(next) }
+          file.value = next
+          snapshot = plain(next)
         }
       }
     } catch (e) {
@@ -146,7 +222,7 @@ export function useStock(): UseStock {
     if (!canWrite.value) {
       return
     }
-    entries.value = applyStockOp(entries.value, op)
+    file.value = applyFileOp(file.value, op)
     pending.push(op)
     clearTimer()
     timer = setTimeout(() => void flush(), STOCK_SAVE_DELAY_MS)
@@ -164,6 +240,8 @@ export function useStock(): UseStock {
   return {
     entries,
     stock,
+    catalogData,
+    catalog,
     loading,
     saving,
     error,
@@ -172,6 +250,7 @@ export function useStock(): UseStock {
     setQuantity: (articleId, quantity) => push({ type: 'setQuantity', articleId, quantity }),
     setNote: (articleId, note) => push({ type: 'setNote', articleId, note }),
     removeEntry: (articleId) => push({ type: 'remove', articleId }),
+    edit: push,
     flush
   }
 }

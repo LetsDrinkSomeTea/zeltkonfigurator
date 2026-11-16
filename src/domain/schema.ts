@@ -1,15 +1,25 @@
 import { InvalidFileError } from '../storage/DataStore'
 import {
-  CATEGORIES,
   DEFAULT_FINISH_ORDER,
+  type Article,
+  type CatalogData,
+  type CategoryDef,
   type Deviation,
   type ExtraItem,
   type Finish,
   type PackItem,
   type PacklistFile,
+  type Part,
+  type RoofConfig,
+  type RoofModule,
+  type RoofSetup,
   type StockFile,
-  type TentConfig
+  type TentConfig,
+  type TentTypeData,
+  type WallOptionId
 } from './types'
+
+const WALL_OPTIONS: WallOptionId[] = ['keine', 'normal', 'hoch', 'nur-streifen', 'erdstreifen']
 
 const FINISHES: Finish[] = ['blanko', 'fenster', 'gaze']
 
@@ -82,7 +92,138 @@ export function parseStockFile(json: unknown): StockFile {
       ...(note !== undefined && { note })
     }
   }
-  return { schemaVersion: 1, stock }
+  return {
+    schemaVersion: 1,
+    stock,
+    ...(o.catalog !== undefined && { catalog: parseCatalogData(o.catalog, 'catalog') })
+  }
+}
+
+function positive(v: unknown, path: string): number {
+  if (count(v, path) === 0) fail(path, 'muss mindestens 1 sein')
+  return v as number
+}
+
+function parseParts(v: unknown, path: string): Part[] {
+  return arr(v, path).map((raw, i) => {
+    const p = obj(raw, `${path}[${i}]`)
+    return {
+      articleId: nonEmptyStr(p.articleId, `${path}[${i}].articleId`),
+      quantity: positive(p.quantity, `${path}[${i}].quantity`)
+    }
+  })
+}
+
+function parseNamedParts(v: unknown, path: string): RoofConfig | RoofSetup {
+  const o = obj(v, path)
+  return {
+    id: nonEmptyStr(o.id, `${path}.id`),
+    label: nonEmptyStr(o.label, `${path}.label`),
+    parts: parseParts(o.parts, `${path}.parts`)
+  }
+}
+
+function nonEmptyList<T>(v: unknown, path: string, item: (x: unknown, p: string) => T): T[] {
+  const list = arr(v, path)
+  if (list.length === 0) fail(path, 'braucht mindestens einen Eintrag')
+  return list.map((x, i) => item(x, `${path}[${i}]`))
+}
+
+function parseCategory(v: unknown, path: string): CategoryDef {
+  const o = obj(v, path)
+  return { id: nonEmptyStr(o.id, `${path}.id`), name: nonEmptyStr(o.name, `${path}.name`) }
+}
+
+function parseArticle(v: unknown, path: string): Article {
+  const o = obj(v, path)
+  return {
+    id: nonEmptyStr(o.id, `${path}.id`),
+    name: nonEmptyStr(o.name, `${path}.name`),
+    category: nonEmptyStr(o.category, `${path}.category`)
+  }
+}
+
+function parseModule(v: unknown, path: string): RoofModule {
+  const o = obj(v, path)
+  return {
+    id: nonEmptyStr(o.id, `${path}.id`),
+    name: nonEmptyStr(o.name, `${path}.name`),
+    roofs: nonEmptyList(o.roofs, `${path}.roofs`, parseNamedParts),
+    setups: nonEmptyList(o.setups, `${path}.setups`, parseNamedParts),
+    parts: parseParts(o.parts, `${path}.parts`)
+  }
+}
+
+function parseTentType(v: unknown, path: string): TentTypeData {
+  const o = obj(v, path)
+  const wall = obj(o.wall, `${path}.wall`)
+  const options = nonEmptyList(wall.options, `${path}.wall.options`, (x, p) => {
+    if (!WALL_OPTIONS.includes(x as WallOptionId)) {
+      fail(p, `muss einer von ${WALL_OPTIONS.join(', ')} sein`)
+    }
+    return x as WallOptionId
+  })
+  const defaults = o.defaults === undefined ? undefined : obj(o.defaults, `${path}.defaults`)
+  return {
+    id: nonEmptyStr(o.id, `${path}.id`),
+    name: nonEmptyStr(o.name, `${path}.name`),
+    modules: nonEmptyList(o.modules, `${path}.modules`, (x, p) => {
+      const m = obj(x, p)
+      return {
+        moduleId: nonEmptyStr(m.moduleId, `${p}.moduleId`),
+        ...(m.setups !== undefined && {
+          setups: nonEmptyList(m.setups, `${p}.setups`, parseNamedParts)
+        })
+      }
+    }),
+    wall: { segments: count(wall.segments, `${path}.wall.segments`), options },
+    fixed: parseParts(o.fixed, `${path}.fixed`),
+    ...(defaults && {
+      defaults: {
+        ...(defaults.wallId !== undefined && {
+          wallId: str(defaults.wallId, `${path}.defaults.wallId`)
+        }),
+        ...(defaults.buildId !== undefined && {
+          buildId: str(defaults.buildId, `${path}.defaults.buildId`)
+        }),
+        ...(defaults.finish !== undefined && {
+          finish: finish(defaults.finish, `${path}.defaults.finish`)
+        })
+      }
+    })
+  }
+}
+
+function uniqueIds(list: { id: string }[], path: string): void {
+  const seen = new Set<string>()
+  for (const { id } of list) {
+    if (seen.has(id)) fail(path, `enthält die Kennung „${id}“ doppelt`)
+    seen.add(id)
+  }
+}
+
+/** Katalog-Daten einer Materialliste prüfen. */
+export function parseCatalogData(v: unknown, path: string): CatalogData {
+  const o = obj(v, path)
+  const data: CatalogData = {
+    categories: arr(o.categories, `${path}.categories`).map((x, i) =>
+      parseCategory(x, `${path}.categories[${i}]`)
+    ),
+    articles: arr(o.articles, `${path}.articles`).map((x, i) =>
+      parseArticle(x, `${path}.articles[${i}]`)
+    ),
+    modules: arr(o.modules, `${path}.modules`).map((x, i) =>
+      parseModule(x, `${path}.modules[${i}]`)
+    ),
+    tentTypes: arr(o.tentTypes, `${path}.tentTypes`).map((x, i) =>
+      parseTentType(x, `${path}.tentTypes[${i}]`)
+    )
+  }
+  uniqueIds(data.categories, `${path}.categories`)
+  uniqueIds(data.articles, `${path}.articles`)
+  uniqueIds(data.modules, `${path}.modules`)
+  uniqueIds(data.tentTypes, `${path}.tentTypes`)
+  return data
 }
 
 function parseTent(v: unknown, path: string): TentConfig {
@@ -108,8 +249,8 @@ function parseTent(v: unknown, path: string): TentConfig {
 function parseItem(v: unknown, path: string): PackItem {
   const i = obj(v, path)
   const category = i.category
-  if (!CATEGORIES.includes(category as PackItem['category'])) {
-    fail(`${path}.category`, `muss einer von ${CATEGORIES.join(', ')} sein`)
+  if (typeof category !== 'string' || category === '') {
+    fail(`${path}.category`, 'muss eine Kategorie-Kennung sein')
   }
   const perTentRaw = obj(i.perTent, `${path}.perTent`)
   const perTent: Record<string, number> = {}

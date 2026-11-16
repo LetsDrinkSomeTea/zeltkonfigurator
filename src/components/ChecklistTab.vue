@@ -88,7 +88,6 @@
 import { computed, ref } from 'vue'
 import { useGettext } from 'vue3-gettext'
 import type { UsePacklist } from '../composables/usePacklist'
-import { catalog } from '../domain/catalog'
 import type { PackItem } from '../domain/types'
 import ChecklistRow from './ChecklistRow.vue'
 import ExtraItems from './ExtraItems.vue'
@@ -120,7 +119,9 @@ const p = computed(() => (list.value ? progress(list.value) : { done: 0, total: 
 
 const visible = (item: PackItem) => !onlyOpen.value || !isCheckable(item) || !item.checked
 
-const groups = computed(() => groupByCategory((list.value?.items ?? []).filter(visible)))
+const groups = computed(() =>
+  groupByCategory((list.value?.items ?? []).filter(visible), props.pl.catalog.value.categories)
+)
 
 const tentSections = computed(() => {
   const l = list.value
@@ -130,7 +131,7 @@ const tentSections = computed(() => {
   return l.tents
     .map((tent) => ({
       tent,
-      title: tentTitle(l, tent, catalog),
+      title: tentTitle(l, tent, props.pl.catalog.value),
       entries: itemsForTent(l, tent.id).filter((e: TentItem) => visible(e.item))
     }))
     .filter((s) => s.entries.length > 0)

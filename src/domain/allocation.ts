@@ -1,7 +1,6 @@
 import { coverWalls, hasFinishLayer, variantLabel } from './walls'
 import { chooseRoof } from './roof'
 import {
-  CATEGORIES,
   type AllocationResult,
   type AllocationStatus,
   type Article,
@@ -195,10 +194,12 @@ export function allocate(
     }
   }
 
+  // Kategorien in Katalog-Reihenfolge, unbekannte am Ende
+  const order = new Map(catalog.categories.map((c, i) => [c.id, i]))
+  const categoryRank = (c: string) => order.get(c) ?? order.size
   const items = [...rows.values()].sort(
     (a, b) =>
-      CATEGORIES.indexOf(a.category) - CATEGORIES.indexOf(b.category) ||
-      a.name.localeCompare(b.name, 'de')
+      categoryRank(a.category) - categoryRank(b.category) || a.name.localeCompare(b.name, 'de')
   )
   let status: AllocationStatus = 'ok'
   if (items.some((i) => i.missing > 0)) status = 'fehlt'

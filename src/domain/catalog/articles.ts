@@ -1,4 +1,4 @@
-import type { Article, Finish, WallRole } from '../types'
+import type { Article, CategoryDef, Finish, WallRole } from '../types'
 
 const FINISH_NAME: Record<Finish, string> = {
   blanko: 'Blanko',
@@ -52,7 +52,10 @@ const wand: Article[] = [
   }
 ]
 
-export const articles: Article[] = [
+export const wallArticles: Article[] = wand
+
+/** Mitgelieferte Artikel ohne Wandmaterial. */
+export const defaultArticles: Article[] = [
   // Dach und Planen
   { id: 'kohtenblatt', name: 'Kohtenblatt', category: 'dach' },
   { id: 'jurtendach', name: 'Jurtendach', category: 'dach' },
@@ -68,9 +71,6 @@ export const articles: Article[] = [
   { id: 'theaterjurtendaechle', name: 'Theaterjurtenabdeckplane', category: 'dach' },
   { id: 'zelthaut-sudan', name: 'Zelthaut Sudan', category: 'dach' },
   { id: 'zelthaut-yellowstone', name: 'Zelthaut Yellowstone', category: 'dach' },
-
-  // Seitenwand
-  ...wand,
 
   // Stangen und Gestänge
   { id: 'mast-375', name: 'Kohtenstange / Mast 375 cm', category: 'stange' },
@@ -103,4 +103,14 @@ export const articles: Article[] = [
   // Bodenplanen
   { id: 'bodenplane-rund', name: 'Bodenplane rund (Sudan)', category: 'boden' },
   { id: 'bodenplane-eckig', name: 'Bodenplane eckig (Yellowstone)', category: 'boden' }
+]
+
+/** Mitgelieferte Kategorien; „wand“ ist fest (Wandberechnung). */
+export const defaultCategories: CategoryDef[] = [
+  { id: 'dach', name: 'Dächer und Planen' },
+  { id: 'wand', name: 'Seitenwand' },
+  { id: 'stange', name: 'Stangen und Gestänge' },
+  { id: 'abspannung', name: 'Heringe und Abspannung' },
+  { id: 'kleinteil', name: 'Kleinteile' },
+  { id: 'boden', name: 'Bodenplanen' }
 ]

@@ -83,7 +83,7 @@
           <ChecklistTab v-else :pl="pl" />
         </div>
       </div>
-      <PrintLayout :list="pl.list.value" />
+      <PrintLayout :list="pl.list.value" :catalog="pl.catalog.value" />
     </template>
   </AppLayout>
 </template>

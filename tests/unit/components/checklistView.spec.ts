@@ -9,8 +9,14 @@ import {
 import { buildList } from './helpers'
 
 describe('checklistView', () => {
+  it('puts unknown categories last under their id', () => {
+    const [item] = buildList().items
+    const groups = groupByCategory([{ ...item, category: 'kueche' }, item], catalog.categories)
+    expect(groups.map((g) => g.title).at(-1)).toBe('kueche')
+  })
+
   it('groups by category in catalog order with German titles', () => {
-    const groups = groupByCategory(buildList().items)
+    const groups = groupByCategory(buildList().items, catalog.categories)
     expect(groups.map((g) => g.title)).toEqual(
       expect.arrayContaining(['Dächer und Planen', 'Stangen und Gestänge'])
     )

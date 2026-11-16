@@ -162,15 +162,23 @@ import { useGettext } from 'vue3-gettext'
 import type { Resource } from '@opencloud-eu/web-client'
 import AppLayout from '../components/AppLayout.vue'
 import { useStock } from '../composables/useStock'
-import { catalog } from '../domain/catalog'
-import { CATEGORIES, type Category } from '../domain/types'
 
 // Im App-Rahmen (AppWrapper) übergibt OpenCloud die geöffnete Datei; ohne Rahmen fehlt sie.
 defineProps<{ resource?: Resource }>()
 
 const { $gettext } = useGettext()
-const { entries, loading, error, canWrite, load, setQuantity, setNote, removeEntry, flush } =
-  useStock()
+const {
+  entries,
+  catalog,
+  loading,
+  error,
+  canWrite,
+  load,
+  setQuantity,
+  setNote,
+  removeEntry,
+  flush
+} = useStock()
 
 const query = ref('')
 const confirmRemove = ref<string | null>(null)
@@ -194,40 +202,24 @@ watch(onlyAvailable, (value) => {
   }
 })
 
-const categoryTitle = (category: Category): string => {
-  switch (category) {
-    case 'dach':
-      return $gettext('Dächer und Planen')
-    case 'wand':
-      return $gettext('Seitenwand')
-    case 'stange':
-      return $gettext('Stangen und Gestänge')
-    case 'abspannung':
-      return $gettext('Heringe und Abspannung')
-    case 'kleinteil':
-      return $gettext('Kleinteile')
-    default:
-      return $gettext('Bodenplanen')
-  }
-}
-
 const groups = computed(() => {
   const q = query.value.trim().toLowerCase()
-  return CATEGORIES.map((category) => {
-    const title = categoryTitle(category)
-    const categoryMatches = q !== '' && title.toLowerCase().includes(q)
-    const articles = catalog.articles.filter(
-      (a) =>
-        a.category === category &&
-        (!onlyAvailable.value || quantityOf(a.id) > 0) &&
-        (q === '' || categoryMatches || a.name.toLowerCase().includes(q))
-    )
-    return { category, title, articles }
-  }).filter((g) => g.articles.length > 0)
+  return catalog.value.categories
+    .map(({ id: category, name: title }) => {
+      const categoryMatches = q !== '' && title.toLowerCase().includes(q)
+      const articles = catalog.value.articles.filter(
+        (a) =>
+          a.category === category &&
+          (!onlyAvailable.value || quantityOf(a.id) > 0) &&
+          (q === '' || categoryMatches || a.name.toLowerCase().includes(q))
+      )
+      return { category, title, articles }
+    })
+    .filter((g) => g.articles.length > 0)
 })
 
 const unknown = computed(() => {
-  const known = new Set(catalog.articles.map((a) => a.id))
+  const known = new Set(catalog.value.articles.map((a) => a.id))
   const q = query.value.trim().toLowerCase()
   return Object.entries(entries.value)
     .filter(([id]) => !known.has(id))

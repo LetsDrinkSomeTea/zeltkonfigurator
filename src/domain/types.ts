@@ -6,9 +6,16 @@
 
 // ---------------------------------------------------------------- Katalog (Code)
 
-export type Category = 'dach' | 'wand' | 'stange' | 'abspannung' | 'kleinteil' | 'boden'
+/** Kennung einer Kategorie, z. B. "dach" oder eine eigene wie "kueche". */
+export type Category = string
 
-export const CATEGORIES: Category[] = ['dach', 'wand', 'stange', 'abspannung', 'kleinteil', 'boden']
+export interface CategoryDef {
+  id: Category
+  name: string
+}
+
+/** Kategorie des Wandmaterials; die Wandberechnung hängt daran, sie ist nicht löschbar. */
+export const WALL_CATEGORY = 'wand'
 
 export type Finish = 'blanko' | 'fenster' | 'gaze'
 
@@ -101,9 +108,40 @@ export interface TentDefaults {
   finish?: Finish
 }
 
+/** Der aufgelöste Katalog, mit dem die App rechnet. */
 export interface Catalog {
+  /** Reihenfolge = Reihenfolge der Gruppen in Listen */
+  categories: CategoryDef[]
   articles: Article[]
+  /** Dach-Bausteine, aus denen Zelttypen bestehen */
+  modules: RoofModule[]
   tentTypes: TentType[]
+}
+
+/** Wandoptionen, aus denen ein Zelttyp wählt. */
+export type WallOptionId = 'keine' | 'normal' | 'hoch' | 'nur-streifen' | 'erdstreifen'
+
+/** Zelttyp, wie er gespeichert und im Editor bearbeitet wird. */
+export interface TentTypeData {
+  id: string
+  name: string
+  /** Dächer: Baustein-Kennung, optional mit eigenen Aufbauten (z. B. Holzgestänge) */
+  modules: { moduleId: string; setups?: RoofSetup[] }[]
+  /** Wandsegmente und angebotene Wandoptionen (Reihenfolge = Anzeige) */
+  wall: { segments: number; options: WallOptionId[] }
+  fixed: Part[]
+  defaults?: TentDefaults
+}
+
+/**
+ * Katalog als Daten: wird in der Materialliste gespeichert und dort bearbeitet. Wandmaterial
+ * (Normal-, Superbahn, Streifen …) gehört nicht dazu; es ist fest in der App.
+ */
+export interface CatalogData {
+  categories: CategoryDef[]
+  articles: Article[]
+  modules: RoofModule[]
+  tentTypes: TentTypeData[]
 }
 
 /** articleId → verfügbare Stückzahl. Fehlende Einträge gelten als 0. */
@@ -119,6 +157,8 @@ export interface TentRoof {
 export interface StockFile {
   schemaVersion: 1
   stock: Record<string, { quantity: number; note?: string }>
+  /** Eigener Katalog; fehlt er, gilt der mitgelieferte. */
+  catalog?: CatalogData
 }
 
 export interface TentConfig {

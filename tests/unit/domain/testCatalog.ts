@@ -95,7 +95,17 @@ export const jurte: TentType = {
   fixed: [{ articleId: 'seitenstange', quantity: 2 }]
 }
 
-export const catalog: Catalog = { articles, tentTypes: [jurte] }
+export const catalog: Catalog = {
+  categories: [
+    { id: 'dach', name: 'Dächer und Planen' },
+    { id: 'wand', name: 'Seitenwand' },
+    { id: 'stange', name: 'Stangen und Gestänge' },
+    { id: 'kleinteil', name: 'Kleinteile' }
+  ],
+  articles,
+  modules: [jurteDach],
+  tentTypes: [jurte]
+}
 
 /** Bestand mit allem Nicht-Wandmaterial reichlich, Wand nach Angabe. */
 export function stockOf(extra: Stock = {}, base = true): Stock {

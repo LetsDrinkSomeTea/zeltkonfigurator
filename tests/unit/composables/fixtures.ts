@@ -11,7 +11,9 @@ import { storeKey } from '../../../src/composables/useStore'
 import type { DataStore } from '../../../src/storage/DataStore'
 
 export const fakeCatalog: Catalog = {
+  categories: [{ id: 'dach', name: 'Dächer und Planen' }],
   articles: [],
+  modules: [],
   tentTypes: [
     {
       id: 'kohte',

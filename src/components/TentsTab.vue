@@ -28,7 +28,7 @@
         v-model="selectedType"
         class="ext:grow"
         :label="$gettext('Zelttyp')"
-        :options="catalog.tentTypes"
+        :options="pl.catalog.value.tentTypes"
         option-label="name"
         :clearable="false"
         :searchable="false"
@@ -61,7 +61,6 @@
 import { nextTick, onBeforeUnmount, ref } from 'vue'
 import { useGettext } from 'vue3-gettext'
 import type { UsePacklist } from '../composables/usePacklist'
-import { catalog } from '../domain/catalog'
 import FinishOrderEditor from './FinishOrderEditor.vue'
 import TentCard from './TentCard.vue'
 
@@ -72,7 +71,7 @@ const { $gettext } = useGettext()
 const MAX_COUNT = 20
 const HIGHLIGHT_MS = 2000
 
-const selectedType = ref(catalog.tentTypes[0])
+const selectedType = ref(props.pl.catalog.value.tentTypes[0])
 const count = ref(1)
 const listEl = ref<HTMLElement>()
 const highlightIds = ref<string[]>([])

@@ -73,8 +73,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useGettext } from 'vue3-gettext'
-import { catalog } from '../domain/catalog'
-import type { Deviation, PacklistFile } from '../domain/types'
+import type { Deviation, PacklistFile, Catalog } from '../domain/types'
 import {
   describeTent,
   formatDate,
@@ -85,15 +84,15 @@ import {
 } from './checklistView'
 
 /** Druckansicht: auf dem Bildschirm verborgen, nur im Druck sichtbar. */
-const props = defineProps<{ list: PacklistFile }>()
+const props = defineProps<{ list: PacklistFile; catalog: Catalog }>()
 const { $gettext } = useGettext()
 
-const groups = computed(() => groupByCategory(props.list.items))
+const groups = computed(() => groupByCategory(props.list.items, props.catalog.categories))
 const printedAt = new Date().toLocaleString('de-DE')
 
 function deviationTent(tentId: Deviation['tentId']): string {
   const tent = props.list.tents.find((t) => t.id === tentId)
-  return tent ? tentTitle(props.list, tent, catalog) : tentId
+  return tent ? tentTitle(props.list, tent, props.catalog) : tentId
 }
 </script>
 
