@@ -1,0 +1,6 @@
+@import '@opencloud-eu/extension-sdk/tailwind.css';
+@source '../../src';
+
+:root {
+  --oc-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
