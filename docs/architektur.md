@@ -307,8 +307,8 @@ interface PacklistDocument {
 ```
 
 `DataStore` ist der Bestand am festen Ablageort. Eine Packliste ist dagegen ein
-`PacklistDocument`: In OpenCloud baut `createDocument()` es aus der Adresse (Space und Pfad,
-`useAppDefaults`), in Tests und Vorschau liefert `MemoryDataStore.document(id)` eines. Eine
+`PacklistDocument`: In OpenCloud baut `createDocument()` es aus Space und Datei, die der
+App-Rahmen (`AppWrapperRoute`) der Ansicht übergibt, in Tests und Vorschau liefert `MemoryDataStore.document(id)` eines. Eine
 leere Datei füllt `usePacklist` beim ersten Laden mit einer leeren Packliste.
 
 Fehlerklassen: `NotConfiguredError`, `NotFoundError`, `ForbiddenError`, `ConflictError`,

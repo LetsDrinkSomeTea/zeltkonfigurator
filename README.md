@@ -55,6 +55,10 @@ einem App-Update. Im Space liegen nur Stückzahlen und Packlisten.
   Speichern angelegt. Geöffnet wird der Bestand über diese Datei oder über den Link „Bestand“
   in jeder Packliste.
 
+Beide Dateiarten öffnen sich im App-Rahmen von OpenCloud, wie Texteditor oder PDF-Betrachter:
+Kopfleiste mit Dateiname, Schließen und den Dateiaktionen (Umbenennen, Teilen, Herunterladen,
+…). Gespeichert wird weiterhin sofort nach jeder Änderung; einen Speichern-Knopf gibt es nicht.
+
 Der Inhalt beider Dateiarten ist YAML. Wer eine Packliste bearbeiten will, braucht Schreibrecht
 auf die Datei und Leserecht auf den Space mit dem Bestand.
 

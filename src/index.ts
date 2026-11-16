@@ -1,8 +1,9 @@
-import { defineWebApplication } from '@opencloud-eu/web-pkg'
+import { AppWrapperRoute, defineWebApplication } from '@opencloud-eu/web-pkg'
 import '@opencloud-eu/extension-sdk/tailwind.css'
 import { RouteRecordRaw } from 'vue-router'
 import { useGettext } from 'vue3-gettext'
 import { setAppConfig } from './storage/appConfig'
+import PacklistEditor from './views/PacklistEditor.vue'
 
 export default defineWebApplication({
   setup({ applicationConfig }) {
@@ -46,15 +47,16 @@ export default defineWebApplication({
         // Die Packliste liegt dort, wo die Adresse hinzeigt (Space und Pfad).
         path: '/liste/:driveAliasAndItem(.*)?',
         name: 'zeltkonfigurator-liste',
-        component: () => import('./views/PacklistEditor.vue'),
+        // Im App-Rahmen von OpenCloud: Kopfleiste mit Dateiname, Schließen und Dateiaktionen.
+        component: AppWrapperRoute(PacklistEditor, { applicationId: appInfo.id }),
         meta: { authContext: 'user', title: $gettext('Packliste'), patchCleanPath: true }
       },
       {
-        // Der Bestand liegt immer am festen Ablageort; der Pfad in der Adresse ist nur der
-        // Einstieg aus der Dateiansicht.
+        // Der Bestand liegt immer am festen Ablageort. Mit Datei in der Adresse läuft er im
+        // App-Rahmen, ohne Datei sucht StockRoute die Bestandsdatei und wechselt dorthin.
         path: '/bestand/:driveAliasAndItem(.*)?',
         name: 'zeltkonfigurator-bestand',
-        component: () => import('./views/InventoryView.vue'),
+        component: () => import('./views/StockRoute.vue'),
         meta: { authContext: 'user', title: $gettext('Bestand'), patchCleanPath: true }
       }
     ]

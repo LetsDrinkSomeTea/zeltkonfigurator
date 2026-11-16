@@ -1,5 +1,5 @@
 <template>
-  <AppLayout :title="doc.name" :loading="pl.loading.value" :error="pl.error.value">
+  <AppLayout :title="doc.name" :framed="framed" :loading="pl.loading.value" :error="pl.error.value">
     <template #actions>
       <span v-if="pl.saving.value" class="zk-no-print" role="status">{{
         $gettext('Wird gespeichert …')
@@ -73,6 +73,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useGettext } from 'vue3-gettext'
+import type { Resource, SpaceResource } from '@opencloud-eu/web-client'
 import AppLayout from '../components/AppLayout.vue'
 import ChecklistTab from '../components/ChecklistTab.vue'
 import PerTentTab from '../components/PerTentTab.vue'
@@ -87,8 +88,18 @@ type TabId = 'zelte' | 'material' | 'packliste'
 
 const { $gettext } = useGettext()
 const { router, route } = useAppRouter()
+// Space, Datei und Schreibrecht kommen von OpenClouds App-Rahmen (AppWrapper). Er liest die
+// deklarierten Props aus, um zu entscheiden, was er lädt – den Inhalt lädt und speichert die
+// App selbst (sofortiges Speichern mit Konflikterkennung).
+const props = defineProps<{ space?: SpaceResource; resource?: Resource; isReadOnly?: boolean }>()
+const framed = computed(() => !!props.resource)
+
 // Die Datei bestimmt Ort und Namen der Liste; umbenannt wird sie in der Dateiansicht.
-const doc = usePacklistDocument()
+const doc = usePacklistDocument({
+  space: () => props.space,
+  resource: () => props.resource,
+  isReadOnly: () => !!props.isReadOnly
+})
 const pl = usePacklist(doc)
 
 const tabs = computed<{ id: TabId; label: string }[]>(() => [
@@ -106,7 +117,6 @@ const status = computed(() =>
   pl.list.value ? derivePacklistStatus(pl.list.value) : ('leer' as const)
 )
 
-// Nach dem Bearbeiten des Namens die Datei nachziehen und zur neuen Adresse wechseln.
 function select(id: TabId) {
   void router.replace({ query: { ...route.value.query, tab: id } })
 }
