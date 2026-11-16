@@ -119,6 +119,8 @@ export interface PackItem {
   missing: number
   /** TentConfig.id → Bedarf dieses Zeltes. Summe = quantity + missing. */
   perTent: Record<string, number>
+  /** TentConfig.id → davon nicht gedeckt (nur Einträge > 0). Summe = missing. */
+  missingPerTent: Record<string, number>
   checked: boolean
 }
 

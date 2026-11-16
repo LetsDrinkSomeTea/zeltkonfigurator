@@ -217,7 +217,7 @@ describe('PacklistEditor configurator', () => {
   it('resets a tent to its default configuration', async () => {
     const { wrapper, store } = await open([bareTent('jurte', { label: 'Küche' })], fullStock(100))
     await expandTents(wrapper)
-    const reset = () => wrapper.findAll('article button').find((b) => b.text() === 'Standard')!
+    const reset = () => wrapper.findAll('article button').find((b) => b.text() === 'Zurücksetzen')!
     await reset().trigger('click')
     await flushPromises()
     expect(wrapper.find('.zk-tent-custom').exists()).toBe(false)
@@ -249,6 +249,7 @@ describe('PacklistEditor configurator', () => {
     expect(wrapper.findAll('article')).toHaveLength(3)
 
     await cards()[2].find('button[aria-label$="entfernen"]').trigger('click')
+    await wrapper.find('.zk-confirm-ok').trigger('click')
     expect(wrapper.findAll('article')).toHaveLength(2)
     await wrapper.unmount()
     await flushPromises()

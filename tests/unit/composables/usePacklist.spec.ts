@@ -142,6 +142,18 @@ describe('usePacklist', () => {
     expect((await stored(store)).tents).toHaveLength(3)
   })
 
+  it('adds several tents at once and moves a tent to a position', async () => {
+    const { pl } = await setup()
+    const ids = pl.addTent('kohte', 3)
+    expect(ids).toHaveLength(3)
+    expect(pl.list.value?.tents).toHaveLength(5)
+    expect(new Set(pl.list.value!.tents.map((t) => t.id)).size).toBe(5)
+    expect(pl.addTent('unknown', 2)).toEqual([])
+
+    pl.moveTentTo(ids[2], 0)
+    expect(pl.list.value!.tents[0].id).toBe(ids[2])
+  })
+
   it('manages finishOrder, date and extras', async () => {
     const { store, pl } = await setup()
     pl.setFinishOrder(['blanko', 'fenster', 'gaze'])

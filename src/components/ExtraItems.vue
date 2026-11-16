@@ -21,7 +21,7 @@
           class="zk-extra-remove"
           size="small"
           :aria-label="$gettext('Entfernen: %{text}', { text: extra.text })"
-          @click="emit('remove', extra.id)"
+          @click="pendingRemove = extra"
         >
           {{ $gettext('Entfernen') }}
         </oc-button>
@@ -39,6 +39,8 @@
         :label="$gettext('Text')"
         required-mark
         :fix-message-line="true"
+        :error-message="textError"
+        :error-message-debounced-time="0"
       />
       <oc-text-input
         :model-value="String(quantity)"
@@ -47,12 +49,21 @@
         :label="$gettext('Menge')"
         required-mark
         :fix-message-line="true"
+        :error-message="quantityError"
+        :error-message-debounced-time="0"
         @update:model-value="quantity = Number($event)"
       />
       <oc-button submit="submit" appearance="filled" color-role="primary">
         {{ $gettext('Hinzufügen') }}
       </oc-button>
     </form>
+
+    <ConfirmDialog
+      v-if="pendingRemove"
+      :title="$gettext('%{name} entfernen?', { name: pendingRemove.text })"
+      @confirm="confirmRemove"
+      @cancel="pendingRemove = null"
+    />
   </section>
 </template>
 
@@ -60,6 +71,7 @@
 import { computed, ref } from 'vue'
 import { useGettext } from 'vue3-gettext'
 import type { ExtraItem } from '../domain/types'
+import ConfirmDialog from './ConfirmDialog.vue'
 
 const props = defineProps<{ extras: ExtraItem[]; canWrite: boolean; onlyOpen?: boolean }>()
 const emit = defineEmits<{
@@ -71,6 +83,26 @@ const { $gettext } = useGettext()
 
 const text = ref('')
 const quantity = ref<number>(1)
+/** Fehler erscheinen erst nach einem Absendeversuch und verschwinden bei gültiger Eingabe. */
+const attempted = ref(false)
+const pendingRemove = ref<ExtraItem | null>(null)
+
+const textError = computed(() =>
+  attempted.value && !text.value.trim() ? $gettext('Bitte Text eingeben') : ''
+)
+const quantityError = computed(() => {
+  if (!attempted.value) return ''
+  const q = Number(quantity.value)
+  if (!Number.isFinite(q) || q < 1) return $gettext('Mindestens 1')
+  return Number.isInteger(q) ? '' : $gettext('Bitte eine ganze Zahl eingeben')
+})
+
+function confirmRemove() {
+  if (pendingRemove.value) {
+    emit('remove', pendingRemove.value.id)
+  }
+  pendingRemove.value = null
+}
 
 const visible = computed(() =>
   props.onlyOpen ? props.extras.filter((e) => !e.checked) : props.extras
@@ -79,9 +111,11 @@ const visible = computed(() =>
 function submit() {
   const t = text.value.trim()
   const q = Number(quantity.value)
+  attempted.value = true
   if (!t || !Number.isInteger(q) || q < 1) {
     return
   }
+  attempted.value = false
   emit('add', t, q)
   text.value = ''
   quantity.value = 1

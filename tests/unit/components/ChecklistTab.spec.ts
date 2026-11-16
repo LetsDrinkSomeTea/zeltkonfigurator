@@ -115,6 +115,7 @@ describe('ChecklistTab', () => {
     await w.find('.zk-extras li input').setValue(true)
     expect(pl.list.value!.extraItems[0].checked).toBe(true)
     await w.find('.zk-extra-remove').trigger('click')
+    await w.find('.zk-confirm-ok').trigger('click')
     expect(pl.list.value!.extraItems).toHaveLength(0)
   })
 

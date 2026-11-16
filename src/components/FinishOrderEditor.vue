@@ -1,46 +1,52 @@
 <template>
   <section class="zk-finish-order ext:mb-4" aria-labelledby="zk-finish-order-title">
-    <h3 id="zk-finish-order-title" class="ext:font-bold">
-      {{ $gettext('Ausweichreihenfolge der Ausführungen') }}
-    </h3>
-    <p class="ext:mb-2">
-      {{
-        $gettext(
-          'Ist die gewünschte Ausführung nicht in ausreichender Menge da, weicht die App in dieser Reihenfolge aus.'
-        )
-      }}
-    </p>
-    <oc-list raw class="ext:flex ext:flex-col ext:gap-1">
-      <li
-        v-for="(finish, index) in order"
-        :key="finish"
-        class="ext:flex ext:items-center ext:gap-2"
-      >
-        <span class="ext:grow">{{ index + 1 }}. {{ finishLabel(finish) }}</span>
-        <template v-if="!readOnly">
-          <oc-button
-            size="small"
-            :disabled="index === 0"
-            :aria-label="$gettext('%{name} nach oben', { name: finishLabel(finish) })"
-            @click="move(index, -1)"
-          >
-            <oc-icon name="arrow-up" size="small" />
-          </oc-button>
-          <oc-button
-            size="small"
-            :disabled="index === order.length - 1"
-            :aria-label="$gettext('%{name} nach unten', { name: finishLabel(finish) })"
-            @click="move(index, 1)"
-          >
-            <oc-icon name="arrow-down" size="small" />
-          </oc-button>
-        </template>
-      </li>
-    </oc-list>
+    <h3 class="ext:font-bold">{{ $gettext('Erweitert') }}</h3>
+    <!-- Selten nötig: standardmäßig zu, die Zusammenfassung zeigt die aktuelle Reihenfolge. -->
+    <details class="zk-finish-details">
+      <summary class="zk-finish-summary ext:py-2">{{ summary }}</summary>
+      <h4 id="zk-finish-order-title" class="ext:font-bold">
+        {{ $gettext('Ausweichreihenfolge der Ausführungen') }}
+      </h4>
+      <p class="ext:mb-2">
+        {{
+          $gettext(
+            'Ist die gewünschte Ausführung nicht in ausreichender Menge da, weicht die App in dieser Reihenfolge aus.'
+          )
+        }}
+      </p>
+      <oc-list raw class="ext:flex ext:flex-col ext:gap-1">
+        <li
+          v-for="(finish, index) in order"
+          :key="finish"
+          class="ext:flex ext:items-center ext:gap-2"
+        >
+          <span class="ext:grow">{{ index + 1 }}. {{ finishLabel(finish) }}</span>
+          <template v-if="!readOnly">
+            <oc-button
+              size="small"
+              :disabled="index === 0"
+              :aria-label="$gettext('%{name} nach oben', { name: finishLabel(finish) })"
+              @click="move(index, -1)"
+            >
+              <oc-icon name="arrow-up" size="small" />
+            </oc-button>
+            <oc-button
+              size="small"
+              :disabled="index === order.length - 1"
+              :aria-label="$gettext('%{name} nach unten', { name: finishLabel(finish) })"
+              @click="move(index, 1)"
+            >
+              <oc-icon name="arrow-down" size="small" />
+            </oc-button>
+          </template>
+        </li>
+      </oc-list>
+    </details>
   </section>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useGettext } from 'vue3-gettext'
 import type { Finish } from '../domain/types'
 
@@ -59,6 +65,12 @@ function finishLabel(finish: Finish): string {
   }
 }
 
+const summary = computed(() =>
+  $gettext('Ausweichreihenfolge: %{order}', {
+    order: props.order.map(finishLabel).join(' → ')
+  })
+)
+
 function move(index: number, direction: -1 | 1) {
   const next = [...props.order]
   const target = index + direction
@@ -69,3 +81,11 @@ function move(index: number, direction: -1 | 1) {
   emit('update:order', next)
 }
 </script>
+
+<style>
+.zk-finish-summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: list-item;
+}
+</style>

@@ -26,13 +26,16 @@ export interface UsePacklist {
   flush(): Promise<void>
   setDate(date: string | undefined): void
   setFinishOrder(order: Finish[]): void
-  addTent(typeId: string): void
+  /** Fügt `count` Zelte in Standardkonfiguration hinzu und liefert deren IDs. */
+  addTent(typeId: string, count?: number): string[]
   updateTent(tentId: string, patch: Partial<Omit<TentConfig, 'id' | 'typeId'>>): void
   /** Setzt Dach, Wand, Bauart und Ausführung auf die Standardkonfiguration des Zelttyps. */
   resetTent(tentId: string): void
   removeTent(tentId: string): void
   duplicateTent(tentId: string): void
   moveTent(tentId: string, direction: -1 | 1): void
+  /** Verschiebt das Zelt an die (0-basierte) Position `index`, z. B. nach dem Ziehen. */
+  moveTentTo(tentId: string, index: number): void
   toggleItem(articleId: string): void
   toggleExtra(extraId: string): void
   addExtra(text: string, quantity: number): void
@@ -181,12 +184,18 @@ export function usePacklist(doc: PacklistDocument): UsePacklist {
     }
   }
 
-  function addTent(typeId: string) {
+  function addTent(typeId: string, count = 1): string[] {
     const type = catalog.tentTypes.find((t) => t.id === typeId)
     if (!type) {
-      return
+      return []
     }
-    push({ type: 'addTent', tent: { ...createTentConfig(type), id: newId() } })
+    const ids: string[] = []
+    for (let i = 0; i < count; i++) {
+      const id = newId()
+      ids.push(id)
+      push({ type: 'addTent', tent: { ...createTentConfig(type), id } })
+    }
+    return ids
   }
 
   function resetTent(tentId: string) {
@@ -223,6 +232,7 @@ export function usePacklist(doc: PacklistDocument): UsePacklist {
     removeTent: (tentId) => push({ type: 'removeTent', tentId }),
     duplicateTent: (tentId) => push({ type: 'duplicateTent', tentId, newId: newId() }),
     moveTent: (tentId, direction) => push({ type: 'moveTent', tentId, direction }),
+    moveTentTo: (tentId, index) => push({ type: 'moveTentTo', tentId, index }),
     toggleItem,
     toggleExtra,
     addExtra: (text, quantity) =>

@@ -84,6 +84,7 @@ function packlist(id: string, updatedAt: string, checked = false): PacklistFile 
         quantity: 1,
         missing: 0,
         perTent: { t1: 1 },
+        missingPerTent: {},
         checked
       }
     ],
