@@ -16,7 +16,12 @@ import { computed } from 'vue'
 import { useGettext } from 'vue3-gettext'
 import type { PacklistStatus } from '../domain/view/status'
 
-const props = defineProps<{ status: PacklistStatus; missingCount?: number }>()
+const props = defineProps<{
+  status: PacklistStatus
+  missingCount?: number
+  /** Aktiver Reiter: Auf „Zelte“ entfällt der Knopf der leeren Liste, da man schon dort ist. */
+  activeTab?: 'packliste' | 'zelte' | 'bedarf'
+}>()
 /** Wunsch, zu einem Reiter zu wechseln („anzeigen“ bei fehlendem Material, Hinweis bei leerer Liste). */
 const emit = defineEmits<{ show: [tab: 'bedarf' | 'zelte'] }>()
 const { $gettext, $ngettext } = useGettext()
@@ -36,9 +41,11 @@ const headline = computed(() => {
   }
 })
 
-const target = computed<'bedarf' | 'zelte' | null>(() =>
-  props.status === 'fehlt' ? 'bedarf' : props.status === 'leer' ? 'zelte' : null
-)
+const target = computed<'bedarf' | 'zelte' | null>(() => {
+  if (props.status === 'fehlt') return 'bedarf'
+  if (props.status === 'leer' && props.activeTab !== 'zelte') return 'zelte'
+  return null
+})
 
 const actionLabel = computed(() =>
   props.status === 'fehlt'

@@ -70,9 +70,11 @@ src/
   composables/
     useStore.ts  useStock.ts  usePacklist.ts
   views/
-    PacklistEditor.vue      /liste/<Space und Pfad der Datei>   (Reiter: Packliste · Zelte · Material pro Zelt)
+    PacklistEditor.vue      /liste/<Space und Pfad der Datei>   (Reiter: Packliste · Zelte · Bedarf)
     InventoryView.vue       /bestand
-  components/               TentCard, TentOptions, ItemRow, StatusBanner, PrintLayout …
+  components/               AppLayout, StatusBanner, TentsTab, TentCard, FinishOrderEditor,
+                            DemandTab, ChecklistTab, ChecklistRow, ExtraItems, ConfirmDialog,
+                            PrintLayout …
 tests/unit/                 spiegelt src/
 docs/zelttyp-anlegen.md     Anleitung (N-09)
 ```
@@ -205,6 +207,7 @@ interface PackItem {
   quantity: number // aus dem Bestand zu packen
   missing: number // nicht gedeckt
   perTent: Record<string, number> // TentConfig.id → Stückzahl
+  missingPerTent?: Record<string, number> // TentConfig.id → davon nicht gedeckt (nur > 0)
   checked: boolean
 }
 
@@ -316,7 +319,10 @@ Fehlerklassen: `NotConfiguredError`, `NotFoundError`, `ForbiddenError`, `Conflic
 Jedes Schreiben schickt den zuletzt gelesenen ETag als `If-Match`. Lehnt der Server ab,
 wirft der Store `ConflictError`. `usePacklist` lädt neu, wendet die anstehende Änderung auf
 den frischen Stand an und speichert erneut (F-38). Änderungen werden dafür als kleine
-Operationen geführt (`toggle(itemId)`, `setTents(...)`), nicht als ganzer Dateizustand.
+Operationen geführt (`setItemChecked`, `addTent`, `moveTentTo`, `removeExtra` …; siehe
+`packlistOps.ts`), nicht als ganzer Dateizustand. `moveTent` verschiebt um eine Stelle,
+`moveTentTo` auf einen Index (Ziehen). Beim Bestand entfernt `removeEntry` einen unbekannten
+Eintrag (F-07).
 Haken werden gebündelt gespeichert (ca. 1 s Verzögerung).
 
 ### 6.3 Ablageort
@@ -339,10 +345,10 @@ technischem Risiko und wird deshalb zuerst und einzeln geklärt.
 
 ## 7. Oberfläche
 
-| Route      | Ansicht        | Inhalt                                                                                                 |
-| ---------- | -------------- | ------------------------------------------------------------------------------------------------------ |
-| `/liste/…` | PacklistEditor | Statusbanner; Reiter **Packliste** (abhaken, Vorgabe), **Zelte** (Konfigurator), **Material pro Zelt** |
-| `/bestand` | InventoryView  | Artikel nach Kategorie, Suche, Stückzahlen bearbeiten                                                  |
+| Route      | Ansicht        | Inhalt                                                                                                   |
+| ---------- | -------------- | -------------------------------------------------------------------------------------------------------- |
+| `/liste/…` | PacklistEditor | Statusbanner; Reiter **Packliste** (abhaken; „Pro Zelt“ nur lesen), **Zelte** (Konfigurator), **Bedarf** |
+| `/bestand` | InventoryView  | Artikel nach Kategorie, Suche, Stückzahlen bearbeiten                                                    |
 
 - Einstieg ist die Dateiansicht: `appInfo.extensions` verknüpft `.packliste` und `.bestand` mit
   den Routen und trägt „Packliste“ ins „Neu“-Menü ein (`newFileMenu`). Einen Eintrag im
@@ -351,7 +357,24 @@ technischem Risiko und wird deshalb zuerst und einzeln geklärt.
   „Anpassen“ (F-2C). Sie baut ihre Auswahlfelder aus dem Zelttyp: Dach nur bei mehreren
   Dachkonfigurationen, Bauart nur bei mehreren Bauarten, Ausführung nur, wenn die gewählte
   Bauart eine Lage mit Ausführungen hat. Neue Zelttypen brauchen keine Änderung an der
-  Oberfläche.
+  Oberfläche. Die Karte hat „Zurücksetzen“ (Standardkonfiguration), Pfeile und einen
+  Ziehgriff zum Umsortieren (`moveTent`, `moveTentTo`) und zeigt mit `missingPerTent`, wie
+  viele Teile am Zelt fehlen.
+- Löschen von Zelten und freien Zeilen läuft über `ConfirmDialog` (`alertdialog`, Fokus auf
+  „Abbrechen“, Escape bricht ab). „Zelt hinzufügen“ steht unter der Liste, mit Anzahl (1–20);
+  neue Zelte werden angescrollt und kurz hervorgehoben. Die Ausweichreihenfolge ist unter
+  „Erweitert“ eingeklappt.
+- Statusbanner: „n Artikel fehlen – anzeigen“ wechselt zum Reiter „Bedarf“; bei leerer Liste
+  verweist er auf „Zelte“, außer man ist schon dort. Ist die Liste veraltet und nichts
+  abgehakt, rechnet der Editor beim Öffnen still neu (Schreibrecht vorausgesetzt); sonst
+  bietet er „Neu berechnen“ an.
+- Speicherstatus: nur Fehler werden angezeigt („Nicht gespeichert: …“). Ohne Schreibrecht
+  zeigt die Kopfzeile das Kennzeichen „Schreibgeschützt“. „Drucken“ und „Bestand“ stehen in
+  der Kopfleiste; „Bestand“ öffnet in einem neuen Tab.
+- Reiter „Packliste“: „Gesamt“ zum Abhaken, „Pro Zelt“ nur zur Ansicht. Reiter „Bedarf“:
+  Gesamtbedarf mit benötigt, aus Bestand, fehlt und Bedarf je Zelt.
+- Bestand: unbekannte Artikel lassen sich entfernen, die Notiz öffnet erst auf Antippen,
+  „Nur vorhandene“ blendet Artikel mit Stückzahl 0 aus (im Browser gemerkt).
 - Bedienelemente aus dem OpenCloud-Design-System, Abstände über die Tailwind-Klassen des
   SDK (Präfix `ext:`). Handy zuerst.
 - Druck (F-39): Komponente `PrintLayout`, sichtbar nur unter `@media print`, Aufruf über
@@ -383,7 +406,7 @@ Verträge (AP 0), Review und Zusammenführen liegen beim Hauptagenten.
 | 3   | Katalog: `articles.ts`, `walls.ts`, alle Zelttypen, Konsistenztest, `docs/zelttyp-anlegen.md`       | 0            | ja       |
 | 4   | `MemoryDataStore` und Composables (`useStore`, `useStock`, `usePacklist` mit Konfliktbehandlung)    | 0            | ja       |
 | 5   | Bestandsansicht                                                                                     | 4            | ja       |
-| 6   | Packlisten-Übersicht und Konfigurator (Reiter „Zelte“, „Material pro Zelt“, Statusbanner)           | 2, 4         | ja       |
+| 6   | Packlisten-Übersicht und Konfigurator (Reiter „Zelte“, „Bedarf“, Statusbanner)                      | 2, 4         | ja       |
 | 7   | Packliste abhaken, freie Zeilen, Druckansicht                                                       | 2, 4         | ja       |
 | 8   | Zusammenbau, Test gegen OpenCloud im Container, README mit Installationsanleitung                   | alle         | –        |
 

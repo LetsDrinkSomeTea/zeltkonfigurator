@@ -33,7 +33,12 @@
           <p v-else-if="pl.list.value.date">{{ pl.list.value.date }}</p>
         </section>
 
-        <StatusBanner :status="status" :missing-count="missingCount" @show="select" />
+        <StatusBanner
+          :status="status"
+          :missing-count="missingCount"
+          :active-tab="activeTab"
+          @show="select"
+        />
 
         <div v-if="pl.stale.value" class="zk-stale ext:p-3 ext:mb-4 ext:rounded">
           <span>{{
