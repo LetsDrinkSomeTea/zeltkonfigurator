@@ -324,6 +324,16 @@ export function parsePacklistFile(json: unknown): PacklistFile {
     deviations: arr(o.deviations, 'deviations').map((d, n) =>
       parseDeviation(d, `deviations[${n}]`)
     ),
+    materials:
+      o.materials === undefined
+        ? []
+        : arr(o.materials, 'materials').map((m, n) => {
+            const p = obj(m, `materials[${n}]`)
+            return {
+              articleId: nonEmptyStr(p.articleId, `materials[${n}].articleId`),
+              quantity: positive(p.quantity, `materials[${n}].quantity`)
+            }
+          }),
     extraItems: arr(o.extraItems, 'extraItems').map((e, n) => parseExtra(e, `extraItems[${n}]`)),
     fingerprint: str(o.fingerprint, 'fingerprint'),
     updatedAt: str(o.updatedAt, 'updatedAt')

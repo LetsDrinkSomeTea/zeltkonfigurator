@@ -20,6 +20,7 @@ export function createPacklist(name: string, catalog: Catalog, stock: Stock): Pa
     finishOrder: [...DEFAULT_FINISH_ORDER],
     items: [],
     deviations: [],
+    materials: [],
     extraItems: [],
     fingerprint: fingerprint(catalog, stock),
     updatedAt: new Date().toISOString()
@@ -67,7 +68,7 @@ export function createTentConfig(type: TentType): TentConfig {
 
 /** Rechnet items/deviations/fingerprint neu und übernimmt Haken nach F-36. */
 export function recalculate(list: PacklistFile, catalog: Catalog, stock: Stock): PacklistFile {
-  const result = allocate(list.tents, list.finishOrder, catalog, stock)
+  const result = allocate(list.tents, list.finishOrder, catalog, stock, list.materials)
   const old = new Map(list.items.map((i) => [i.articleId, i]))
   const items: PackItem[] = result.items.map((item) => {
     const prev = old.get(item.articleId)

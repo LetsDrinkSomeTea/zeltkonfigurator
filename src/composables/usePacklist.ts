@@ -14,7 +14,7 @@ import {
   defaultTentOptions,
   fingerprint
 } from '../domain/packlist'
-import type { Catalog, Finish, PacklistFile, Stock, TentConfig } from '../domain/types'
+import type { Catalog, Finish, PacklistFile, Part, Stock, TentConfig } from '../domain/types'
 import { ConflictError, type PacklistDocument } from '../storage/DataStore'
 import { applyOp, newId, type PacklistOp } from './packlistOps'
 import { MAX_CONFLICT_RETRIES, toError, toStock } from './useStock'
@@ -48,6 +48,8 @@ export interface UsePacklist {
   moveTentTo(tentId: string, index: number): void
   toggleItem(articleId: string): void
   toggleExtra(extraId: string): void
+  /** weiteres Material aus der Materialliste (ersetzt die Liste) */
+  setMaterials(materials: Part[]): void
   addExtra(text: string, quantity: number): void
   removeExtra(extraId: string): void
   recalc(): void
@@ -248,6 +250,7 @@ export function usePacklist(doc: PacklistDocument): UsePacklist {
     moveTentTo: (tentId, index) => push({ type: 'moveTentTo', tentId, index }),
     toggleItem,
     toggleExtra,
+    setMaterials: (materials) => push({ type: 'setMaterials', materials }),
     addExtra: (text, quantity) =>
       push({
         type: 'addExtra',

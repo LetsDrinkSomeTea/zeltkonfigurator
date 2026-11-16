@@ -74,6 +74,7 @@ function packlist(id: string, updatedAt: string, checked = false): PacklistFile 
     schemaVersion: 1,
     id,
     name: `Liste ${id}`,
+    materials: [],
     tents: [
       {
         id: 't1',

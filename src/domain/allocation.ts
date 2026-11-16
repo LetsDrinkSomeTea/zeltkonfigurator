@@ -24,12 +24,17 @@ export class UnknownConfigError extends Error {
 
 type Row = Omit<PackItem, 'checked'>
 
+/** Schlüssel in perTent/missingPerTent für das weitere Material der Packliste. */
+export const MATERIAL_KEY = '_material'
+
 /** Berechnet Bedarf und Zuteilung aller Zelte gegen den Bestand. */
 export function allocate(
   tents: TentConfig[],
   finishOrder: Finish[],
   catalog: Catalog,
-  stock: Stock
+  stock: Stock,
+  /** weiteres Material der Packliste (nach den Zelten gebucht) */
+  materials: Part[] = []
 ): AllocationResult {
   const work: Stock = { ...stock }
   const articles = new Map<string, Article>(catalog.articles.map((a) => [a.id, a]))
@@ -193,6 +198,10 @@ export function allocate(
       }
     }
   }
+
+  // Weiteres Material nach den Zelten; perTent führt es unter MATERIAL_KEY.
+  const materialOwner = { id: MATERIAL_KEY } as TentConfig
+  for (const part of materials) book(materialOwner, part)
 
   // Kategorien in Katalog-Reihenfolge, unbekannte am Ende
   const order = new Map(catalog.categories.map((c, i) => [c.id, i]))

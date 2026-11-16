@@ -22,6 +22,7 @@ const validList = () => ({
       finish: 'gaze'
     }
   ],
+  materials: [{ articleId: 'braeter', quantity: 2 }],
   finishOrder: ['blanko', 'gaze', 'fenster'],
   items: [
     {

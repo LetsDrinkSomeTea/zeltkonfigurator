@@ -90,6 +90,7 @@ export function fakeCreatePacklist(name: string, catalog: Catalog, stock: Stock)
     schemaVersion: 1,
     id: `list-${Math.random().toString(36).slice(2, 8)}`,
     name,
+    materials: [],
     tents: [],
     finishOrder: ['gaze', 'fenster', 'blanko'],
     items: [],

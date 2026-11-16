@@ -1,4 +1,4 @@
-import { allocate, UnknownConfigError } from '../../../src/domain/allocation'
+import { allocate, MATERIAL_KEY, UnknownConfigError } from '../../../src/domain/allocation'
 import type { AllocationResult, Finish, Stock, TentConfig } from '../../../src/domain/types'
 import { catalog, DEFAULT_ORDER, stockOf, tent } from './testCatalog'
 
@@ -205,5 +205,25 @@ describe('allocate: unbekannte Konfiguration', () => {
 
   it('leere buildId bei Option ohne Bauarten ist in Ordnung', () => {
     expect(() => run([tent('a', { wallId: 'keine', buildId: '' })], stockOf())).not.toThrow()
+  })
+})
+
+describe('allocate: weiteres Material', () => {
+  it('bucht nach den Zelten und führt es unter MATERIAL_KEY', () => {
+    const res = allocate(
+      [tent('a', { wallId: 'keine', buildId: '' })],
+      DEFAULT_ORDER,
+      catalog,
+      stockOf({ mast: 4 }),
+      [
+        { articleId: 'mast', quantity: 3 },
+        { articleId: 'daechle', quantity: 1 }
+      ]
+    )
+    const mast = res.items.find((i) => i.articleId === 'mast')!
+    // Zelt zuerst: 3 Masten; vom Rest (1) bekommt das weitere Material 1, 2 fehlen
+    expect(mast).toMatchObject({ quantity: 4, missing: 2 })
+    expect(mast.perTent).toEqual({ a: 3, [MATERIAL_KEY]: 3 })
+    expect(mast.missingPerTent).toEqual({ [MATERIAL_KEY]: 2 })
   })
 })

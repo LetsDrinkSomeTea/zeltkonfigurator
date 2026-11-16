@@ -218,6 +218,8 @@ export interface PacklistFile {
   /** Lagerdatum, frei (ISO-Datum empfohlen) */
   date?: string
   tents: TentConfig[]
+  /** weiteres Material aus der Materialliste, unabhängig von Zelten (z. B. Küche) */
+  materials: Part[]
   /** Ausweichreihenfolge der Ausführungen (F-2B) */
   finishOrder: Finish[]
   /** festgeschriebenes Rechenergebnis (F-37) */
