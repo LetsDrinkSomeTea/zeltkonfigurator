@@ -27,11 +27,6 @@ export function holzgestaenge(): RoofSetup {
   }
 }
 
-/** Baustein mit anderen Aufbauten, z. B. Jurte auf dem Holzgestänge der Cafélounge. */
-export function mitAufbau(module: RoofModule, ...setups: RoofSetup[]): RoofModule {
-  return { ...module, setups }
-}
-
 const jurtenAufhaengung = (spinne: string, blockseilrollen = 1): Part[] => [
   { articleId: spinne, quantity: 1 },
   { articleId: 'blockseilrolle', quantity: blockseilrollen },
@@ -58,14 +53,18 @@ export const kohte: RoofModule = {
   parts: [{ articleId: 'kohtendaechle', quantity: 1 }]
 }
 
-export const hochkohte: RoofModule = mitAufbau(
-  { ...kohte, id: 'hochkohte', name: 'Hochkohte' },
-  gestellt([
-    { articleId: 'kohtenkreuz', quantity: 1 },
-    { articleId: 'mast-500', quantity: 2 }, // PLATZHALTER
-    { articleId: 'aufzugseil', quantity: 1 }
-  ])
-)
+export const hochkohte: RoofModule = {
+  ...kohte,
+  id: 'hochkohte',
+  name: 'Hochkohte',
+  setups: [
+    gestellt([
+      { articleId: 'kohtenkreuz', quantity: 1 },
+      { articleId: 'mast-500', quantity: 2 }, // PLATZHALTER
+      { articleId: 'aufzugseil', quantity: 1 }
+    ])
+  ]
+}
 
 export const jurte: RoofModule = {
   id: 'jurte',
@@ -80,7 +79,8 @@ export const jurte: RoofModule = {
   ],
   setups: [
     gestellt([...jurtenAufhaengung('jurtenspinne-6'), { articleId: 'mast-375', quantity: 3 }]),
-    gehaengt(jurtenAufhaengung('jurtenspinne-6'))
+    gehaengt(jurtenAufhaengung('jurtenspinne-6')),
+    holzgestaenge()
   ],
   parts: [{ articleId: 'jurtendaechle', quantity: 1 }]
 }
@@ -97,7 +97,8 @@ export const grossjurte: RoofModule = {
   ],
   setups: [
     gestellt([...jurtenAufhaengung('jurtenspinne-8'), { articleId: 'mast-500', quantity: 3 }]),
-    gehaengt(jurtenAufhaengung('jurtenspinne-8'))
+    gehaengt(jurtenAufhaengung('jurtenspinne-8')),
+    holzgestaenge()
   ],
   parts: [{ articleId: 'grossjurtendaechle', quantity: 1 }]
 }

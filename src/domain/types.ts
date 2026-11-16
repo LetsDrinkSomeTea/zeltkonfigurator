@@ -125,8 +125,8 @@ export type WallOptionId = 'keine' | 'normal' | 'hoch' | 'nur-streifen' | 'erdst
 export interface TentTypeData {
   id: string
   name: string
-  /** Dächer: Baustein-Kennung, optional mit eigenen Aufbauten (z. B. Holzgestänge) */
-  modules: { moduleId: string; setups?: RoofSetup[] }[]
+  /** Dächer: Baustein und die angebotenen Aufbauten (fehlt `setupIds`: alle des Bausteins) */
+  modules: { moduleId: string; setupIds?: string[] }[]
   /** Wandsegmente und angebotene Wandoptionen (Reihenfolge = Anzeige) */
   wall: { segments: number; options: WallOptionId[] }
   fixed: Part[]

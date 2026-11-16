@@ -171,8 +171,10 @@ function parseTentType(v: unknown, path: string): TentTypeData {
       const m = obj(x, p)
       return {
         moduleId: nonEmptyStr(m.moduleId, `${p}.moduleId`),
-        ...(m.setups !== undefined && {
-          setups: nonEmptyList(m.setups, `${p}.setups`, parseNamedParts)
+        ...(m.setupIds !== undefined && {
+          setupIds: arr(m.setupIds, `${p}.setupIds`).map((x, i) =>
+            nonEmptyStr(x, `${p}.setupIds[${i}]`)
+          )
         })
       }
     }),

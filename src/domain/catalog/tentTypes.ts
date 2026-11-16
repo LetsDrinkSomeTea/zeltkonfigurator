@@ -1,8 +1,9 @@
 import type { TentTypeData } from '../types'
 import { heringe } from './heringe'
-import { holzgestaenge } from './modules'
 
 const JURTEN_WAND = ['keine', 'normal', 'hoch'] as const
+// Jurten werden gestellt oder gehängt; das Holzgestänge gibt es nur bei der Cafélounge.
+const JURTEN_AUFBAU = ['gestellt', 'gehaengt'] as const
 // Standard der Jurten: hohe Wand aus Superbahnen mit Gaze
 const HOCH_SUPER_GAZE = { wallId: 'hoch', buildId: 'super', finish: 'gaze' } as const
 
@@ -11,7 +12,7 @@ function jurtenZelt(id: string, name: string, moduleId: string, segments: number
   return {
     id,
     name,
-    modules: [{ moduleId }],
+    modules: [{ moduleId, setupIds: [...JURTEN_AUFBAU] }],
     wall: { segments, options: [...JURTEN_WAND] },
     defaults: { ...HOCH_SUPER_GAZE },
     fixed: [
@@ -53,7 +54,7 @@ export const defaultTentTypes: TentTypeData[] = [
     // Drei Jurten mit einem Dreiecksdachteil in der Mitte; jedes Dach wird einzeln eingestellt.
     id: 'dreierjurtenburg',
     name: 'Dreierjurtenburg',
-    modules: [{ moduleId: 'jurte' }, { moduleId: 'jurte' }, { moduleId: 'jurte' }],
+    modules: [1, 2, 3].map(() => ({ moduleId: 'jurte', setupIds: [...JURTEN_AUFBAU] })),
     wall: { segments: 27, options: [...JURTEN_WAND] }, // PLATZHALTER: geometrisch abgeleitet
     defaults: { ...HOCH_SUPER_GAZE },
     fixed: [
@@ -69,8 +70,8 @@ export const defaultTentTypes: TentTypeData[] = [
     id: 'cafelounge',
     name: 'Cafélounge',
     modules: [
-      { moduleId: 'grossjurte', setups: [holzgestaenge()] },
-      { moduleId: 'jurte', setups: [holzgestaenge()] },
+      { moduleId: 'grossjurte', setupIds: ['holzgestaenge'] },
+      { moduleId: 'jurte', setupIds: ['holzgestaenge'] },
       { moduleId: 'kohte' }
     ],
     // PLATZHALTER: 16 + 12 Segmente, abzüglich je 2 an den beiden Knüpfstellen

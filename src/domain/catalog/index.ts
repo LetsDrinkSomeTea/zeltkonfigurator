@@ -58,7 +58,10 @@ export function resolveCatalog(data: CatalogData): Catalog & { problems: string[
       name: t.name,
       modules: t.modules.map((ref) => {
         const m = modules.get(ref.moduleId)!
-        return ref.setups && ref.setups.length > 0 ? { ...m, setups: ref.setups } : m
+        if (!ref.setupIds || ref.setupIds.length === 0) return m
+        // Angebotene Aufbauten in der Reihenfolge der Auswahl; unbekannte entfallen.
+        const setups = ref.setupIds.flatMap((id) => m.setups.filter((s) => s.id === id))
+        return setups.length > 0 ? { ...m, setups } : m
       }),
       walls: buildWalls(t.wall),
       fixed: t.fixed,
