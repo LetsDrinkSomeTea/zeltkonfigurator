@@ -1,12 +1,11 @@
 # Architektur-Entwurf – Zeltkonfigurator
 
-Stand: 2026-11-16 · Status: Entwurf zur Abstimmung · Bezug: [anforderungen.md](anforderungen.md)
+Stand: 2026-11-16 · Status: Entwurf 2 zur Abstimmung · Bezug: [anforderungen.md](anforderungen.md)
 
 ## 1. Überblick
 
 Die App ist eine OpenCloud-Web-Erweiterung auf Basis des `web-app-skeleton`
-(Vue 3, TypeScript, Vite, `@opencloud-eu/extension-sdk`). Sie hat kein eigenes Backend:
-Alle Daten sind JSON-Dateien in einem Space und werden über WebDAV gelesen und geschrieben.
+(Vue 3, TypeScript, Vite, `@opencloud-eu/extension-sdk`). Sie hat kein eigenes Backend.
 
 ```
 ┌──────────────────────────── Browser (OpenCloud Web) ────────────────────────────┐
@@ -16,24 +15,33 @@ Alle Daten sind JSON-Dateien in einem Space und werden über WebDAV gelesen und 
 │  composables/              Zustand: geladene Daten, Speichern, Rechte            │
 │        │            │                                                            │
 │  domain/                  storage/                                               │
-│  reine Berechnung         Dateizugriff hinter einer Schnittstelle                │
-│  (kein Vue, kein OC)             │                                               │
-└──────────────────────────────────┼───────────────────────────────────────────────┘
-                                   │ WebDAV (Client aus web-pkg)
-                          ┌────────▼─────────┐
-                          │ OpenCloud-Space  │  material.json · zelte.json ·
-                          │ Ordner der App   │  packlisten/*.json
-                          └──────────────────┘
+│  ├ catalog/  Artikel und Zelttypen (Code)      Dateizugriff hinter               │
+│  └ Rechenkern (rein, ohne Vue/OpenCloud)       einer Schnittstelle               │
+└──────────────────────────────────────────────────────┼───────────────────────────┘
+                                                       │ WebDAV (Client aus web-pkg)
+                                              ┌────────▼─────────┐
+                                              │ Space            │  bestand.json
+                                              │ „Material Team“  │  packlisten/*.json
+                                              └──────────────────┘
 ```
+
+Was wo liegt:
+
+| Inhalt                                        | Ort                 | Ändert sich durch |
+| --------------------------------------------- | ------------------- | ----------------- |
+| Artikelliste, Zelttypen, Dachkonfigurationen  | Code (`catalog/`)   | App-Update        |
+| Zuweisungs- und Ausweichlogik                 | Code (`domain/`)    | App-Update        |
+| Stückzahlen und Notizen                       | Space               | Bestandseditor    |
+| Packlisten mit Abhak-Stand                    | Space               | Nutzer            |
 
 Leitlinien:
 
-- **Rechenkern ohne Abhängigkeiten.** `domain/` kennt weder Vue noch OpenCloud und ist
-  dadurch vollständig testbar (N-06).
-- **Stücklisten sind Daten.** Neue Zelttypen oder geänderte Stücklisten brauchen keinen
-  neuen Build (F-13).
-- **Dateizugriff hinter einer Schnittstelle.** Oberfläche und Tests arbeiten gegen
-  `DataStore`; nur eine Klasse kennt WebDAV.
+- **Ein Zelttyp ist eine kurze, deklarative Datei.** Sie nennt Dachkonfigurationen,
+  Wandoptionen und feste Teile – keine Logik.
+- **Die Wandzuweisung steht genau einmal** und arbeitet nur mit Rollen, nicht mit
+  konkreten Zelttypen.
+- **Rechenkern ohne Abhängigkeiten**, dadurch vollständig testbar.
+- **Dateizugriff hinter einer Schnittstelle**; nur eine Klasse kennt WebDAV.
 
 ## 2. Verzeichnisstruktur
 
@@ -42,98 +50,153 @@ src/
   index.ts                  App-Registrierung, Routen, Menüeintrag
   domain/
     types.ts                alle Datentypen (Vertrag zwischen den Schichten)
-    schema.ts               Prüfung und Migration geladener Dateien
-    bom.ts                  Bedarf eines Zeltes aus Stückliste + Konfiguration
-    allocation.ts           Abgleich mit Bestand, Ausweichlogik
+    catalog/
+      articles.ts           Artikelliste
+      walls.ts              wiederverwendbare Wandoptionen (keine, normal, hoch, …)
+      tents/
+        kohte.ts  hochkohte.ts  jurte.ts  grossjurte.ts  gigajurte9.ts
+        gigajurte12.ts  ovaljurte.ts  dreierjurtenburg.ts  sudan.ts  yellowstone.ts
+        index.ts            Liste aller Zelttypen
+    roof.ts                 Dachkonfiguration wählen (mit Ausweichen)
+    walls.ts                Wandsegmente decken (Rollen, Einzel/Doppel, Ausweichen)
+    allocation.ts           alles zusammen gegen den Bestand
     packlist.ts             Packliste erzeugen, neu berechnen, Haken übernehmen
-    defaults/               mitgelieferte Vorgabedaten (material, zelte)
+    schema.ts               Prüfung geladener Dateien
   storage/
     DataStore.ts            Schnittstelle + Fehlerklassen
     WebDavDataStore.ts      Umsetzung über den WebDAV-Client von web-pkg
     MemoryDataStore.ts      Umsetzung im Speicher für Tests und Entwicklung
     location.ts             Space und Ordner aus der App-Konfiguration auflösen
   composables/
-    useStore.ts             liefert den DataStore, kennt Schreibrecht
-    useMaterial.ts          Bestand und Zelttypen laden, speichern
-    usePacklist.ts          eine Packliste laden, ändern, automatisch speichern
+    useStore.ts  useStock.ts  usePacklist.ts
   views/
     PacklistOverview.vue    /listen
     PacklistEditor.vue      /listen/:id   (Reiter: Zelte · Material pro Zelt · Packliste)
     InventoryView.vue       /bestand
-  components/               TentCard, WallOptions, ItemRow, StatusBanner, PrintLayout …
+  components/               TentCard, TentOptions, ItemRow, StatusBanner, PrintLayout …
 tests/unit/                 spiegelt src/
+docs/zelttyp-anlegen.md     Anleitung (N-09)
 ```
 
-## 3. Datenmodell
+## 3. Katalog (Code)
 
-Alle Typen stehen in `src/domain/types.ts`. Jede Datei hat `schemaVersion`.
-
-### 3.1 `material.json` – Artikel und Bestand
+### 3.1 Artikel
 
 ```ts
-type Category = 'plane' | 'stange' | 'abspannung' | 'kleinteil'
+type Category = 'dach' | 'wand' | 'stange' | 'abspannung' | 'kleinteil' | 'boden'
 type Finish = 'blanko' | 'fenster' | 'gaze'
+type WallRole = 'normalbahn' | 'superbahn' | 'erweiterungsstreifen' | 'erdstreifen'
 
 interface Article {
-  id: string // stabil, z. B. "superbahn-fenster"
+  id: string // stabil, z. B. "superbahn-doppel-gaze"
   name: string
   category: Category
-  stock: number
-  note?: string
-  role?: WallRole // nur für Wandmaterial, siehe 3.2
-  finish?: Finish // nur für Wandmaterial mit Ausführung
-}
-
-interface MaterialFile {
-  schemaVersion: 1
-  articles: Article[]
+  cuttable?: boolean // Stange darf vor Ort geschlagen werden (F-2A)
+  wall?: { role: WallRole; span: 1 | 2; finish: Finish } // nur Wandmaterial
 }
 ```
 
-### 3.2 `zelte.json` – Zelttypen und Stücklisten
+Wandmaterial ist allein über `wall` beschrieben. Eine neue Bahn (z. B. „Doppel-Superbahn
+mit Folienfenster“) ist ein neuer Eintrag in `articles.ts` und wird von der Zuweisung
+automatisch berücksichtigt.
 
-Feste Positionen verweisen direkt auf Artikel. Wandmaterial wird nicht je Zelttyp
-ausformuliert, sondern über **Rollen** beschrieben: Der Zelttyp nennt nur die Zahl der
-Wandsegmente, und `allocation.ts` deckt jedes Segment aus Artikeln der passenden Rolle.
+### 3.2 Zelttyp
 
 ```ts
-type WallHeight = 'keine' | 'normal' | 'hoch'
-type WallRole = 'normalbahn' | 'superbahn' | 'erweiterungsstreifen'
-
-interface BomLine {
+interface Part {
   articleId: string
   quantity: number
-  when?: { wall: WallHeight[] } // Position gilt nur bei diesen Seitenwänden
+}
+
+interface RoofConfig {
+  id: string
+  label: string
+  parts: Part[]
+}
+
+interface WallBuild {
+  id: string // 'super' | 'normal+streifen' | 'normal' | 'streifen' | 'erdstreifen'
+  label: string
+  layers: WallRole[] // alle Lagen zusammen ergeben die Wand
+}
+
+interface WallOption {
+  id: string // 'keine' | 'normal' | 'hoch' | 'nur-streifen' | 'erdstreifen' …
+  label: string
+  segments: number // 0 = keine Wand
+  builds: WallBuild[] // Reihenfolge = Vorgabe; mehrere = Nutzer wählt bevorzugte
+  parts: Part[] // was diese Option zusätzlich braucht, z. B. Seitenstangen
 }
 
 interface TentType {
-  id: string // "hochkohte"
+  id: string
   name: string
-  wallOptions: WallHeight[] // leer oder ['keine'] = keine Auswahl
-  wallSegments: number // 0 bei Zelten ohne Seitenwand
-  lines: BomLine[] // Dach, Mast, Seitenstangen je Höhe, Heringe, Kleinteile
-}
-
-interface TentsFile {
-  schemaVersion: 1
-  tentTypes: TentType[]
+  roofs: RoofConfig[] // erste = Vorgabe
+  walls: WallOption[] // erste = Vorgabe
+  fixed: Part[] // Dächle, Kreuz, Mast, Heringe, Abspannung, Bodenplane
 }
 ```
 
-Seitenstangen unterschiedlicher Länge sind normale `BomLine`s mit `when`, z. B.
-`{ articleId: 'seitenstange-lang', quantity: 12, when: { wall: ['hoch'] } }`.
-
-### 3.3 `packlisten/<id>.json` – Packliste
+Beispiel – die ganze Datei `tents/jurte.ts`:
 
 ```ts
-type HighBuild = 'super' | 'normal+streifen'
+export const jurte: TentType = {
+  id: 'jurte',
+  name: 'Jurte',
+  roofs: [
+    { id: 'jurtendach', label: 'Jurtendach', parts: [{ articleId: 'jurtendach', quantity: 1 }] },
+    {
+      id: 'kohtenblaetter',
+      label: '6 Kohtenblätter',
+      parts: [{ articleId: 'kohtenblatt', quantity: 6 }]
+    }
+  ],
+  walls: [
+    keineWand({ stangen: 'seitenstange-kurz', anzahl: 12 }),
+    normaleWand({ segmente: 12, stangen: 'seitenstange-165' }),
+    hoheWand({ segmente: 12, stangen: 'seitenstange-209' })
+  ],
+  fixed: [
+    { articleId: 'jurtendaechle', quantity: 1 },
+    { articleId: 'jurtenkreuz', quantity: 1 }
+    // Mast, Heringe, Abspannung …
+  ]
+}
+```
 
+`keineWand`, `normaleWand`, `hoheWand`, `nurStreifen`, `erdstreifen` sind kleine
+Hilfsfunktionen in `catalog/walls.ts`. `hoheWand` liefert z. B.
+`builds: [super, normal+streifen]`. Kohte und Hochkohte nutzen dieselben Bausteine:
+
+- Kohte: `walls: [ohneWand(), erdstreifen()]`
+- Hochkohte: `walls: [nurStreifen({ segmente: 8 }), normaleWand({ segmente: 8 }), hoheWand({ segmente: 8 })]`
+
+Ein Test prüft für alle Zelttypen: eindeutige IDs, alle `articleId`s existieren, jede
+Wandrolle hat mindestens einen Artikel (F-17).
+
+## 4. Dateien im Space
+
+### 4.1 `bestand.json`
+
+```ts
+interface StockFile {
+  schemaVersion: 1
+  stock: Record<string, { quantity: number; note?: string }> // articleId → Bestand
+}
+```
+
+Einträge zu unbekannten Artikel-IDs bleiben beim Speichern erhalten (F-07).
+
+### 4.2 `packlisten/<id>.json`
+
+```ts
 interface TentConfig {
   id: string // eindeutig in der Packliste
   typeId: string
   label?: string
-  wall: WallHeight
-  build: HighBuild // nur bei wall = 'hoch' relevant
+  roofId: string // bevorzugte Dachkonfiguration
+  wallId: string // gewählte Wandoption
+  buildId: string // bevorzugte Bauart innerhalb der Wandoption
   finish: Finish
 }
 
@@ -143,94 +206,96 @@ interface PackItem {
   category: Category
   quantity: number // aus dem Bestand zu packen
   missing: number // nicht gedeckt
+  toCut: number // vor Ort zu schlagen (nur cuttable)
   perTent: Record<string, number> // TentConfig.id → Stückzahl
   checked: boolean
 }
 
 interface Deviation {
   tentId: string
-  segments: number
-  wanted: { build: HighBuild | 'normal'; finish: Finish }
-  got: { build: HighBuild | 'normal'; finish: Finish } | null // null = fehlt
+  kind: 'dach' | 'wand'
+  wanted: string // lesbare Beschreibung, z. B. "Superbahn Fenster"
+  got: string | null // null = fehlt
+  segments?: number
 }
 
 interface PacklistFile {
   schemaVersion: 1
   id: string
   name: string
-  date?: string // Lagerdatum, frei
+  date?: string
   tents: TentConfig[]
   items: PackItem[] // festgeschriebenes Rechenergebnis (F-37)
   deviations: Deviation[]
   extraItems: { id: string; text: string; quantity: number; checked: boolean }[]
-  materialFingerprint: string // Hash von Bestand + Stücklisten bei Berechnung
+  fingerprint: string // Hash aus Bestand + Katalog bei Berechnung
   updatedAt: string
 }
 ```
 
-`materialFingerprint` erlaubt den Hinweis „Bestand hat sich geändert – neu berechnen?“,
-ohne dass alte Packlisten stillschweigend ihren Inhalt ändern.
+Verweist eine gespeicherte Packliste auf einen Zelttyp oder eine Option, die es nach einem
+App-Update nicht mehr gibt, bleibt die Liste lesbar (das Material ist festgeschrieben);
+„Neu berechnen“ verlangt dann, das betroffene Zelt neu zu konfigurieren.
 
-## 4. Rechenkern
+## 5. Rechenkern
 
-Alle Funktionen sind rein: gleiche Eingabe, gleiche Ausgabe, keine Seiteneffekte.
+Alle Funktionen sind rein. Eingaben: Zelte der Packliste, Katalog, Bestand.
 
 ```ts
-// bom.ts – feste Positionen eines Zeltes
-fixedDemand(type: TentType, config: TentConfig): Map<articleId, number>
-
-// allocation.ts – alles zusammen gegen den Bestand
-allocate(tents: TentConfig[], types: TentType[], articles: Article[]): AllocationResult
+allocate(tents: TentConfig[], catalog: Catalog, stock: Stock): AllocationResult
 //   → items: PackItem[] (ohne checked), deviations: Deviation[],
 //     status: 'ok' | 'mit-ausweichmaterial' | 'fehlt'
-
-// packlist.ts
-recalculate(list: PacklistFile, types, articles): PacklistFile   // übernimmt Haken (F-36)
-fingerprint(types, articles): string
+recalculate(list: PacklistFile, catalog, stock): PacklistFile // übernimmt Haken (F-36)
+fingerprint(catalog, stock): string
 ```
 
-Ablauf von `allocate`:
+Ablauf von `allocate` – Zelte in Listenreihenfolge, Bestand als Arbeitskopie:
 
-1. Bestand in eine Arbeitskopie übernehmen (`articleId → frei`).
-2. Zelte in Listenreihenfolge durchgehen (F-28).
-3. Feste Positionen abbuchen. Reicht der Bestand nicht, wird der Rest als `missing`
-   gezählt; für feste Positionen gibt es keine Alternativen.
-4. Wandsegmente einzeln decken. Jede Möglichkeit ist ein **Rezept** – eine Menge von
-   Artikeln, die gemeinsam ein Segment ergeben:
-   - `super[A]` → 1 Artikel mit Rolle `superbahn`, Ausführung A
-   - `normal+streifen[A]` → 1 `normalbahn` + 1 `erweiterungsstreifen` in Ausführung A
-   - `normal` → 1 `normalbahn`
+1. **Dach** (`roof.ts`): bevorzugte Dachkonfiguration nehmen, wenn alle Teile frei sind;
+   sonst die nächste vollständig verfügbare; sonst die bevorzugte mit Fehlbestand.
+2. **Feste Teile und Teile der Wandoption** abbuchen. Fehlendes wird `missing`, bei
+   `cuttable`-Artikeln `toCut`.
+3. **Wand** (`walls.ts`), siehe unten.
+4. Abweichungen je Zelt zusammenfassen.
 
-   Die Rezepte werden in der Reihenfolge aus Abschnitt 5.4 der Anforderungen versucht.
-   Ein Rezept gilt nur, wenn alle seine Artikel noch frei sind. Trifft keines zu, wird
-   das Segment im Wunschrezept als fehlend gebucht.
-5. Abweichungen vom Wunsch je Zelt zu `Deviation`-Einträgen zusammenfassen.
+### 5.1 Wandzuweisung
 
-Das Verfahren ist bewusst einfach und vorhersehbar (wer zuerst in der Liste steht, bekommt
-seinen Wunsch) statt optimal. Eine globale Optimierung wäre für Nutzer schwerer
-nachvollziehbar.
+Eingabe: Segmentzahl `n`, Bauarten der Wandoption, bevorzugte Bauart, Wunsch-Ausführung.
 
-Weil Rezepte Artikelmengen sind, lassen sich Doppelbahnen (O-3) später als Rezept über
-zwei Segmente ergänzen, ohne das Modell zu ändern.
+Daraus entsteht eine geordnete Liste von **Varianten** (Bauart × Ausführung) nach
+Anforderungen 5.4. Für jede Variante der Reihe nach:
 
-## 5. Speicherung
+- Je Lage der Bauart die passenden Artikel bestimmen (Rolle, Ausführung; Rollen ohne
+  Ausführungswahl wie `normalbahn` immer blanko).
+- Eine Lage kann `k` Segmente decken, wenn es `d` Doppel- und `s` Einzelteile gibt mit
+  `2d + s = k`, `d ≤ frei(doppel)`, `s ≤ frei(einzel)`; dabei `d` so groß wie möglich.
+- Die Variante deckt das größte `k ≤ Rest`, das **alle** ihre Lagen decken können.
+- Diese Teile abbuchen, `Rest -= k`, nächste Variante.
 
-### 5.1 Schnittstelle
+Bleibt ein Rest, wird er in der Wunsch-Variante als fehlend gebucht (Doppelteile zuerst
+gezählt).
+
+Eigenschaften: vorhersehbar, in einem Durchlauf, ohne Rückschritte. Bahn und Streifen einer
+Bauart dürfen unabhängig einzel oder doppelt sein, weil jede Lage für sich gedeckt wird.
+Eine globale Optimierung über alle Zelte ist bewusst nicht vorgesehen.
+
+## 6. Speicherung
+
+### 6.1 Schnittstelle
 
 ```ts
 interface Versioned<T> {
   data: T
-  etag: string
+  etag: string | null // null = Datei existiert noch nicht
 }
 
 interface DataStore {
   canWrite(): Promise<boolean>
-  loadMaterial(): Promise<Versioned<MaterialFile>> // legt Vorgabedaten an, falls nicht vorhanden
-  saveMaterial(file: MaterialFile, etag: string): Promise<string> // neuer ETag
-  loadTents(): Promise<Versioned<TentsFile>>
+  loadStock(): Promise<Versioned<StockFile>>
+  saveStock(file: StockFile, etag: string | null): Promise<string> // neuer ETag
   listPacklists(): Promise<PacklistSummary[]>
   loadPacklist(id: string): Promise<Versioned<PacklistFile>>
-  savePacklist(file: PacklistFile, etag: string | null): Promise<string> // null = neu anlegen
+  savePacklist(file: PacklistFile, etag: string | null): Promise<string>
   deletePacklist(id: string): Promise<void>
 }
 ```
@@ -238,88 +303,92 @@ interface DataStore {
 Fehlerklassen: `NotConfiguredError`, `NotFoundError`, `ForbiddenError`, `ConflictError`,
 `InvalidFileError`. Die Oberfläche übersetzt sie in Meldungen (F-42, N-05).
 
-### 5.2 Gleichzeitiges Bearbeiten
+### 6.2 Gleichzeitiges Bearbeiten
 
 Jedes Schreiben schickt den zuletzt gelesenen ETag als `If-Match`. Lehnt der Server ab,
-wirft der Store `ConflictError`. `usePacklist` lädt dann neu, wendet die anstehende
-Änderung (z. B. einen Haken) auf den frischen Stand an und speichert erneut (F-38).
-Änderungen werden als kleine Operationen geführt (`toggle(itemId)`, `setTents(...)`),
-nicht als ganzer Dateizustand – nur so ist das erneute Anwenden verlustfrei.
+wirft der Store `ConflictError`. `usePacklist` lädt neu, wendet die anstehende Änderung auf
+den frischen Stand an und speichert erneut (F-38). Änderungen werden dafür als kleine
+Operationen geführt (`toggle(itemId)`, `setTents(...)`), nicht als ganzer Dateizustand.
+Haken werden gebündelt gespeichert (ca. 1 s Verzögerung).
 
-Haken werden verzögert gebündelt gespeichert (ca. 1 s), damit schnelles Abhaken nicht
-jede Sekunde eine Dateiversion erzeugt.
+### 6.3 Ablageort
 
-### 5.3 Ablageort
-
-Der Ort kommt aus der App-Konfiguration des Servers (F-41):
+Aus der App-Konfiguration des Servers (F-41), mit Vorgabe:
 
 ```json
-{ "space": "Material", "folder": "Zeltmaterial" }
+{ "space": "Material Team", "folder": "Zeltkonfigurator" }
 ```
 
 `location.ts` sucht den Space unter den Spaces des Nutzers und liefert die WebDAV-Basis.
-Schreibrecht wird aus den Berechtigungen des Space bzw. Ordners abgeleitet.
+Schreibrecht wird aus den Berechtigungen des Space abgeleitet.
 
-**Zu prüfen im ersten Arbeitspaket:** wie die Konfiguration die App genau erreicht
+**Zu klären im ersten Arbeitspaket:** wie die Konfiguration die App erreicht
 (`manifest.json` / `apps.yaml` → `applicationConfig`) und welche Aufrufe von
-`useClientService()` für Lesen, Schreiben mit `If-Match`, Auflisten und Rechteabfrage
-in der eingesetzten `web-pkg`-Version gelten. Das ist die einzige Stelle mit echtem
-technischem Risiko; sie wird deshalb zuerst und einzeln geklärt.
+`useClientService()` für Lesen, Schreiben mit `If-Match`, Auflisten und Rechteabfrage in
+der eingesetzten `web-pkg`-Version gelten. Das ist die einzige Stelle mit echtem
+technischem Risiko und wird deshalb zuerst und einzeln geklärt.
 
-## 6. Oberfläche
+## 7. Oberfläche
 
-| Route          | Ansicht           | Inhalt                                                                                           |
-| -------------- | ----------------- | ------------------------------------------------------------------------------------------------ |
-| `/listen`      | PacklistOverview  | Karten der Packlisten mit Fortschritt; anlegen, duplizieren, löschen                             |
-| `/listen/:id`  | PacklistEditor    | Statusbanner; Reiter **Zelte** (Konfigurator), **Material pro Zelt**, **Packliste** (abhaken)    |
-| `/bestand`     | InventoryView     | Artikel nach Kategorie, Suche, Stückzahlen bearbeiten                                            |
+| Route         | Ansicht          | Inhalt                                                                                        |
+| ------------- | ---------------- | --------------------------------------------------------------------------------------------- |
+| `/listen`     | PacklistOverview | Karten der Packlisten mit Fortschritt; anlegen, duplizieren, löschen                          |
+| `/listen/:id` | PacklistEditor   | Statusbanner; Reiter **Zelte** (Konfigurator), **Material pro Zelt**, **Packliste** (abhaken) |
+| `/bestand`    | InventoryView    | Artikel nach Kategorie, Suche, Stückzahlen bearbeiten                                         |
 
+- Die Zeltkarte baut ihre Auswahlfelder aus dem Zelttyp: Dach nur bei mehreren
+  Dachkonfigurationen, Bauart nur bei mehreren Bauarten, Ausführung nur, wenn die gewählte
+  Bauart eine Lage mit Ausführungen hat. Neue Zelttypen brauchen keine Änderung an der
+  Oberfläche.
 - Bedienelemente aus dem OpenCloud-Design-System, Abstände über die Tailwind-Klassen des
-  SDK (Präfix `ext:`).
-- Handy zuerst: Zeltkarten untereinander, Abhakzeilen mit großer Trefferfläche.
-- Druck (F-39): eigene Komponente `PrintLayout`, sichtbar nur unter `@media print`,
-  Aufruf über `window.print()`. Keine PDF-Bibliothek.
+  SDK (Präfix `ext:`). Handy zuerst.
+- Druck (F-39): Komponente `PrintLayout`, sichtbar nur unter `@media print`, Aufruf über
+  `window.print()`. Keine PDF-Bibliothek.
 - Texte deutsch als Quellsprache, durchgehend über `$gettext`.
 
-## 7. Tests und Qualität
+## 8. Tests und Qualität
 
-- `domain/`: Unit-Tests mit Vitest für jede Regel aus Anforderungen 5.3–5.5, inklusive
-  Grenzfälle (Bestand 0, zwei Zelte konkurrieren um dieselben Bahnen, alle Rezepte
-  erschöpft, Haken-Übernahme).
+- `domain/`: Unit-Tests für jede Regel aus Anforderungen 5.3–5.5, mit Grenzfällen:
+  Bestand 0, zwei Zelte konkurrieren um dieselben Bahnen, ungerade Segmentreste mit nur
+  Doppelteilen, gemischte Einzel-/Doppellagen, Dach-Ausweichen, `cuttable`, Haken-Übernahme.
+- Katalog: Konsistenztest über alle Zelttypen (F-17).
 - `storage/`: Tests gegen `MemoryDataStore`; `WebDavDataStore` mit nachgebildetem Client
   (Konflikt, fehlende Datei, defekte Datei).
 - Ansichten: Komponententests für die Kernabläufe (Zelt hinzufügen, abhaken, Nur-Lese-Modus).
 - Manuell: einmal gegen die OpenCloud-Instanz aus `docker-compose.yml`.
 - Vor jedem Zusammenführen: `pnpm lint`, `pnpm check:types`, `pnpm test:unit`, `pnpm build`.
 
-## 8. Umsetzungsplan
+## 9. Umsetzungsplan
 
 Die Arbeitspakete werden von Subagenten umgesetzt, je Paket in einem eigenen Arbeitsbaum.
-Review, Zusammenführen und die Verträge (AP 0) liegen beim Hauptagenten.
+Verträge (AP 0), Review und Zusammenführen liegen beim Hauptagenten.
 
-| AP | Inhalt                                                                                                   | Hängt ab von | Parallel |
-| -- | -------------------------------------------------------------------------------------------------------- | ------------ | -------- |
-| 0  | Grundgerüst: Skeleton umbenennen, Routen, `types.ts`, `DataStore`-Schnittstelle, leere Ansichten          | –            | –        |
-| 1  | Klärung OpenCloud-Anbindung (Konfiguration, WebDAV, ETag, Rechte) und `WebDavDataStore`, `location.ts`    | 0            | ja       |
-| 2  | Rechenkern: `bom.ts`, `allocation.ts`, `packlist.ts`, `schema.ts` mit Tests                               | 0            | ja       |
-| 3  | `MemoryDataStore` und Composables (`useStore`, `useMaterial`, `usePacklist` mit Konfliktbehandlung)       | 0            | ja       |
-| 4  | Bestandsansicht                                                                                          | 3            | ja       |
-| 5  | Packlisten-Übersicht und Konfigurator (Reiter „Zelte“, „Material pro Zelt“, Statusbanner)                 | 2, 3         | ja       |
-| 6  | Packliste abhaken, freie Zeilen, Druckansicht                                                            | 2, 3         | ja       |
-| 7  | Vorgabedaten (Artikel, Stücklisten) – nach Klärung der offenen Punkte aus den Anforderungen               | 0            | ja       |
-| 8  | Zusammenbau, Test gegen OpenCloud im Container, README mit Installationsanleitung                         | alle         | –        |
+| AP  | Inhalt                                                                                                 | Hängt ab von | Parallel |
+| --- | ------------------------------------------------------------------------------------------------------ | ------------ | -------- |
+| 0   | Grundgerüst: Skeleton umbenennen, Routen, `types.ts`, `DataStore`-Schnittstelle, leere Ansichten       | –            | –        |
+| 1   | Klärung OpenCloud-Anbindung (Konfiguration, WebDAV, ETag, Rechte), `WebDavDataStore`, `location.ts`    | 0            | ja       |
+| 2   | Rechenkern: `roof.ts`, `walls.ts`, `allocation.ts`, `packlist.ts`, `schema.ts` mit Tests               | 0            | ja       |
+| 3   | Katalog: `articles.ts`, `walls.ts`, alle Zelttypen, Konsistenztest, `docs/zelttyp-anlegen.md`          | 0            | ja       |
+| 4   | `MemoryDataStore` und Composables (`useStore`, `useStock`, `usePacklist` mit Konfliktbehandlung)       | 0            | ja       |
+| 5   | Bestandsansicht                                                                                        | 4            | ja       |
+| 6   | Packlisten-Übersicht und Konfigurator (Reiter „Zelte“, „Material pro Zelt“, Statusbanner)              | 2, 4         | ja       |
+| 7   | Packliste abhaken, freie Zeilen, Druckansicht                                                          | 2, 4         | ja       |
+| 8   | Zusammenbau, Test gegen OpenCloud im Container, README mit Installationsanleitung                      | alle         | –        |
 
-AP 4–6 arbeiten gegen `MemoryDataStore` und sind dadurch nicht von AP 1 blockiert.
+AP 5–7 arbeiten gegen `MemoryDataStore` und einen kleinen Testkatalog und sind dadurch
+weder von AP 1 noch von AP 3 blockiert. AP 3 trägt offene Stücklisten-Angaben als
+deutlich markierte Platzhalter ein, die später in den Zelttyp-Dateien korrigiert werden.
 
-## 9. Entscheidungen
+## 10. Entscheidungen
 
-| Entscheidung                                        | Begründung                                                                                             | Verworfen                                                    |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
-| JSON-Dateien im Space statt Datenbank               | Kein Backend zu betreiben; Rechte, Versionen und Sicherung kommen von OpenCloud.                        | Eigener Dienst mit Datenbank                                 |
-| Wandmaterial über Rollen und Rezepte                | Ausweichlogik steht einmal im Code statt in jeder Stückliste; neue Ausführungen sind nur neue Artikel.  | Alternativen je Zelttyp in der Stückliste ausformulieren     |
-| Zuteilung in Listenreihenfolge                      | Vorhersehbar und erklärbar.                                                                             | Globale Optimierung                                          |
-| Packliste speichert das Rechenergebnis              | Eine abgehakte Liste ändert sich nicht unbemerkt, wenn jemand den Bestand korrigiert.                   | Immer live berechnen                                         |
-| ETag + erneutes Anwenden kleiner Operationen        | Gleichzeitiges Abhaken ohne Server-Logik.                                                               | Sperren; „letzter gewinnt“                                   |
-| Druck über Browser                                  | Keine zusätzliche Abhängigkeit, PDF kann jeder Browser.                                                 | PDF-Bibliothek                                               |
-| Kein zentraler Store (Pinia) für App-Zustand        | Drei Ansichten mit wenig geteiltem Zustand; Composables genügen.                                        | Pinia-Module                                                 |
-| Stücklisten in Version 1 ohne Editor                | Ändern sich fast nie; ein Editor wäre der größte Einzelaufwand.                                         | Stücklisten-Editor                                           |
+| Entscheidung                                     | Begründung                                                                                                 | Verworfen                                                |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Zelttypen und Artikel im Code                    | Vom Stamm so gewünscht; typgeprüft, testbar, keine Fehler durch defekte Dateien im Space.                  | Stücklisten als Datei im Space                           |
+| Im Space nur Stückzahlen und Packlisten          | Kein Backend zu betreiben; Rechte, Versionen und Sicherung kommen von OpenCloud.                           | Eigener Dienst mit Datenbank                             |
+| Wandmaterial über Rollen, Lagen und Einzel/Doppel | Zuweisung steht einmal im Code; neue Bahnen sind nur neue Artikel, neue Zelte nur neue Segmentzahlen.      | Alternativen je Zelttyp ausformulieren                   |
+| Dach als wählbare Konfiguration je Zelttyp       | Deckt „Jurtendach oder 6 Kohtenblätter“ und zusammengesetzte Dächer (Gigajurte 12 m) mit demselben Modell. | Dach als feste Stücklistenzeile                          |
+| Zuteilung in Listenreihenfolge                   | Vorhersehbar und erklärbar.                                                                                | Globale Optimierung                                      |
+| Packliste speichert das Rechenergebnis           | Eine abgehakte Liste ändert sich nicht unbemerkt durch Bestandskorrektur oder App-Update.                  | Immer live berechnen                                     |
+| ETag + erneutes Anwenden kleiner Operationen     | Gleichzeitiges Abhaken ohne Server-Logik.                                                                  | Sperren; „letzter gewinnt“                               |
+| Druck über Browser                               | Keine zusätzliche Abhängigkeit.                                                                            | PDF-Bibliothek                                           |
+| Kein zentraler Store (Pinia) für App-Zustand     | Drei Ansichten mit wenig geteiltem Zustand; Composables genügen.                                           | Pinia-Module                                             |
