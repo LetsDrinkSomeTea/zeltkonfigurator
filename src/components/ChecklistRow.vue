@@ -1,38 +1,36 @@
 <template>
   <li
-    class="zk-row ext:flex ext:items-center ext:gap-3"
+    class="zk-row ext:flex ext:flex-wrap ext:items-center ext:gap-x-3"
     :class="{ 'zk-row-done': checked && checkable, 'zk-row-inactive': !checkable }"
   >
-    <label v-if="checkable" class="zk-row-label ext:flex ext:items-center ext:gap-3 ext:grow">
-      <input
-        type="checkbox"
-        class="zk-row-box"
-        :checked="checked"
-        :disabled="disabled"
-        @change="emit('toggle')"
-      />
-      <span class="zk-row-text">
-        <span class="zk-row-qty">{{ quantity }} ×</span> {{ name }}
-      </span>
-    </label>
-    <div v-else class="zk-row-label ext:flex ext:items-center ext:gap-3 ext:grow">
-      <span class="zk-row-text">
-        <span v-if="quantity > 0" class="zk-row-qty">{{ quantity }} ×</span> {{ name }}
-      </span>
-    </div>
-    <span v-if="missing > 0" class="zk-hint zk-hint-missing">{{
-      $gettext('%{n} fehlen', { n: String(missing) })
+    <oc-checkbox
+      v-if="checkable"
+      class="zk-row-label ext:grow"
+      size="large"
+      :label="label"
+      :model-value="checked"
+      :disabled="disabled"
+      @update:model-value="emit('toggle')"
+    />
+    <span v-else class="zk-row-label ext:flex ext:items-center ext:grow zk-row-text">{{
+      label
     }}</span>
-    <span v-if="toCut > 0" class="zk-hint zk-hint-cut">{{
-      $gettext('%{n} vor Ort schlagen', { n: String(toCut) })
-    }}</span>
+    <span class="ext:flex ext:flex-wrap ext:gap-2">
+      <oc-tag v-if="missing > 0" class="zk-hint zk-hint-missing" size="small">{{
+        $gettext('%{n} fehlen', { n: String(missing) })
+      }}</oc-tag>
+      <oc-tag v-if="toCut > 0" class="zk-hint zk-hint-cut" size="small">{{
+        $gettext('%{n} vor Ort schlagen', { n: String(toCut) })
+      }}</oc-tag>
+    </span>
   </li>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useGettext } from 'vue3-gettext'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     name: string
     quantity: number
@@ -47,6 +45,11 @@ withDefaults(
 )
 const emit = defineEmits<{ toggle: [] }>()
 const { $gettext } = useGettext()
+
+/** „3 × Name“; Menge 0 (nicht aus dem Bestand) wird ohne Zahl angezeigt */
+const label = computed(() =>
+  props.quantity > 0 || props.checkable ? `${props.quantity} × ${props.name}` : props.name
+)
 </script>
 
 <style>
@@ -58,16 +61,16 @@ const { $gettext } = useGettext()
 }
 .zk-row-label {
   min-height: 44px;
-  cursor: pointer;
 }
-.zk-row-box {
-  width: 1.5rem;
-  height: 1.5rem;
-  flex: none;
+/* ganze Zeile als Trefferfläche: das Label füllt die Breite */
+.zk-row-label label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  min-height: 44px;
 }
-.zk-row-qty {
-  font-weight: 700;
-}
+.zk-row-done label,
 .zk-row-done .zk-row-text {
   text-decoration: line-through;
   opacity: 0.55;
@@ -75,15 +78,7 @@ const { $gettext } = useGettext()
 .zk-row-inactive {
   opacity: 0.6;
 }
-.zk-hint {
-  font-size: 0.875rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
 .zk-hint-missing {
-  color: var(--oc-role-error, #b3261e);
-}
-.zk-hint-cut {
-  color: var(--oc-role-on-surface-variant, #555);
+  color: var(--oc-role-error);
 }
 </style>

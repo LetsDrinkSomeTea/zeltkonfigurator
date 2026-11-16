@@ -6,21 +6,25 @@
       </p>
       <template v-else>
         <div class="ext:flex ext:flex-wrap ext:items-center ext:gap-4 ext:mb-2">
-          <fieldset class="zk-mode ext:flex ext:gap-2 ext:border-0 ext:p-0 ext:m-0">
-            <legend class="ext:sr-only">{{ $gettext('Ansicht') }}</legend>
-            <label class="zk-mode-option" :class="{ 'zk-mode-active': mode === 'gesamt' }">
-              <input v-model="mode" type="radio" name="zk-mode" value="gesamt" />
-              {{ $gettext('Gesamt') }}
-            </label>
-            <label class="zk-mode-option" :class="{ 'zk-mode-active': mode === 'zelt' }">
-              <input v-model="mode" type="radio" name="zk-mode" value="zelt" />
-              {{ $gettext('Pro Zelt') }}
-            </label>
-          </fieldset>
-          <label class="ext:flex ext:items-center ext:gap-2 zk-filter">
-            <input v-model="onlyOpen" type="checkbox" />
-            {{ $gettext('Nur offene anzeigen') }}
-          </label>
+          <div class="zk-mode oc-button-group" role="group" :aria-label="$gettext('Ansicht')">
+            <oc-button
+              v-for="option in modes"
+              :key="option.value"
+              class="zk-mode-option"
+              :data-mode="option.value"
+              :aria-pressed="mode === option.value"
+              :appearance="mode === option.value ? 'filled' : 'outline'"
+              color-role="secondary"
+              @click="mode = option.value"
+            >
+              {{ option.label }}
+            </oc-button>
+          </div>
+          <oc-switch
+            v-model:checked="onlyOpen"
+            class="zk-filter"
+            :label="$gettext('Nur offene anzeigen')"
+          />
           <oc-button class="ext:ml-auto" @click="print">{{ $gettext('Drucken') }}</oc-button>
         </div>
         <p class="zk-progress ext:font-bold" role="status">
@@ -38,7 +42,7 @@
         <template v-if="mode === 'gesamt'">
           <section v-for="group in groups" :key="group.category" class="ext:mt-4">
             <h2 class="ext:text-lg ext:font-bold">{{ group.title }}</h2>
-            <ul class="ext:p-0">
+            <oc-list raw>
               <ChecklistRow
                 v-for="item in group.items"
                 :key="item.articleId"
@@ -51,7 +55,7 @@
                 :disabled="!pl.canWrite.value"
                 @toggle="pl.toggleItem(item.articleId)"
               />
-            </ul>
+            </oc-list>
           </section>
         </template>
 
@@ -65,7 +69,7 @@
           </p>
           <section v-for="t in tentSections" :key="t.tent.id" class="ext:mt-4">
             <h2 class="ext:text-lg ext:font-bold">{{ t.title }}</h2>
-            <ul class="ext:p-0">
+            <oc-list raw>
               <ChecklistRow
                 v-for="entry in t.entries"
                 :key="entry.item.articleId"
@@ -76,7 +80,7 @@
                 :disabled="!pl.canWrite.value"
                 @toggle="pl.toggleItem(entry.item.articleId)"
               />
-            </ul>
+            </oc-list>
           </section>
         </template>
       </template>
@@ -117,6 +121,10 @@ const props = defineProps<{ pl: UsePacklist }>()
 const { $gettext } = useGettext()
 
 const mode = ref<'gesamt' | 'zelt'>('gesamt')
+const modes = [
+  { value: 'gesamt', label: $gettext('Gesamt') },
+  { value: 'zelt', label: $gettext('Pro Zelt') }
+] as const
 const onlyOpen = ref(false)
 
 const list = computed(() => props.pl.list.value)
@@ -149,21 +157,7 @@ function print() {
 </script>
 
 <style>
-.zk-mode-option {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: 44px;
-  padding: 0 1rem;
-  border: 1px solid var(--oc-role-outline, #888);
-  border-radius: 4px;
-  cursor: pointer;
-}
-.zk-mode-active {
-  background: var(--oc-role-primary-container, #dde);
-  color: var(--oc-role-on-primary-container, #000);
-  font-weight: 700;
-}
+.zk-mode-option,
 .zk-filter {
   min-height: 44px;
 }
