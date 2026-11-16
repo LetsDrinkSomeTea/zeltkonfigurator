@@ -4,7 +4,7 @@ import { defineComponent, h } from 'vue'
 import TentsTab from '../../../src/components/TentsTab.vue'
 import { usePacklist } from '../../../src/composables/usePacklist'
 import { storeKey } from '../../../src/composables/useStore'
-import { fullStock, listFor, storeWith, tentOf } from '../views/support'
+import { choose, fullStock, listFor, ocSelect, storeWith, tentOf } from '../views/support'
 
 type Pl = ReturnType<typeof usePacklist>
 
@@ -223,10 +223,7 @@ describe('TentsTab Ziehen', () => {
 describe('TentsTab weiteres Material', () => {
   it('nimmt Material aus der Materialliste auf und rechnet es mit', async () => {
     const { wrapper, pl } = await mountTab([tentOf('kohte', { id: 'a' })])
-    const picker = wrapper
-      .findAllComponents({ name: 'OcSelect' })
-      .find((c) => String(c.props('id')).endsWith('-article'))!
-    picker.vm.$emit('update:modelValue', 'blockseilrolle')
+    await choose(ocSelect(wrapper, 'article'), 'blockseilrolle')
     await flushPromises()
     await wrapper.find('.zk-parts-add input[type="number"]').setValue('2')
     await wrapper.findAll('.zk-parts-add button').at(-1)!.trigger('click')

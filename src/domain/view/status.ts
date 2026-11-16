@@ -4,9 +4,11 @@ export type PacklistStatus = 'leer' | 'ok' | 'ausweichmaterial' | 'fehlt'
 
 /** Gesamtstatus aus dem gespeicherten Rechenergebnis (F-29). */
 export function derivePacklistStatus(
-  list: Pick<PacklistFile, 'tents' | 'items' | 'deviations'>
+  list: Pick<PacklistFile, 'tents' | 'items' | 'deviations'> &
+    Partial<Pick<PacklistFile, 'materials'>>
 ): PacklistStatus {
-  if (list.tents.length === 0) {
+  // Leer ist eine Liste erst ohne Zelte und ohne weiteres Material.
+  if (list.tents.length === 0 && (list.materials ?? []).length === 0) {
     return 'leer'
   }
   if (list.items.some((item) => item.missing > 0)) {

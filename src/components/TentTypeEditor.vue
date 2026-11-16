@@ -28,12 +28,11 @@
           class="zk-editor-grow"
           :label="$gettext('Dach %{n}', { n: String(i + 1) })"
           :options="modules"
-          :reduce="(m: RoofModule) => m.id"
           option-label="name"
           :clearable="false"
           :searchable="true"
-          :model-value="ref_.moduleId"
-          @update:model-value="(id: string) => setModule(i, id)"
+          :model-value="modules.find((m) => m.id === ref_.moduleId)"
+          @update:model-value="(m: RoofModule | null) => m && setModule(i, m.id)"
         />
         <fieldset v-if="setupsOf(ref_.moduleId).length > 1" class="zk-editor-checks">
           <legend>{{ $gettext('Angebotene Aufbauten') }}</legend>
@@ -98,12 +97,13 @@
           class="zk-editor-grow"
           :label="$gettext('Standard-Wand')"
           :options="chosenWalls"
-          :reduce="(o: Labeled) => o.id"
           option-label="label"
           :clearable="false"
           :searchable="false"
-          :model-value="draft.defaults?.wallId ?? draft.wall.options[0]"
-          @update:model-value="(id: string) => setDefault({ wallId: id })"
+          :model-value="
+            chosenWalls.find((o) => o.id === (draft.defaults?.wallId ?? draft.wall.options[0]))
+          "
+          @update:model-value="(o: Labeled | null) => o && setDefault({ wallId: o.id })"
         />
         <oc-select
           v-if="(draft.defaults?.wallId ?? draft.wall.options[0]) === 'hoch'"
@@ -111,12 +111,11 @@
           class="zk-editor-grow"
           :label="$gettext('Standard-Bauart')"
           :options="builds"
-          :reduce="(o: Labeled) => o.id"
           option-label="label"
           :clearable="false"
           :searchable="false"
-          :model-value="draft.defaults?.buildId ?? 'super'"
-          @update:model-value="(id: string) => setDefault({ buildId: id })"
+          :model-value="builds.find((o) => o.id === (draft.defaults?.buildId ?? 'super'))"
+          @update:model-value="(o: Labeled | null) => o && setDefault({ buildId: o.id })"
         />
         <oc-select
           v-if="['hoch', 'nur-streifen'].includes(draft.defaults?.wallId ?? draft.wall.options[0])"
@@ -124,12 +123,11 @@
           class="zk-editor-grow"
           :label="$gettext('Standard-Ausführung')"
           :options="finishes"
-          :reduce="(o: Labeled) => o.id"
           option-label="label"
           :clearable="false"
           :searchable="false"
-          :model-value="draft.defaults?.finish ?? 'blanko'"
-          @update:model-value="(id: Finish) => setDefault({ finish: id })"
+          :model-value="finishes.find((o) => o.id === (draft.defaults?.finish ?? 'blanko'))"
+          @update:model-value="(o: Labeled | null) => o && setDefault({ finish: o.id as Finish })"
         />
       </div>
     </fieldset>

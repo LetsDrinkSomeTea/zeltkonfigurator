@@ -14,14 +14,14 @@
       />
       <oc-select
         :id="`${uid}-category`"
-        v-model="category"
         class="zk-field"
         :label="$gettext('Kategorie')"
         :options="categoryOptions"
-        :reduce="(o: CategoryOption) => o.id"
+        :model-value="categoryOptions.find((o) => o.id === category)"
         option-label="name"
         :clearable="false"
         :searchable="true"
+        @update:model-value="(o: CategoryOption | null) => o && (category = o.id)"
       />
       <oc-text-input
         v-if="category === NEW"

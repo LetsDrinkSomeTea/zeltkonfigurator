@@ -5,7 +5,7 @@
         id="zk-inventory-search"
         v-model="query"
         class="zk-search"
-        :label="$gettext('Artikel suchen')"
+        :label="$gettext('Material suchen')"
         :default-value="$gettext('Name oder Kategorie')"
         :clear-button-enabled="true"
         :clear-button-accessible-label="$gettext('Suche zurücksetzen')"

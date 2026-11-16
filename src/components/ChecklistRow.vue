@@ -20,7 +20,7 @@
     >
     <span class="ext:flex ext:flex-wrap ext:gap-2">
       <oc-tag v-if="missing > 0" class="zk-hint zk-hint-missing" size="small">{{
-        $gettext('%{n} fehlen', { n: String(missing) })
+        $ngettext('%{n} fehlt', '%{n} fehlen', missing, { n: String(missing) })
       }}</oc-tag>
     </span>
   </li>

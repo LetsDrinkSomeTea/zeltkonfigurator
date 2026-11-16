@@ -18,7 +18,9 @@
             <span class="zk-print-qty">{{ item.quantity }} ×</span>
             <span>{{ item.name }}</span>
             <span v-if="item.missing > 0" class="zk-print-hint">
-              ({{ $gettext('%{n} fehlen', { n: String(item.missing) }) }})
+              ({{
+                $ngettext('%{n} fehlt', '%{n} fehlen', item.missing, { n: String(item.missing) })
+              }})
             </span>
           </li>
         </ul>

@@ -31,14 +31,14 @@
     <div class="zk-parts-add">
       <oc-select
         :id="`${uid}-article`"
-        v-model="newArticle"
         class="zk-parts-picker"
         :label="$gettext('Material')"
         :options="options"
-        :reduce="(o: Option) => o.id"
+        :model-value="options.find((o) => o.id === newArticle) ?? null"
         option-label="label"
         :clearable="true"
         :searchable="true"
+        @update:model-value="(o: Option | null) => (newArticle = o?.id ?? null)"
       />
       <oc-text-input
         :id="`${uid}-new-qty`"

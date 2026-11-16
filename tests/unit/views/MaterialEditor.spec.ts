@@ -4,7 +4,7 @@ import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import InventoryView from '../../../src/views/InventoryView.vue'
 import { storeKey } from '../../../src/composables/useStore'
 import { MemoryDataStore } from '../../../src/storage/MemoryDataStore'
-import { createTestRouter, ocSelect } from './support'
+import { choose, createTestRouter, ocSelect } from './support'
 
 async function mountView(store: MemoryDataStore, tab = 'material') {
   const Host = defineComponent({ render: () => h(InventoryView) })
@@ -22,9 +22,9 @@ async function mountView(store: MemoryDataStore, tab = 'material') {
   return { wrapper, router }
 }
 
-/** Wählt in einem OcSelect mit `reduce` einen Wert (die Komponente erhält die Kennung). */
+/** Wählt in einem OcSelect die Option mit der Kennung `value` (wie im Browser: ganzes Objekt). */
 async function pick(wrapper: VueWrapper, id: string, value: string) {
-  ocSelect(wrapper, id)!.vm.$emit('update:modelValue', value)
+  await choose(ocSelect(wrapper, id), value)
   await flushPromises()
 }
 
@@ -44,11 +44,7 @@ describe('Materialliste: Material', () => {
     await button(wrapper, 'Material hinzufügen').trigger('click')
     const form = wrapper.find('form.zk-article-form')
     await form.find('input[id$="-name"]').setValue('Bräter')
-    const categorySelect = wrapper
-      .findAllComponents({ name: 'OcSelect' })
-      .find((c) => String(c.props('id')).endsWith('-category'))!
-    categorySelect.vm.$emit('update:modelValue', '__neu__')
-    await flushPromises()
+    await pick(wrapper, 'category', '__neu__')
     await wrapper.find('input[id$="-new-category"]').setValue('Küche')
     await wrapper.find('input[id$="-quantity"]').setValue('2')
     await form.trigger('submit')
@@ -70,8 +66,8 @@ describe('Materialliste: Material', () => {
     const { wrapper } = await mountView(new MemoryDataStore())
     await button(wrapper, 'Material hinzufügen').trigger('click')
     await wrapper.find('form.zk-article-form').trigger('submit')
-    await flushPromises()
-    expect(wrapper.text()).toContain('Bitte einen Namen eingeben')
+    // Die Fehlermeldung des Eingabefelds erscheint erst nach einem Zeitgeber.
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Bitte einen Namen eingeben'))
   })
 
   it('benennt Material um und lässt verwendetes Material nicht löschen', async () => {

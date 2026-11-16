@@ -114,7 +114,11 @@ const onlyOpen = ref(false)
 
 const list = computed(() => props.pl.list.value)
 const empty = computed(
-  () => !!list.value && list.value.tents.length === 0 && list.value.extraItems.length === 0
+  () =>
+    !!list.value &&
+    list.value.tents.length === 0 &&
+    list.value.materials.length === 0 &&
+    list.value.extraItems.length === 0
 )
 const p = computed(() => (list.value ? progress(list.value) : { done: 0, total: 0 }))
 
