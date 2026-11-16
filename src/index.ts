@@ -1,13 +1,6 @@
-import {
-  defineWebApplication,
-  Extension,
-  AppMenuItemExtension,
-  AppNavigationItem
-} from '@opencloud-eu/web-pkg'
-import { urlJoin } from '@opencloud-eu/web-client'
+import { defineWebApplication } from '@opencloud-eu/web-pkg'
 import '@opencloud-eu/extension-sdk/tailwind.css'
 import { RouteRecordRaw } from 'vue-router'
-import { computed } from 'vue'
 import { useGettext } from 'vue3-gettext'
 import { setAppConfig } from './storage/appConfig'
 
@@ -21,17 +14,22 @@ export default defineWebApplication({
       name: $gettext('Zeltkonfigurator'),
       icon: 'home-3',
       color: '#1f3a2d',
-      // Dateien der App lassen sich aus der Dateiansicht heraus öffnen.
+      // Kein Eintrag im App-Umschalter: Die App wird über ihre Dateien geöffnet.
       extensions: [
         {
+          // Packlisten lassen sich über „Neu“ in jedem Ordner anlegen.
           extension: 'packliste',
-          routeName: 'zeltkonfigurator-datei',
+          routeName: 'zeltkonfigurator-liste',
           label: $gettext('Im Zeltkonfigurator öffnen'),
-          icon: 'list-check'
+          icon: 'list-check',
+          newFileMenu: {
+            menuTitle: () => $gettext('Packliste'),
+            defaultName: () => $gettext('Neue Packliste')
+          }
         },
         {
           extension: 'bestand',
-          routeName: 'zeltkonfigurator-datei',
+          routeName: 'zeltkonfigurator-bestand',
           label: $gettext('Im Zeltkonfigurator öffnen'),
           icon: 'archive'
         }
@@ -41,70 +39,25 @@ export default defineWebApplication({
     const routes: RouteRecordRaw[] = [
       {
         path: '/',
-        redirect: `/${appInfo.id}/listen`
+        redirect: `/${appInfo.id}/bestand`
       },
       {
-        path: '/listen',
-        name: 'zeltkonfigurator-listen',
-        component: () => import('./views/PacklistOverview.vue'),
-        meta: { authContext: 'user', title: $gettext('Packlisten') }
-      },
-      {
-        path: '/listen/:id',
+        // Die Packliste liegt dort, wo die Adresse hinzeigt (Space und Pfad).
+        path: '/liste/:driveAliasAndItem(.*)?',
         name: 'zeltkonfigurator-liste',
         component: () => import('./views/PacklistEditor.vue'),
-        meta: { authContext: 'user', title: $gettext('Packliste') }
+        meta: { authContext: 'user', title: $gettext('Packliste'), patchCleanPath: true }
       },
       {
-        // Einstieg aus der Dateiansicht: leitet zur passenden Ansicht weiter.
-        path: '/datei/:driveAliasAndItem(.*)?',
-        name: 'zeltkonfigurator-datei',
-        component: () => import('./views/OpenFile.vue'),
-        meta: { authContext: 'user', title: $gettext('Zeltkonfigurator'), patchCleanPath: true }
-      },
-      {
-        path: '/bestand',
+        // Der Bestand liegt immer am festen Ablageort; der Pfad in der Adresse ist nur der
+        // Einstieg aus der Dateiansicht.
+        path: '/bestand/:driveAliasAndItem(.*)?',
         name: 'zeltkonfigurator-bestand',
         component: () => import('./views/InventoryView.vue'),
-        meta: { authContext: 'user', title: $gettext('Bestand') }
+        meta: { authContext: 'user', title: $gettext('Bestand'), patchCleanPath: true }
       }
     ]
 
-    // Seitenleiste von OpenCloud; wird angezeigt, sobald es mehr als einen Eintrag gibt.
-    const navItems: AppNavigationItem[] = [
-      {
-        name: () => $gettext('Packlisten'),
-        icon: 'list-check',
-        route: { path: `/${appInfo.id}/listen` },
-        activeFor: [{ path: `/${appInfo.id}/listen` }]
-      },
-      {
-        name: () => $gettext('Bestand'),
-        icon: 'archive',
-        route: { path: `/${appInfo.id}/bestand` }
-      }
-    ]
-
-    const extensions = computed<Extension[]>(() => {
-      const menuItems: AppMenuItemExtension[] = [
-        {
-          // registers a menu item for the app switcher
-          id: `app.${appInfo.id}.menuItem`,
-          type: 'appMenuItem',
-          label: () => appInfo.name,
-          color: appInfo.color,
-          icon: appInfo.icon,
-          path: urlJoin(appInfo.id)
-        }
-      ]
-      return [...menuItems]
-    })
-
-    return {
-      appInfo,
-      navItems,
-      routes,
-      extensions
-    }
+    return { appInfo, routes }
   }
 })

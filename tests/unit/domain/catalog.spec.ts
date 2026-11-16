@@ -1,3 +1,4 @@
+import { defaultTentOptions } from '../../../src/domain/packlist'
 import { describe, expect, it } from 'vitest'
 import { catalog } from '../../../src/domain/catalog'
 import type { Part, TentType } from '../../../src/domain/types'
@@ -184,5 +185,53 @@ describe('Katalog: Stichproben aus den Anforderungen', () => {
       expect(t.walls.map((w) => w.id)).toEqual(['keine'])
       expect(count(t.fixed, boden)).toBe(1)
     }
+  })
+})
+
+describe('Standardkonfigurationen', () => {
+  it('verweisen nur auf vorhandene Dächer, Wände und Bauarten', () => {
+    for (const t of tentTypes) {
+      const d = t.defaults
+      if (!d) continue
+      if (d.roofId)
+        expect(
+          t.roofs.some((r) => r.id === d.roofId),
+          `${t.id} roof`
+        ).toBe(true)
+      const wall = t.walls.find((w) => w.id === (d.wallId ?? t.walls[0].id))
+      expect(wall, `${t.id} wall`).toBeDefined()
+      if (d.buildId)
+        expect(
+          wall!.builds.some((b) => b.id === d.buildId),
+          `${t.id} build`
+        ).toBe(true)
+    }
+  })
+
+  it('Jurten: hohe Wand aus Superbahnen mit Gaze', () => {
+    const jurten = [
+      'jurte',
+      'grossjurte',
+      'gigajurte9',
+      'gigajurte12',
+      'ovaljurte',
+      'dreierjurtenburg'
+    ]
+    for (const id of jurten) {
+      expect(defaultTentOptions(tent(id)), id).toMatchObject({
+        wallId: 'hoch',
+        buildId: 'super',
+        finish: 'gaze'
+      })
+    }
+  })
+
+  it('Kohte mit Erdstreifen, Hochkohte normal und blanko', () => {
+    expect(defaultTentOptions(tent('kohte'))).toMatchObject({ wallId: 'erdstreifen' })
+    expect(defaultTentOptions(tent('hochkohte'))).toMatchObject({
+      wallId: 'normal',
+      buildId: 'normal',
+      finish: 'blanko'
+    })
   })
 })

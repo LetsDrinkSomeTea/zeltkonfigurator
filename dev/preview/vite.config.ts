@@ -18,6 +18,10 @@ export default defineConfig({
       {
         find: /^.*\/storage\/createStore$/,
         replacement: fileURLToPath(new URL('./createStoreStub.ts', import.meta.url))
+      },
+      {
+        find: /^.*\/storage\/createDocument$/,
+        replacement: fileURLToPath(new URL('./createDocumentStub.ts', import.meta.url))
       }
     ]
   },

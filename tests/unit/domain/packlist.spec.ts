@@ -2,8 +2,9 @@ import {
   createPacklist,
   createTentConfig,
   fingerprint,
-  recalculate,
-  summarize
+  defaultTentOptions,
+  hasDefaultOptions,
+  recalculate
 } from '../../../src/domain/packlist'
 import type { Catalog, PacklistFile } from '../../../src/domain/types'
 import { catalog, jurte, stockOf, tent } from './testCatalog'
@@ -48,6 +49,45 @@ describe('createPacklist / createTentConfig', () => {
   it('erste Bauart der ersten Wandoption', () => {
     const type = { ...jurte, walls: [jurte.walls[2], jurte.walls[0]] }
     expect(createTentConfig(type)).toMatchObject({ wallId: 'hoch', buildId: 'super' })
+  })
+})
+
+describe('Standardkonfiguration', () => {
+  const type = {
+    ...jurte,
+    defaults: { wallId: 'hoch', buildId: 'super', finish: 'gaze' as const }
+  }
+
+  it('nimmt die Angaben aus defaults', () => {
+    expect(createTentConfig(type)).toMatchObject({
+      roofId: 'jurtendach',
+      wallId: 'hoch',
+      buildId: 'super',
+      finish: 'gaze'
+    })
+  })
+
+  it('ergänzt fehlende Angaben: erste Bauart der gewählten Wand, blanko', () => {
+    expect(defaultTentOptions({ ...jurte, defaults: { wallId: 'hoch' } })).toEqual({
+      roofId: 'jurtendach',
+      wallId: 'hoch',
+      buildId: jurte.walls.find((w) => w.id === 'hoch')!.builds[0].id,
+      finish: 'blanko'
+    })
+  })
+
+  it('fällt bei unbekannten Angaben auf die erste Möglichkeit zurück', () => {
+    expect(defaultTentOptions({ ...jurte, defaults: { wallId: 'gibt-es-nicht' } })).toMatchObject({
+      wallId: 'keine',
+      buildId: ''
+    })
+  })
+
+  it('erkennt, ob ein Zelt vom Standard abweicht', () => {
+    const t = createTentConfig(type)
+    expect(hasDefaultOptions(t, type)).toBe(true)
+    expect(hasDefaultOptions({ ...t, label: 'Küche' }, type)).toBe(true)
+    expect(hasDefaultOptions({ ...t, finish: 'fenster' }, type)).toBe(false)
   })
 })
 
@@ -149,51 +189,5 @@ describe('fingerprint', () => {
     const base = fingerprint(catalog, stock)
     expect(fingerprint(renamed, stock)).not.toBe(base)
     expect(fingerprint(moreParts, stock)).not.toBe(base)
-  })
-})
-
-describe('summarize', () => {
-  it('zählt items und extraItems', () => {
-    const l: PacklistFile = {
-      ...createPacklist('S', catalog, {}),
-      date: '2026-08-01',
-      tents: [tent('a'), tent('b')],
-      items: [
-        {
-          articleId: 'x',
-          name: 'x',
-          category: 'stange',
-          quantity: 1,
-          missing: 0,
-          toCut: 0,
-          perTent: {},
-          checked: true
-        },
-        {
-          articleId: 'y',
-          name: 'y',
-          category: 'stange',
-          quantity: 1,
-          missing: 0,
-          toCut: 0,
-          perTent: {},
-          checked: false
-        }
-      ],
-      extraItems: [{ id: 'e', text: 't', quantity: 1, checked: true }]
-    }
-    expect(summarize(l)).toEqual({
-      id: l.id,
-      name: 'S',
-      date: '2026-08-01',
-      tentCount: 2,
-      itemCount: 3,
-      checkedCount: 2,
-      updatedAt: l.updatedAt
-    })
-  })
-
-  it('lässt date weg, wenn keines gesetzt ist', () => {
-    expect('date' in summarize(createPacklist('S', catalog, {}))).toBe(false)
   })
 })

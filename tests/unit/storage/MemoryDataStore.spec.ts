@@ -53,7 +53,7 @@ describe('MemoryDataStore', () => {
   it('throws NotFoundError for a missing packlist', async () => {
     const store = new MemoryDataStore()
     await expect(store.loadPacklist('nope')).rejects.toBeInstanceOf(NotFoundError)
-    await expect(store.deletePacklist('nope')).rejects.toBeInstanceOf(NotFoundError)
+    await expect(store.document('nope').load()).rejects.toBeInstanceOf(NotFoundError)
   })
 
   it('applies etag semantics to packlists', async () => {
@@ -72,14 +72,8 @@ describe('MemoryDataStore', () => {
     expect(await store.canWrite()).toBe(false)
     await expect(store.saveStock(stockFile, null)).rejects.toBeInstanceOf(ForbiddenError)
     await expect(store.savePacklist(list('q'), null)).rejects.toBeInstanceOf(ForbiddenError)
-    await expect(store.deletePacklist('p')).rejects.toBeInstanceOf(ForbiddenError)
+    await expect(store.document('p').save(list('p'), null)).rejects.toBeInstanceOf(ForbiddenError)
     expect((await store.loadPacklist('p')).data.id).toBe('p')
-  })
-
-  it('deletes packlists', async () => {
-    const store = new MemoryDataStore({ packlists: [list('p')] })
-    await store.deletePacklist('p')
-    expect(await store.listPacklists()).toEqual([])
   })
 
   it('clones data on the way in and out', async () => {
@@ -97,42 +91,25 @@ describe('MemoryDataStore', () => {
     expect((await store.loadPacklist('q')).data.name).toBe('q')
   })
 
-  it('lists summaries sorted by updatedAt descending with counts', async () => {
-    const store = new MemoryDataStore({
-      packlists: [
-        list('old', { updatedAt: '2026-01-01T00:00:00.000Z' }),
-        list('new', {
-          updatedAt: '2026-03-01T00:00:00.000Z',
-          date: '2026-06-01',
-          tents: [
-            { id: 't', typeId: 'k', roofId: 'r', wallId: 'w', buildId: '', finish: 'blanko' }
-          ],
-          items: [
-            {
-              articleId: 'a',
-              name: 'A',
-              category: 'dach',
-              quantity: 1,
-              missing: 0,
-              toCut: 0,
-              perTent: { t: 1 },
-              checked: true
-            }
-          ],
-          extraItems: [
-            { id: 'e1', text: 'x', quantity: 1, checked: true },
-            { id: 'e2', text: 'y', quantity: 1, checked: false }
-          ]
-        })
-      ]
-    })
-    const summaries = await store.listPacklists()
-    expect(summaries.map((s) => s.id)).toEqual(['new', 'old'])
-    expect(summaries[0]).toMatchObject({
-      tentCount: 1,
-      itemCount: 3,
-      checkedCount: 2,
-      date: '2026-06-01'
-    })
+  it('opens a packlist as a document named after its id', async () => {
+    const store = new MemoryDataStore({ packlists: [list('Sommerlager')] })
+    const doc = store.document('Sommerlager')
+    expect(doc.name).toBe('Sommerlager')
+    const loaded = await doc.load()
+    const etag = await doc.save({ ...loaded.data!, date: '2026-08-01' }, loaded.etag)
+    expect((await store.loadPacklist('Sommerlager')).data.date).toBe('2026-08-01')
+    await expect(doc.save(loaded.data!, loaded.etag)).rejects.toBeInstanceOf(ConflictError)
+    expect((await doc.load()).etag).toBe(etag)
+  })
+
+  it('treats a freshly created file as empty', async () => {
+    const store = new MemoryDataStore()
+    store.createEmptyFile('Neu')
+    const loaded = await store.document('Neu').load()
+    expect(loaded.data).toBeNull()
+    expect(loaded.etag).not.toBeNull()
+    await expect(store.loadPacklist('Neu')).rejects.toBeInstanceOf(NotFoundError)
+    await store.document('Neu').save(list('x'), loaded.etag)
+    expect((await store.loadPacklist('Neu')).data.id).toBe('Neu')
   })
 })

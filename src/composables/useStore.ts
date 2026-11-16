@@ -1,5 +1,6 @@
 import { inject, provide, type InjectionKey } from 'vue'
-import type { DataStore } from '../storage/DataStore'
+import { createDocument } from '../storage/createDocument'
+import type { DataStore, PacklistDocument } from '../storage/DataStore'
 import { createStore } from '../storage/createStore'
 
 export const storeKey: InjectionKey<DataStore> = Symbol('zeltkonfigurator-store')
@@ -22,4 +23,15 @@ export function useStore(): DataStore {
 
 export function resetStoreForTests(): void {
   cached = null
+}
+
+/** Liefert die gerade geöffnete Packlisten-Datei; wird in setup() aufgerufen. */
+export type DocumentFactory = () => PacklistDocument
+
+export const documentKey: InjectionKey<DocumentFactory> = Symbol('zeltkonfigurator-document')
+
+/** Die geöffnete Packlisten-Datei: die bereitgestellte (Tests, Vorschau), sonst die aus OpenCloud. */
+export function usePacklistDocument(): PacklistDocument {
+  const factory = inject(documentKey, null)
+  return factory ? factory() : createDocument()
 }

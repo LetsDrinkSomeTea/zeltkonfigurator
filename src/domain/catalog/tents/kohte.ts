@@ -12,6 +12,7 @@ export const kohte: TentType = {
     }
   ],
   walls: [keineWand('Ohne Erdstreifen'), erdstreifen()],
+  defaults: { wallId: 'erdstreifen' },
   fixed: [
     { articleId: 'kohtendaechle', quantity: 1 },
     { articleId: 'kohtenkreuz', quantity: 1 },

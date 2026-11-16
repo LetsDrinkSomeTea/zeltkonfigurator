@@ -1,6 +1,6 @@
-import { isValidPacklistId, PACKLIST_DIR, PACKLIST_EXT, STOCK_FILE } from '../domain/fileNames'
+import { packlistName, STOCK_FILE } from '../domain/fileNames'
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml'
-import type { PacklistFile, PacklistSummary, StockFile } from '../domain/types'
+import type { PacklistFile, StockFile } from '../domain/types'
 import {
   ConflictError,
   DataStoreError,
@@ -8,7 +8,7 @@ import {
   InvalidFileError,
   NotFoundError
 } from './DataStore'
-import type { DataStore, Versioned } from './DataStore'
+import type { DataStore, PacklistDocument, Versioned } from './DataStore'
 
 /**
  * Schmale WebDAV-Schnittstelle, relativ zum Space. Alle Pfade ohne führenden Schrägstrich.
@@ -19,10 +19,7 @@ export interface WebDavFiles {
   read(path: string): Promise<{ body: unknown; etag: string | null }>
   /** etag = null: Datei darf noch nicht existieren (If-None-Match: *), sonst If-Match. */
   write(path: string, content: string, etag: string | null): Promise<{ etag: string | null }>
-  /** Namen der direkten Kinder. */
-  list(path: string): Promise<string[]>
   mkdir(path: string): Promise<void>
-  remove(path: string): Promise<void>
 }
 
 export interface WebDavDataStoreOptions {
@@ -31,10 +28,10 @@ export interface WebDavDataStoreOptions {
   folder: string
   canWrite: () => Promise<boolean>
   parseStockFile: (json: unknown) => StockFile
-  parsePacklistFile: (json: unknown) => PacklistFile
 }
 
-const EXT = PACKLIST_EXT
+const STOCK = 'Die Bestandsdatei'
+const PACKLIST = 'Die Packliste'
 
 export function statusOf(error: unknown): number | undefined {
   const e = error as { statusCode?: unknown; response?: { status?: unknown } } | null
@@ -60,6 +57,40 @@ function mapError(error: unknown, what: string): unknown {
   }
 }
 
+function parseFile<T>(body: unknown, parser: (json: unknown) => T, what: string): T {
+  let json: unknown = body
+  if (typeof body === 'string') {
+    try {
+      json = parseYaml(body)
+    } catch (e) {
+      throw new InvalidFileError(`${what} enthält kein gültiges YAML.`, { cause: e })
+    }
+  }
+  try {
+    return parser(json)
+  } catch (e) {
+    if (e instanceof InvalidFileError) throw e
+    throw new InvalidFileError(`${what} hat ein unerwartetes Format.`, { cause: e })
+  }
+}
+
+/** Schreibt die Datei als YAML und liefert den neuen ETag (notfalls durch erneutes Lesen). */
+async function writeFile(
+  files: WebDavFiles,
+  path: string,
+  file: unknown,
+  etag: string | null,
+  what: string
+): Promise<string> {
+  const content = stringifyYaml(file, { lineWidth: 0 })
+  const result = await files.write(path, content, etag)
+  if (result.etag) return result.etag
+  const reread = await files.read(path)
+  if (!reread.etag) throw new DataStoreError(`${what} wurde gespeichert, der ETag fehlt aber.`)
+  return reread.etag
+}
+
+/** Bestand am festen Ablageort. */
 export class WebDavDataStore implements DataStore {
   private foldersReady = false
 
@@ -70,125 +101,34 @@ export class WebDavDataStore implements DataStore {
   }
 
   async loadStock(): Promise<Versioned<StockFile>> {
-    const path = this.stockPath()
     try {
-      const { body, etag } = await this.options.files.read(path)
-      return { data: this.parse(body, this.options.parseStockFile, 'Die Bestandsdatei'), etag }
+      const { body, etag } = await this.options.files.read(this.stockPath())
+      return { data: parseFile(body, this.options.parseStockFile, STOCK), etag }
     } catch (e) {
       if (statusOf(e) === 404) {
         return { data: { schemaVersion: 1, stock: {} }, etag: null }
       }
-      throw mapError(e, 'Die Bestandsdatei')
+      throw mapError(e, STOCK)
     }
   }
 
-  saveStock(file: StockFile, etag: string | null): Promise<string> {
-    return this.save(this.stockPath(), file, etag, 'Die Bestandsdatei')
-  }
-
-  async listPacklists(): Promise<PacklistSummary[]> {
-    let names: string[]
+  async saveStock(file: StockFile, etag: string | null): Promise<string> {
     try {
-      names = await this.options.files.list(this.packlistDir())
+      await this.ensureFolders()
+      return await writeFile(this.options.files, this.stockPath(), file, etag, STOCK)
     } catch (e) {
-      if (statusOf(e) === 404) return []
-      throw mapError(e, 'Der Ordner der Packlisten')
-    }
-    const summaries: PacklistSummary[] = []
-    for (const name of names.filter((n) => n.endsWith(EXT))) {
-      try {
-        const { data } = await this.loadPacklist(name.slice(0, -EXT.length))
-        summaries.push(summarize(data))
-      } catch (e) {
-        // Defekte oder zwischenzeitlich gelöschte Dateien überspringen, alles andere melden.
-        if (e instanceof InvalidFileError || e instanceof NotFoundError) continue
-        throw e
-      }
-    }
-    return summaries.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-  }
-
-  async loadPacklist(id: string): Promise<Versioned<PacklistFile>> {
-    const path = this.packlistPath(id)
-    try {
-      const { body, etag } = await this.options.files.read(path)
-      const data = this.parse(body, this.options.parsePacklistFile, 'Die Packliste')
-      // Maßgeblich ist der Dateiname – auch wenn die Datei im Space umbenannt wurde.
-      return { data: { ...data, id }, etag }
-    } catch (e) {
-      throw mapError(e, 'Die Packliste')
+      throw mapError(e, STOCK)
     }
   }
-
-  savePacklist(file: PacklistFile, etag: string | null): Promise<string> {
-    return this.save(this.packlistPath(file.id), file, etag, 'Die Packliste')
-  }
-
-  async deletePacklist(id: string): Promise<void> {
-    try {
-      await this.options.files.remove(this.packlistPath(id))
-    } catch (e) {
-      throw mapError(e, 'Die Packliste')
-    }
-  }
-
-  // ------------------------------------------------------------------ intern
 
   private stockPath(): string {
     return `${this.options.folder}/${STOCK_FILE}`
   }
 
-  private packlistDir(): string {
-    return `${this.options.folder}/${PACKLIST_DIR}`
-  }
-
-  private packlistPath(id: string): string {
-    if (!isValidPacklistId(id)) throw new InvalidFileError(`Ungültige Packlisten-ID „${id}“.`)
-    return `${this.packlistDir()}/${id}${EXT}`
-  }
-
-  private parse<T>(body: unknown, parser: (json: unknown) => T, what: string): T {
-    let json: unknown = body
-    if (typeof body === 'string') {
-      try {
-        json = parseYaml(body)
-      } catch (e) {
-        throw new InvalidFileError(`${what} enthält kein gültiges YAML.`, { cause: e })
-      }
-    }
-    try {
-      return parser(json)
-    } catch (e) {
-      if (e instanceof InvalidFileError) throw e
-      throw new InvalidFileError(`${what} hat ein unerwartetes Format.`, { cause: e })
-    }
-  }
-
-  private async save(
-    path: string,
-    file: unknown,
-    etag: string | null,
-    what: string
-  ): Promise<string> {
-    const content = stringifyYaml(file, { lineWidth: 0 })
-    try {
-      await this.ensureFolders()
-      const result = await this.options.files.write(path, content, etag)
-      if (result.etag) return result.etag
-      const reread = await this.options.files.read(path)
-      if (!reread.etag) throw new DataStoreError(`${what} wurde gespeichert, der ETag fehlt aber.`)
-      return reread.etag
-    } catch (e) {
-      throw mapError(e, what)
-    }
-  }
-
   private async ensureFolders(): Promise<void> {
     if (this.foldersReady) return
     const parts = this.options.folder.split('/').filter(Boolean)
-    const paths = parts.map((_, i) => parts.slice(0, i + 1).join('/'))
-    paths.push(this.packlistDir())
-    for (const path of paths) {
+    for (const path of parts.map((_, i) => parts.slice(0, i + 1).join('/'))) {
       try {
         await this.options.files.mkdir(path)
       } catch (e) {
@@ -200,17 +140,49 @@ export class WebDavDataStore implements DataStore {
   }
 }
 
-function summarize(file: PacklistFile): PacklistSummary {
-  const items = file.items ?? []
-  const extra = file.extraItems ?? []
-  return {
-    id: file.id,
-    name: file.name,
-    ...(file.date !== undefined && { date: file.date }),
-    tentCount: (file.tents ?? []).length,
-    itemCount: items.length + extra.length,
-    checkedCount: items.filter((i) => i.checked).length + extra.filter((i) => i.checked).length,
-    updatedAt: file.updatedAt
+export interface WebDavPacklistDocumentOptions {
+  files: WebDavFiles
+  /** Pfad der Datei im Space, ohne führenden Schrägstrich */
+  path: string
+  canWrite: () => Promise<boolean>
+  parsePacklistFile: (json: unknown) => PacklistFile
+  close?: () => void
+}
+
+/** Eine Packlisten-Datei an beliebiger Stelle eines Space. */
+export class WebDavPacklistDocument implements PacklistDocument {
+  readonly name: string
+  readonly close?: () => void
+
+  constructor(private readonly options: WebDavPacklistDocumentOptions) {
+    this.name = packlistName(options.path)
+    this.close = options.close
+  }
+
+  canWrite(): Promise<boolean> {
+    return this.options.canWrite()
+  }
+
+  async load(): Promise<Versioned<PacklistFile | null>> {
+    try {
+      const { body, etag } = await this.options.files.read(this.options.path)
+      if (typeof body === 'string' && body.trim() === '') {
+        return { data: null, etag }
+      }
+      const data = parseFile(body, this.options.parsePacklistFile, PACKLIST)
+      // Maßgeblich ist der Dateiname – auch wenn die Datei umbenannt oder kopiert wurde.
+      return { data: { ...data, name: this.name }, etag }
+    } catch (e) {
+      throw mapError(e, PACKLIST)
+    }
+  }
+
+  async save(file: PacklistFile, etag: string | null): Promise<string> {
+    try {
+      return await writeFile(this.options.files, this.options.path, file, etag, PACKLIST)
+    } catch (e) {
+      throw mapError(e, PACKLIST)
+    }
   }
 }
 
@@ -227,13 +199,7 @@ export interface WebDavApi<S> {
     space: S,
     options: { path: string; content: string; previousEntityTag?: string; overwrite?: boolean }
   ): Promise<{ etag?: string }>
-  listFiles(
-    space: S,
-    target: { path: string },
-    options?: { depth?: number }
-  ): Promise<{ children?: { name?: string }[] }>
   createFolder(space: S, options: { path: string; fetchFolder?: boolean }): Promise<unknown>
-  deleteFile(space: S, options: { path: string }): Promise<unknown>
 }
 
 /** Entfernt Anführungszeichen und "W/", damit GET- und PROPFIND-ETags vergleichbar sind. */
@@ -256,15 +222,8 @@ export function createWebDavFiles<S>(webdav: WebDavApi<S>, space: S): WebDavFile
       })
       return { etag: normalizeEtag(resource.etag) }
     },
-    async list(path) {
-      const { children } = await webdav.listFiles(space, { path }, { depth: 1 })
-      return (children ?? []).map((c) => c.name ?? '').filter(Boolean)
-    },
     async mkdir(path) {
       await webdav.createFolder(space, { path, fetchFolder: false })
-    },
-    async remove(path) {
-      await webdav.deleteFile(space, { path })
     }
   }
 }

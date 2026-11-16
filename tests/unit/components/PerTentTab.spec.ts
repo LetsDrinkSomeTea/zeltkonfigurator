@@ -12,7 +12,7 @@ async function mountTab(stock: Parameters<typeof fullStock>[1], quantity: number
   const store = storeWith(full, [list])
   const Host = defineComponent({
     setup() {
-      const pl = usePacklist('p1')
+      const pl = usePacklist(store.document('p1'))
       void pl.load()
       return () => h(PerTentTab, { pl })
     }

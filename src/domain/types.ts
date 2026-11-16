@@ -64,9 +64,21 @@ export interface TentType {
   name: string
   /** mindestens eine; erste = Vorgabe */
   roofs: RoofConfig[]
-  /** mindestens eine; erste = Vorgabe */
+  /** mindestens eine; erste = Vorgabe, sofern `defaults` nichts anderes sagt */
   walls: WallOption[]
   fixed: Part[]
+  /**
+   * Standardkonfiguration eines neuen Zeltes. Fehlende Angaben: erstes Dach, erste Wandoption,
+   * erste Bauart der Wandoption, Ausführung 'blanko'.
+   */
+  defaults?: TentDefaults
+}
+
+export interface TentDefaults {
+  roofId?: string
+  wallId?: string
+  buildId?: string
+  finish?: Finish
 }
 
 export interface Catalog {
@@ -134,7 +146,9 @@ export interface ExtraItem {
 
 export interface PacklistFile {
   schemaVersion: 1
+  /** Kennung aus der Zeit, als die App die Dateien selbst benannt hat; ohne Bedeutung. */
   id: string
+  /** Beim Laden durch den Dateinamen ersetzt: die Liste heißt wie ihre Datei. */
   name: string
   /** Lagerdatum, frei (ISO-Datum empfohlen) */
   date?: string
@@ -148,17 +162,6 @@ export interface PacklistFile {
   /** Hash aus Katalog + Bestand zum Zeitpunkt der Berechnung */
   fingerprint: string
   /** ISO-Zeitstempel */
-  updatedAt: string
-}
-
-export interface PacklistSummary {
-  id: string
-  name: string
-  date?: string
-  tentCount: number
-  /** abhakbare Zeilen: items + extraItems */
-  itemCount: number
-  checkedCount: number
   updatedAt: string
 }
 

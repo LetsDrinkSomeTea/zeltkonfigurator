@@ -79,20 +79,21 @@ Nicht Teil der App:
 
 ### 5.3 Konfigurator
 
-| ID   | Anforderung                                                                                                                                                                         |
-| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| F-20 | In einer Packliste lassen sich beliebig viele Zelte hinzufügen, entfernen und duplizieren. Jedes Zelt kann eine Bezeichnung bekommen (z. B. „Küchenjurte“).                         |
-| F-21 | Hat ein Zelttyp mehrere Dachkonfigurationen, wird die bevorzugte gewählt (Vorgabe: die erste).                                                                                      |
-| F-22 | Pro Zelt wird eine Wandoption gewählt, einheitlich für das ganze Zelt. Welche es gibt, bestimmt der Zelttyp (Abschnitt 7).                                                          |
-| F-23 | Lässt eine Wandoption mehrere Bauarten zu („hoch“: Superbahn oder Normalbahn + Erweiterungsstreifen), wird die bevorzugte gewählt (Vorgabe: Superbahn).                             |
-| F-24 | Pro Zelt wird die Wunsch-Ausführung gewählt: Blanko, Fenster oder Gaze. Sie gilt für Superbahnen und Erweiterungsstreifen dieses Zeltes.                                            |
-| F-25 | Die App berechnet sofort nach jeder Änderung die Materialliste pro Zelt und die Gesamtliste und gleicht sie mit dem Bestand ab: benötigt, vorhanden, fehlend.                       |
-| F-26 | Reicht der Bestand für den Wunsch nicht, weicht die App in fester Reihenfolge aus (5.4) und kennzeichnet jede Abweichung am betroffenen Zelt.                                       |
-| F-27 | Was auf keinem Weg gedeckt werden kann, wird als fehlend ausgewiesen – gezählt in der Wunsch-Variante.                                                                              |
-| F-28 | Zelte werden in Listenreihenfolge bedient: Das erste Zelt bekommt seine Wünsche zuerst. Die Reihenfolge ist änderbar.                                                               |
-| F-29 | Eine Zusammenfassung oben zeigt: „alles vorhanden“, „mit Ausweichmaterial machbar“ oder „es fehlt Material“.                                                                        |
-| F-2A | Stangen, die laut Artikelliste auch vor Ort geschlagen werden können, zählen nicht als fehlend. Was der Bestand nicht deckt, erscheint als „vor Ort schlagen“ mit Anzahl und Länge. |
-| F-2B | Die Ausweichreihenfolge der Ausführungen ist je Packliste einstellbar (drei Einträge umsortieren). Vorgabe: Gaze, Fenster, Blanko.                                                  |
+| ID   | Anforderung                                                                                                                                                                                                                                                                     |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F-20 | In einer Packliste lassen sich beliebig viele Zelte hinzufügen, entfernen und duplizieren. Jedes Zelt kann eine Bezeichnung bekommen (z. B. „Küchenjurte“).                                                                                                                     |
+| F-21 | Hat ein Zelttyp mehrere Dachkonfigurationen, wird die bevorzugte gewählt (Vorgabe: die Standardkonfiguration des Zelttyps, sonst die erste).                                                                                                                                    |
+| F-22 | Pro Zelt wird eine Wandoption gewählt, einheitlich für das ganze Zelt. Welche es gibt, bestimmt der Zelttyp (Abschnitt 7).                                                                                                                                                      |
+| F-23 | Lässt eine Wandoption mehrere Bauarten zu („hoch“: Superbahn oder Normalbahn + Erweiterungsstreifen), wird die bevorzugte gewählt (Vorgabe: Superbahn).                                                                                                                         |
+| F-2C | Jeder Zelttyp hat eine Standardkonfiguration (Jurten: hohe Wand aus Superbahnen mit Gaze; Kohte: mit Erdstreifen; Hochkohte: normale Wand). Neue Zelte starten darin und zeigen sie in einer Zeile; die Auswahlfelder erscheinen erst über „Anpassen“, „Standard“ setzt zurück. |
+| F-24 | Pro Zelt wird die Wunsch-Ausführung gewählt: Blanko, Fenster oder Gaze. Sie gilt für Superbahnen und Erweiterungsstreifen dieses Zeltes.                                                                                                                                        |
+| F-25 | Die App berechnet sofort nach jeder Änderung die Materialliste pro Zelt und die Gesamtliste und gleicht sie mit dem Bestand ab: benötigt, vorhanden, fehlend.                                                                                                                   |
+| F-26 | Reicht der Bestand für den Wunsch nicht, weicht die App in fester Reihenfolge aus (5.4) und kennzeichnet jede Abweichung am betroffenen Zelt.                                                                                                                                   |
+| F-27 | Was auf keinem Weg gedeckt werden kann, wird als fehlend ausgewiesen – gezählt in der Wunsch-Variante.                                                                                                                                                                          |
+| F-28 | Zelte werden in Listenreihenfolge bedient: Das erste Zelt bekommt seine Wünsche zuerst. Die Reihenfolge ist änderbar.                                                                                                                                                           |
+| F-29 | Eine Zusammenfassung oben zeigt: „alles vorhanden“, „mit Ausweichmaterial machbar“ oder „es fehlt Material“.                                                                                                                                                                    |
+| F-2A | Stangen, die laut Artikelliste auch vor Ort geschlagen werden können, zählen nicht als fehlend. Was der Bestand nicht deckt, erscheint als „vor Ort schlagen“ mit Anzahl und Länge.                                                                                             |
+| F-2B | Die Ausweichreihenfolge der Ausführungen ist je Packliste einstellbar (drei Einträge umsortieren). Vorgabe: Gaze, Fenster, Blanko.                                                                                                                                              |
 
 ### 5.4 Ausweichregeln
 
@@ -122,9 +123,9 @@ Dabei gilt:
 
 | ID   | Anforderung                                                                                                                                                               |
 | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| F-30 | Eine Übersicht zeigt alle gespeicherten Packlisten mit Name, Datum, Anzahl Zelte und Abhak-Fortschritt.                                                                   |
-| F-31 | Packlisten können angelegt, umbenannt, dupliziert und gelöscht werden. Löschen verlangt eine Bestätigung.                                                                 |
-| F-32 | Jede Packliste ist eine eigene Datei im Space und enthält Zelte, berechnetes Material und Abhak-Stand.                                                                    |
+| F-30 | Entfällt: Es gibt keine eigene Übersicht. Packlisten werden in der Dateiansicht von OpenCloud gefunden.                                                                   |
+| F-31 | Packlisten werden über „Neu → Packliste“ in einem beliebigen Ordner angelegt. Umbenennen, Duplizieren, Verschieben und Löschen übernimmt die Dateiansicht.                |
+| F-32 | Jede Packliste ist eine eigene Datei an beliebiger Stelle und enthält Zelte, berechnetes Material und Abhak-Stand. Die Liste heißt wie die Datei.                         |
 | F-33 | Jede Zeile der Packliste ist abhakbar. Der Stand wird automatisch gespeichert und ist für alle mit Zugriff derselbe.                                                      |
 | F-34 | Bearbeiter können freie Zeilen ergänzen (Text, Stückzahl), die ebenfalls abhakbar sind.                                                                                   |
 | F-35 | Die Packliste lässt sich umschalten zwischen „Gesamt“ (summiert, nach Kategorie) und „Pro Zelt“.                                                                          |
@@ -135,12 +136,12 @@ Dabei gilt:
 
 ### 5.6 Einbindung in OpenCloud
 
-| ID   | Anforderung                                                                                                                                                                                                             |
-| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| F-40 | Die App erscheint im App-Umschalter von OpenCloud.                                                                                                                                                                      |
-| F-41 | Der Ablageort (Space und Ordner) wird einmal in der App-Konfiguration des Servers festgelegt. Vorgabe: Space „Material Team“.                                                                                           |
-| F-42 | Fehlt die Konfiguration, der Space oder der Zugriff, zeigt die App eine verständliche Meldung statt einer leeren Seite.                                                                                                 |
-| F-43 | Packlisten (`.packliste`) und der Bestand (`.bestand`) lassen sich aus der Dateiansicht des Space heraus mit der App öffnen. Die Packlisten-Datei heißt wie die Liste und wird beim Umbenennen der Liste mit umbenannt. |
+| ID   | Anforderung                                                                                                                                                 |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F-40 | Die App hat keinen Eintrag im App-Umschalter. Sie wird über ihre Dateien und den Eintrag „Packliste“ im „Neu“-Menü geöffnet.                                |
+| F-41 | Der Ablageort des Bestands (Space und Ordner) wird einmal in der App-Konfiguration des Servers festgelegt. Vorgabe: Space „Material Team“.                  |
+| F-42 | Fehlt die Konfiguration, der Space oder der Zugriff, zeigt die App eine verständliche Meldung statt einer leeren Seite.                                     |
+| F-43 | Packlisten (`.packliste`) und der Bestand (`.bestand`) lassen sich aus der Dateiansicht heraus mit der App öffnen. Jede Packliste verlinkt auf den Bestand. |
 
 ## 6. Nichtfunktionale Anforderungen
 

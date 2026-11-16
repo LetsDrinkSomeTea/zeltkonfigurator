@@ -1,19 +1,13 @@
-import {
-  computed,
-  getCurrentScope,
-  onScopeDispose,
-  ref,
-  toValue,
-  watch,
-  type ComputedRef,
-  type MaybeRefOrGetter,
-  type Ref
-} from 'vue'
+import { computed, getCurrentScope, onScopeDispose, ref, type ComputedRef, type Ref } from 'vue'
 import { catalog } from '../domain/catalog'
-import { packlistFileId, sanitizeFileName } from '../domain/fileNames'
-import { createTentConfig, fingerprint } from '../domain/packlist'
+import {
+  createPacklist,
+  createTentConfig,
+  defaultTentOptions,
+  fingerprint
+} from '../domain/packlist'
 import type { Finish, PacklistFile, Stock, TentConfig } from '../domain/types'
-import { ConflictError } from '../storage/DataStore'
+import { ConflictError, type PacklistDocument } from '../storage/DataStore'
 import { applyOp, newId, type PacklistOp } from './packlistOps'
 import { MAX_CONFLICT_RETRIES, toError, toStock } from './useStock'
 import { useStore } from './useStore'
@@ -30,16 +24,12 @@ export interface UsePacklist {
   stale: ComputedRef<boolean>
   load(): Promise<void>
   flush(): Promise<void>
-  setName(name: string): void
-  /**
-   * Benennt die Liste um und zieht die Datei nach, damit sie wie die Liste heißt.
-   * Liefert die (ggf. neue) Kennung; bei einer neuen Kennung muss der Aufrufer dorthin wechseln.
-   */
-  rename(name: string): Promise<string>
   setDate(date: string | undefined): void
   setFinishOrder(order: Finish[]): void
   addTent(typeId: string): void
   updateTent(tentId: string, patch: Partial<Omit<TentConfig, 'id' | 'typeId'>>): void
+  /** Setzt Dach, Wand, Bauart und Ausführung auf die Standardkonfiguration des Zelttyps. */
+  resetTent(tentId: string): void
   removeTent(tentId: string): void
   duplicateTent(tentId: string): void
   moveTent(tentId: string, direction: -1 | 1): void
@@ -54,7 +44,10 @@ function plain<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
 }
 
-export function usePacklist(id: MaybeRefOrGetter<string>): UsePacklist {
+/**
+ * Bearbeitet die Packliste in `doc`. Der Bestand kommt immer vom festen Ablageort (useStore).
+ */
+export function usePacklist(doc: PacklistDocument): UsePacklist {
   const store = useStore()
   const list = ref<PacklistFile | null>(null)
   const loading = ref(false)
@@ -91,16 +84,25 @@ export function usePacklist(id: MaybeRefOrGetter<string>): UsePacklist {
     error.value = null
     try {
       const [writable, stockFile, loaded] = await Promise.all([
-        store.canWrite(),
+        doc.canWrite(),
         store.loadStock(),
-        store.loadPacklist(toValue(id))
+        doc.load()
       ])
       canWrite.value = writable
       stock.value = toStock(stockFile.data.stock)
       stockLoaded.value = true
-      list.value = loaded.data
       etag = loaded.etag
       pending = []
+      if (loaded.data) {
+        list.value = loaded.data
+      } else {
+        // Leere Datei, frisch über „Neu“ angelegt: mit einer leeren Packliste füllen.
+        const created = createPacklist(doc.name, catalog, stock.value)
+        if (writable) {
+          etag = await doc.save(created, etag)
+        }
+        list.value = created
+      }
     } catch (e) {
       list.value = null
       error.value = toError(e)
@@ -120,7 +122,7 @@ export function usePacklist(id: MaybeRefOrGetter<string>): UsePacklist {
       let snapshot = plain(list.value)
       for (let attempt = 0; ; attempt++) {
         try {
-          etag = await store.savePacklist(snapshot, etag)
+          etag = await doc.save(snapshot, etag)
           error.value = null
           return
         } catch (e) {
@@ -128,10 +130,10 @@ export function usePacklist(id: MaybeRefOrGetter<string>): UsePacklist {
             throw e
           }
           // F-38: neu laden, eigene Änderungen auf den frischen Stand anwenden, erneut speichern.
-          const fresh = await store.loadPacklist(snapshot.id)
+          const fresh = await doc.load()
           ops = [...ops, ...pending]
           pending = []
-          let next = fresh.data
+          let next = fresh.data ?? createPacklist(doc.name, catalog, stock.value)
           for (const op of ops) {
             next = applyOp(next, op, ctx())
           }
@@ -187,45 +189,13 @@ export function usePacklist(id: MaybeRefOrGetter<string>): UsePacklist {
     push({ type: 'addTent', tent: { ...createTentConfig(type), id: newId() } })
   }
 
-  async function rename(name: string): Promise<string> {
-    const current = toValue(id)
-    if (!canWrite.value || !list.value) {
-      return current
-    }
-    if (list.value.name !== name) {
-      push({ type: 'setName', name })
-    }
-    await flush()
-    if (error.value || !list.value) {
-      return current
-    }
-    if (sanitizeFileName(name).toLowerCase() === current.toLowerCase()) {
-      return current
-    }
-    try {
-      const taken = (await store.listPacklists()).map((s) => s.id).filter((t) => t !== current)
-      const nextId = packlistFileId(name, taken)
-      if (nextId === current) {
-        return current
-      }
-      // Erst die neue Datei anlegen, dann die alte entfernen: Bricht es dazwischen ab, gibt es
-      // die Liste doppelt, aber nie gar nicht.
-      await store.savePacklist({ ...plain(list.value), id: nextId }, null)
-      await store.deletePacklist(current)
-      return nextId
-    } catch (e) {
-      error.value = toError(e)
-      return current
+  function resetTent(tentId: string) {
+    const tent = list.value?.tents.find((t) => t.id === tentId)
+    const type = catalog.tentTypes.find((t) => t.id === tent?.typeId)
+    if (type) {
+      push({ type: 'updateTent', tentId, patch: defaultTentOptions(type) })
     }
   }
-
-  watch(
-    () => toValue(id),
-    async () => {
-      await flush()
-      await load()
-    }
-  )
 
   if (getCurrentScope()) {
     onScopeDispose(() => {
@@ -245,12 +215,11 @@ export function usePacklist(id: MaybeRefOrGetter<string>): UsePacklist {
     stale,
     load,
     flush,
-    setName: (name) => push({ type: 'setName', name }),
-    rename,
     setDate: (date) => push({ type: 'setDate', date }),
     setFinishOrder: (order) => push({ type: 'setFinishOrder', order }),
     addTent,
     updateTent: (tentId, patch) => push({ type: 'updateTent', tentId, patch }),
+    resetTent,
     removeTent: (tentId) => push({ type: 'removeTent', tentId }),
     duplicateTent: (tentId) => push({ type: 'duplicateTent', tentId, newId: newId() }),
     moveTent: (tentId, direction) => push({ type: 'moveTent', tentId, direction }),

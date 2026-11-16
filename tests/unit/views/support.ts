@@ -6,7 +6,7 @@ import type { Component } from 'vue'
 import { catalog } from '../../../src/domain/catalog'
 import { createPacklist, createTentConfig, recalculate } from '../../../src/domain/packlist'
 import type { PacklistFile, Stock, TentConfig } from '../../../src/domain/types'
-import { storeKey } from '../../../src/composables/useStore'
+import { documentKey, storeKey } from '../../../src/composables/useStore'
 import { MemoryDataStore } from '../../../src/storage/MemoryDataStore'
 
 const Dummy = { render: (): null => null }
@@ -15,9 +15,16 @@ export function createTestRouter(): Router {
   return createRouter({
     history: createMemoryHistory(),
     routes: [
-      { path: '/listen', name: 'zeltkonfigurator-listen', component: Dummy },
-      { path: '/listen/:id', name: 'zeltkonfigurator-liste', component: Dummy },
-      { path: '/bestand', name: 'zeltkonfigurator-bestand', component: Dummy }
+      {
+        path: '/liste/:driveAliasAndItem(.*)?',
+        name: 'zeltkonfigurator-liste',
+        component: Dummy
+      },
+      {
+        path: '/bestand/:driveAliasAndItem(.*)?',
+        name: 'zeltkonfigurator-bestand',
+        component: Dummy
+      }
     ]
   })
 }
@@ -62,20 +69,38 @@ export function storeWith(
 export async function mountWithStore(
   component: Component,
   store: MemoryDataStore,
-  options: { route?: string; props?: Record<string, unknown> } = {}
+  options: { route?: string; props?: Record<string, unknown>; close?: () => void } = {}
 ) {
   const router = createTestRouter()
-  await router.push(options.route ?? '/listen')
+  await router.push(options.route ?? '/liste/p1.packliste')
   await router.isReady()
   const wrapper = mount(component, {
     props: options.props,
     global: {
       plugins: [...defaultPlugins(), router],
       stubs: { OcIcon: true },
-      provide: { [storeKey as symbol]: store }
+      provide: {
+        [storeKey as symbol]: store,
+        // Die geöffnete Datei ist in den Tests immer die Packliste „p1“.
+        [documentKey as symbol]: () => ({ ...store.document('p1'), close: options.close })
+      }
     }
   })
   return { wrapper, router }
+}
+
+/** Klappt alle Zeltkarten auf („Anpassen“). */
+export async function expandTents(wrapper: VueWrapper) {
+  for (const button of wrapper.findAll('article button')) {
+    if (button.text() === 'Anpassen') {
+      await button.trigger('click')
+    }
+  }
+}
+
+/** Zelt ohne Seitenwand, unabhängig von der Standardkonfiguration des Typs. */
+export function bareTent(typeId: string, patch: Partial<TentConfig> = {}): TentConfig {
+  return tentOf(typeId, { wallId: 'keine', buildId: '', finish: 'blanko', ...patch })
 }
 
 /** Findet das OcSelect einer Zeltoption (IDs enden auf -roof, -wall, -build, -finish) oder per ID. */

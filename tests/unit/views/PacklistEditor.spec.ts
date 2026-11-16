@@ -1,12 +1,28 @@
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import PacklistEditor from '../../../src/views/PacklistEditor.vue'
 import type { PacklistFile, Stock, TentConfig } from '../../../src/domain/types'
-import { choose, fullStock, listFor, mountWithStore, ocSelect, storeWith, tentOf } from './support'
+import {
+  bareTent,
+  choose,
+  expandTents,
+  fullStock,
+  listFor,
+  mountWithStore,
+  ocSelect,
+  storeWith,
+  tentOf
+} from './support'
 
 async function open(
   tents: TentConfig[],
   stock: Stock,
-  options: { writable?: boolean; listStock?: Stock; query?: string; unknownType?: boolean } = {}
+  options: {
+    writable?: boolean
+    listStock?: Stock
+    query?: string
+    unknownType?: boolean
+    close?: () => void
+  } = {}
 ) {
   const list = listFor(tents, options.listStock ?? stock)
   if (options.unknownType) {
@@ -14,7 +30,8 @@ async function open(
   }
   const store = storeWith(stock, [list], options.writable ?? true)
   const mounted = await mountWithStore(PacklistEditor, store, {
-    route: `/listen/p1${options.query ?? ''}`
+    route: `/liste/p1.packliste${options.query ?? ''}`,
+    close: options.close
   })
   await flushPromises()
   return { ...mounted, store, list }
@@ -109,27 +126,55 @@ describe('PacklistEditor tabs', () => {
 })
 
 describe('PacklistEditor configurator', () => {
-  it('adds a Jurte with roof and wall selects', async () => {
+  it('adds a Jurte in its default configuration, collapsed', async () => {
     const { wrapper, store } = await open([], fullStock(100))
     await choose(ocSelect(wrapper, 'zk-add-tent-type'), 'jurte')
     await wrapper.find('form').trigger('submit')
     await flushPromises()
-    expect(select(wrapper, 'roof')).toBeDefined()
-    expect(select(wrapper, 'wall')).toBeDefined()
-    expect(select(wrapper, 'build')).toBeUndefined()
-    expect(select(wrapper, 'finish')).toBeUndefined()
+    expect(wrapper.find('.zk-tent-summary').text()).toBe('Jurtendach · Hoch · Superbahn · Gaze')
+    expect(select(wrapper, 'wall')).toBeUndefined()
     await wrapper.unmount()
     await flushPromises()
-    expect((await savedList(store)).tents.map((t) => t.typeId)).toEqual(['jurte'])
+    expect((await savedList(store)).tents[0]).toMatchObject({
+      typeId: 'jurte',
+      wallId: 'hoch',
+      buildId: 'super',
+      finish: 'gaze'
+    })
   })
 
-  it('shows build and finish selects for a high wall', async () => {
+  it('uses the default configuration of Kohte and Hochkohte', async () => {
+    const { wrapper } = await open([tentOf('kohte'), tentOf('hochkohte')], fullStock(100))
+    expect(wrapper.findAll('.zk-tent-summary').map((p) => p.text())).toEqual([
+      '4 Kohtenblätter · Mit Erdstreifen',
+      '4 Kohtenblätter · Normal'
+    ])
+  })
+
+  it('shows the selects only after "Anpassen" and hides them again with "Fertig"', async () => {
     const { wrapper } = await open([tentOf('jurte')], fullStock(100))
+    const toggle = () => wrapper.find('article button[aria-expanded]')
+    expect(toggle().text()).toBe('Anpassen')
+    expect(toggle().attributes('aria-expanded')).toBe('false')
+    await toggle().trigger('click')
+    expect(toggle().text()).toBe('Fertig')
+    expect(select(wrapper, 'roof')).toBeDefined()
+    expect(select(wrapper, 'wall')).toBeDefined()
+    expect(select(wrapper, 'build')).toBeDefined()
+    expect(select(wrapper, 'finish')).toBeDefined()
+    await toggle().trigger('click')
+    expect(select(wrapper, 'wall')).toBeUndefined()
+  })
+
+  it('shows build and finish selects only where they apply', async () => {
+    const { wrapper } = await open([bareTent('jurte')], fullStock(100))
+    await expandTents(wrapper)
+    expect(select(wrapper, 'build')).toBeUndefined()
+    expect(select(wrapper, 'finish')).toBeUndefined()
     await choose(select(wrapper, 'wall'), 'hoch')
     await flushPromises()
     expect(select(wrapper, 'build')).toBeDefined()
     expect(select(wrapper, 'finish')).toBeDefined()
-    // Bauart ohne Ausführungs-Lage: keine Ausführung
     await choose(select(wrapper, 'build'), 'normal+streifen')
     await flushPromises()
     expect(select(wrapper, 'finish')).toBeDefined()
@@ -141,22 +186,44 @@ describe('PacklistEditor configurator', () => {
 
   it('shows no roof select for a Kohte', async () => {
     const { wrapper } = await open([tentOf('kohte')], fullStock(100))
+    await expandTents(wrapper)
     expect(select(wrapper, 'roof')).toBeUndefined()
     expect(select(wrapper, 'wall')).toBeDefined()
   })
 
-  it('writes option changes to the list', async () => {
+  it('writes option changes to the list and marks the tent as customised', async () => {
     const { wrapper, store } = await open([tentOf('jurte')], fullStock(100))
+    expect(wrapper.find('.zk-tent-custom').exists()).toBe(false)
+    await expandTents(wrapper)
     await choose(select(wrapper, 'roof'), 'kohtenblaetter')
-    await choose(select(wrapper, 'wall'), 'hoch')
-    await choose(select(wrapper, 'finish'), 'gaze')
+    await choose(select(wrapper, 'finish'), 'fenster')
     await wrapper.find('input[id$="-label"]').setValue('Küche')
     await flushPromises()
+    expect(wrapper.find('.zk-tent-summary').text()).toContain('6 Kohtenblätter · Hoch')
+    expect(wrapper.find('.zk-tent-custom').exists()).toBe(true)
     await wrapper.unmount()
     await flushPromises()
     const [tent] = (await savedList(store)).tents
     expect(tent).toMatchObject({
       roofId: 'kohtenblaetter',
+      wallId: 'hoch',
+      buildId: 'super',
+      finish: 'fenster',
+      label: 'Küche'
+    })
+  })
+
+  it('resets a tent to its default configuration', async () => {
+    const { wrapper, store } = await open([bareTent('jurte', { label: 'Küche' })], fullStock(100))
+    await expandTents(wrapper)
+    const reset = () => wrapper.findAll('article button').find((b) => b.text() === 'Standard')!
+    await reset().trigger('click')
+    await flushPromises()
+    expect(wrapper.find('.zk-tent-custom').exists()).toBe(false)
+    expect(reset().attributes('disabled')).toBeDefined()
+    await wrapper.unmount()
+    await flushPromises()
+    expect((await savedList(store)).tents[0]).toMatchObject({
       wallId: 'hoch',
       buildId: 'super',
       finish: 'gaze',
@@ -166,25 +233,21 @@ describe('PacklistEditor configurator', () => {
 
   it('moves, duplicates and removes tents', async () => {
     const { wrapper, store } = await open([tentOf('kohte'), tentOf('jurte')], fullStock(100))
-    const buttons = () => wrapper.findAll('article')
-    expect(buttons()[0].find('button[aria-label="Nach oben"]').attributes('disabled')).toBeDefined()
-    expect(
-      buttons()[1].find('button[aria-label="Nach unten"]').attributes('disabled')
-    ).toBeDefined()
+    await expandTents(wrapper)
+    const cards = () => wrapper.findAll('article')
+    expect(cards()[0].find('button[aria-label="Nach oben"]').attributes('disabled')).toBeDefined()
+    expect(cards()[1].find('button[aria-label="Nach unten"]').attributes('disabled')).toBeDefined()
 
-    await buttons()[1].find('button[aria-label="Nach oben"]').trigger('click')
+    await cards()[1].find('button[aria-label="Nach oben"]').trigger('click')
     expect(wrapper.findAll('article h3').map((h) => h.text())).toEqual(['1. Jurte', '2. Kohte'])
 
-    await buttons()[0]
+    await cards()[0]
       .findAll('button')
       .find((b) => b.text() === 'Duplizieren')!
       .trigger('click')
     expect(wrapper.findAll('article')).toHaveLength(3)
 
-    await buttons()[2]
-      .findAll('button')
-      .find((b) => b.text() === 'Entfernen')!
-      .trigger('click')
+    await cards()[2].find('button[aria-label$="entfernen"]').trigger('click')
     expect(wrapper.findAll('article')).toHaveLength(2)
     await wrapper.unmount()
     await flushPromises()
@@ -226,20 +289,55 @@ describe('PacklistEditor configurator', () => {
   it('hides all controls in read-only mode', async () => {
     const { wrapper } = await open([tentOf('jurte')], fullStock(100), { writable: false })
     expect(ocSelect(wrapper, 'zk-add-tent-type')).toBeUndefined()
-    expect(wrapper.findAll('article button:not(.vs__clear)')).toHaveLength(0)
+    expect(wrapper.findAll('article button')).toHaveLength(0)
+    expect(wrapper.findAllComponents({ name: 'OcSelect' })).toHaveLength(0)
     expect(wrapper.find('button[aria-label="Blanko nach oben"]').exists()).toBe(false)
-    expect(wrapper.find('input#zk-list-name').exists()).toBe(false)
-    expect(wrapper.text()).toContain('Sommerlager')
-    const selects = wrapper.findAllComponents({ name: 'OcSelect' })
-    expect(selects.length).toBeGreaterThan(0)
-    expect(selects.every((s) => s.props('disabled'))).toBe(true)
-    expect(wrapper.find('input[id$="-label"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.find('input#zk-list-date').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Nur Lesezugriff')
+    expect(wrapper.find('.zk-tent-summary').text()).toBe('Jurtendach · Hoch · Superbahn · Gaze')
   })
 
   it('shows an error for an unknown list', async () => {
     const store = storeWith({}, [])
-    const { wrapper } = await mountWithStore(PacklistEditor, store, { route: '/listen/p1' })
+    const { wrapper } = await mountWithStore(PacklistEditor, store)
     await flushPromises()
     expect(wrapper.find('[role="alert"]').exists()).toBe(true)
+  })
+})
+
+describe('PacklistEditor as a file', () => {
+  it('uses the file name as title and links to the stock', async () => {
+    const { wrapper } = await open([tentOf('kohte')], fullStock(100))
+    expect(wrapper.find('h1').text()).toBe('p1')
+    expect(wrapper.find('input#zk-list-name').exists()).toBe(false)
+    expect(wrapper.find('a[href="/bestand"]').text()).toBe('Bestand')
+  })
+
+  it('saves pending changes before closing', async () => {
+    const close = vi.fn()
+    const { wrapper, store } = await open([tentOf('kohte')], fullStock(100), { close })
+    await wrapper.find('input#zk-list-date').setValue('2026-08-01')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Schließen')!
+      .trigger('click')
+    await flushPromises()
+    expect(close).toHaveBeenCalledTimes(1)
+    expect((await savedList(store)).date).toBe('2026-08-01')
+  })
+
+  it('offers no close button when the environment has none', async () => {
+    const { wrapper } = await open([tentOf('kohte')], fullStock(100))
+    expect(wrapper.findAll('button').some((b) => b.text() === 'Schließen')).toBe(false)
+  })
+
+  it('turns an empty file into an empty list', async () => {
+    const store = storeWith(fullStock(100), [])
+    store.createEmptyFile('p1')
+    const { wrapper } = await mountWithStore(PacklistEditor, store)
+    await flushPromises()
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    expect(wrapper.find('.zk-banner').text()).toContain('Noch keine Zelte')
+    expect((await savedList(store)).tents).toEqual([])
   })
 })

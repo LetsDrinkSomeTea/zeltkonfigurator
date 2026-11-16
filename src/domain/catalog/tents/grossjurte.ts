@@ -12,6 +12,8 @@ export const grossjurte: TentType = {
     }
   ],
   walls: [keineWand(), normaleWand({ segmente: 16 }), hoheWand({ segmente: 16 })],
+  // Standard: hohe Wand aus Superbahnen mit Gaze
+  defaults: { wallId: 'hoch', buildId: 'super', finish: 'gaze' },
   fixed: [
     { articleId: 'grossjurtendaechle', quantity: 1 },
     { articleId: 'jurtenspinne-8', quantity: 1 },
