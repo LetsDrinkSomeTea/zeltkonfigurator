@@ -51,7 +51,6 @@
                 :checked="item.checked"
                 :checkable="isCheckable(item)"
                 :missing="item.missing"
-                :to-cut="item.toCut"
                 :disabled="!pl.canWrite.value"
                 @toggle="pl.toggleItem(item.articleId)"
               />

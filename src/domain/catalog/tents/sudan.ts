@@ -14,7 +14,7 @@ export const sudan: TentType = {
   walls: [keineWand()],
   fixed: [
     { articleId: 'gestaengesatz-sudan', quantity: 1 }, // PLATZHALTER
-    { articleId: 'hering', quantity: 16 }, // PLATZHALTER
+    { articleId: 't-profil', quantity: 16 }, // PLATZHALTER
     { articleId: 'bodenplane-rund', quantity: 1 } // PLATZHALTER
   ]
 }

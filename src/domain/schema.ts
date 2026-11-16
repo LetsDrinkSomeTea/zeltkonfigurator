@@ -114,7 +114,6 @@ function parseItem(v: unknown, path: string): PackItem {
     category: category as PackItem['category'],
     quantity: count(i.quantity, `${path}.quantity`),
     missing: count(i.missing, `${path}.missing`),
-    toCut: count(i.toCut, `${path}.toCut`),
     perTent,
     checked: bool(i.checked, `${path}.checked`)
   }

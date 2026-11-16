@@ -30,7 +30,7 @@ describe('Rechenkern mit echtem Katalog', () => {
       jurtendaechle: 1,
       kohtenkreuz: 2,
       'jurtenspinne-6': 1,
-      hering: 40,
+      't-profil': 40,
       abspannseil: 40,
       bodennagel: 100,
       aufzugseil: 3,
@@ -57,9 +57,11 @@ describe('Rechenkern mit echtem Katalog', () => {
     // beide Hochkohten weichen auf Normalbahn + Streifen (Gaze) aus: 16 Segmente
     expect(item('normalbahn-doppel')).toMatchObject({ quantity: 8, missing: 0 })
     expect(item('erweiterungsstreifen-einzel-gaze')).toMatchObject({ quantity: 16, missing: 0 })
-    // Stangen sind nicht im Bestand, dürfen aber geschlagen werden
-    expect(item('seitenstange')).toMatchObject({ quantity: 0, missing: 0, toCut: 28 })
-    expect(list.items.every((i) => i.missing === 0)).toBe(true)
+    // Stangen sind nicht im Bestand und fehlen
+    expect(item('seitenstange')).toMatchObject({ quantity: 0, missing: 28 })
+    expect(list.items.filter((i) => i.category !== 'stange').every((i) => i.missing === 0)).toBe(
+      true
+    )
     expect(list.deviations.filter((d) => d.kind === 'wand')).toHaveLength(2)
   })
 })

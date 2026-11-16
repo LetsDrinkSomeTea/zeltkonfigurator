@@ -30,7 +30,8 @@ async function open(
   }
   const store = storeWith(stock, [list], options.writable ?? true)
   const mounted = await mountWithStore(PacklistEditor, store, {
-    route: `/liste/p1.packliste${options.query ?? ''}`,
+    // ohne Angabe der Reiter „Zelte“; query: '' öffnet die Vorgabe
+    route: `/liste/p1.packliste${options.query ?? '?tab=zelte'}`,
     close: options.close
   })
   await flushPromises()
@@ -101,26 +102,26 @@ describe('PacklistEditor stale notice', () => {
 
 describe('PacklistEditor tabs', () => {
   it('uses accessible tabs and keeps the selection in the query', async () => {
-    const { wrapper, router } = await open([tentOf('kohte')], fullStock(100))
+    const { wrapper, router } = await open([tentOf('kohte')], fullStock(100), { query: '' })
     expect(wrapper.find('[role="tablist"]').exists()).toBe(true)
     const tabs = wrapper.findAll('[role="tab"]')
-    expect(tabs.map((t) => t.text())).toEqual(['Zelte', 'Material pro Zelt', 'Packliste'])
+    expect(tabs.map((t) => t.text())).toEqual(['Packliste', 'Zelte', 'Material pro Zelt'])
     expect(tabs[0].attributes('aria-selected')).toBe('true')
     expect(wrapper.find('[role="tabpanel"]').exists()).toBe(true)
 
     await tabs[0].trigger('keydown', { key: 'ArrowRight' })
     await flushPromises()
-    expect(router.currentRoute.value.query.tab).toBe('material')
+    expect(router.currentRoute.value.query.tab).toBe('zelte')
     expect(wrapper.findAll('[role="tab"]')[1].attributes('aria-selected')).toBe('true')
 
     await wrapper.findAll('[role="tab"]')[2].trigger('click')
     await flushPromises()
-    expect(router.currentRoute.value.query.tab).toBe('packliste')
+    expect(router.currentRoute.value.query.tab).toBe('material')
   })
 
   it('opens the tab from the query', async () => {
     const { wrapper } = await open([tentOf('kohte')], fullStock(100), { query: '?tab=material' })
-    expect(wrapper.findAll('[role="tab"]')[1].attributes('aria-selected')).toBe('true')
+    expect(wrapper.findAll('[role="tab"]')[2].attributes('aria-selected')).toBe('true')
     expect(wrapper.text()).toContain('Gesamt über alle Zelte')
   })
 })
@@ -293,7 +294,7 @@ describe('PacklistEditor configurator', () => {
     expect(wrapper.findAllComponents({ name: 'OcSelect' })).toHaveLength(0)
     expect(wrapper.find('button[aria-label="Blanko nach oben"]').exists()).toBe(false)
     expect(wrapper.find('input#zk-list-date').exists()).toBe(false)
-    expect(wrapper.text()).toContain('Nur Lesezugriff')
+    expect(wrapper.text()).toContain('(schreibgeschützt)')
     expect(wrapper.find('.zk-tent-summary').text()).toBe('Jurtendach · Hoch · Superbahn · Gaze')
   })
 
@@ -306,11 +307,15 @@ describe('PacklistEditor configurator', () => {
 })
 
 describe('PacklistEditor as a file', () => {
-  it('uses the file name as title and links to the stock', async () => {
-    const { wrapper } = await open([tentOf('kohte')], fullStock(100))
+  it('uses the file name as title and opens the stock via a button', async () => {
+    const { wrapper, router } = await open([tentOf('kohte')], fullStock(100))
     expect(wrapper.find('h1').text()).toBe('p1')
     expect(wrapper.find('input#zk-list-name').exists()).toBe(false)
-    expect(wrapper.find('a[href="/bestand"]').text()).toBe('Bestand')
+    const button = wrapper.findAll('button').find((b) => b.text() === 'Bestand')!
+    expect(button).toBeDefined()
+    await button.trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.name).toBe('zeltkonfigurator-bestand')
   })
 
   it('saves pending changes before closing', async () => {

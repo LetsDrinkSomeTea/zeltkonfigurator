@@ -30,7 +30,6 @@ const validList = () => ({
       category: 'stange',
       quantity: 2,
       missing: 1,
-      toCut: 0,
       perTent: { t1: 3 },
       checked: false
     }
@@ -150,7 +149,6 @@ describe('parsePacklistFile', () => {
     ['item.category', (o) => (o.items[0].category = 'x'), /items\[0\]\.category/],
     ['item.quantity negativ', (o) => (o.items[0].quantity = -1), /items\[0\]\.quantity/],
     ['item.missing Bruch', (o) => (o.items[0].missing = 0.5), /items\[0\]\.missing/],
-    ['item.toCut Text', (o) => (o.items[0].toCut = '1'), /items\[0\]\.toCut/],
     ['item.perTent kein Objekt', (o) => (o.items[0].perTent = []), /items\[0\]\.perTent/],
     ['item.perTent Wert', (o) => (o.items[0].perTent.t1 = -2), /items\[0\]\.perTent\.t1/],
     ['item.checked', (o) => (o.items[0].checked = 1), /items\[0\]\.checked/],

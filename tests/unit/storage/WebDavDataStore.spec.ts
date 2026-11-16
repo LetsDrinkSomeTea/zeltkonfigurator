@@ -83,7 +83,6 @@ function packlist(id: string, updatedAt: string, checked = false): PacklistFile 
         category: 'kleinteil',
         quantity: 1,
         missing: 0,
-        toCut: 0,
         perTent: { t1: 1 },
         checked
       }

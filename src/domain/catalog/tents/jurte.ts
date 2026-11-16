@@ -21,7 +21,7 @@ export const jurte: TentType = {
     { articleId: 'mast-375', quantity: 3 },
     { articleId: 'seitenstange', quantity: 12 },
     { articleId: 'abspannseil', quantity: 12 },
-    { articleId: 'hering', quantity: 12 },
+    { articleId: 't-profil', quantity: 12 },
     { articleId: 'blockseilrolle', quantity: 1 },
     { articleId: 'aufzugseil', quantity: 1 }
   ]

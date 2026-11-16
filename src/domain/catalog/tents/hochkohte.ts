@@ -20,7 +20,7 @@ export const hochkohte: TentType = {
     { articleId: 'mast-500', quantity: 2 }, // PLATZHALTER
     { articleId: 'seitenstange', quantity: 8 },
     { articleId: 'abspannseil', quantity: 8 }, // PLATZHALTER
-    { articleId: 'hering', quantity: 8 }, // PLATZHALTER
+    { articleId: 't-profil', quantity: 8 }, // PLATZHALTER
     { articleId: 'aufzugseil', quantity: 1 }
   ]
 }

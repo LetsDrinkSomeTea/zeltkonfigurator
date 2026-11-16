@@ -20,9 +20,6 @@
             <span v-if="item.missing > 0" class="zk-print-hint">
               ({{ $gettext('%{n} fehlen', { n: String(item.missing) }) }})
             </span>
-            <span v-if="item.toCut > 0" class="zk-print-hint">
-              ({{ $gettext('%{n} vor Ort schlagen', { n: String(item.toCut) }) }})
-            </span>
           </li>
         </ul>
       </template>

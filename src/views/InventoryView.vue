@@ -7,7 +7,7 @@
       </span>
     </template>
 
-    <p v-if="!canWrite" class="zk-hint ext:mb-4">{{ $gettext('Nur Lesezugriff') }}</p>
+    <p v-if="!canWrite" class="zk-hint ext:mb-4">{{ $gettext('(schreibgeschützt)') }}</p>
 
     <oc-text-input
       id="zk-inventory-search"
@@ -35,9 +35,6 @@
         <li v-for="article in group.articles" :key="article.id" class="zk-row">
           <div class="zk-name">
             <span>{{ article.name }}</span>
-            <small v-if="article.cuttable" class="zk-hint ext:block">{{
-              $gettext('kann vor Ort geschlagen werden')
-            }}</small>
           </div>
           <template v-if="canWrite">
             <div class="zk-qty">

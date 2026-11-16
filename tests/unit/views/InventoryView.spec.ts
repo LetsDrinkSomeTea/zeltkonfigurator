@@ -95,7 +95,7 @@ describe('InventoryView', () => {
     const wrapper = await mountView(store)
     expect(wrapper.find('input[type="number"]').exists()).toBe(false)
     expect(wrapper.find('button').exists()).toBe(false)
-    expect(wrapper.text()).toContain('Nur Lesezugriff')
+    expect(wrapper.text()).toContain('(schreibgeschützt)')
     expect(wrapper.text()).toContain('oben')
   })
 

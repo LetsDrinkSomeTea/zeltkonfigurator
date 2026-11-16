@@ -103,11 +103,6 @@ describe('Katalog: Konsistenz', () => {
     }
   })
 
-  it('markiert nur Masten und Seitenstangen als schlagbar', () => {
-    const cuttable = articles.filter((a) => a.cuttable).map((a) => a.id)
-    expect(cuttable.sort()).toEqual(['mast-375', 'mast-500', 'seitenstange'])
-  })
-
   it('hat lesbare Namen', () => {
     const a = articles.find((x) => x.id === 'superbahn-doppel-gaze')
     expect(a?.name).toBe('Superbahn doppel, Gaze (323 × 209 cm)')

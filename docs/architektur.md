@@ -70,7 +70,7 @@ src/
   composables/
     useStore.ts  useStock.ts  usePacklist.ts
   views/
-    PacklistEditor.vue      /liste/<Space und Pfad der Datei>   (Reiter: Zelte · Material pro Zelt · Packliste)
+    PacklistEditor.vue      /liste/<Space und Pfad der Datei>   (Reiter: Packliste · Zelte · Material pro Zelt)
     InventoryView.vue       /bestand
   components/               TentCard, TentOptions, ItemRow, StatusBanner, PrintLayout …
 tests/unit/                 spiegelt src/
@@ -90,7 +90,6 @@ interface Article {
   id: string // stabil, z. B. "superbahn-doppel-gaze"
   name: string
   category: Category
-  cuttable?: boolean // Stange darf vor Ort geschlagen werden (F-2A)
   wall?: { role: WallRole; span: 1 | 2; finish: Finish } // nur Wandmaterial
 }
 ```
@@ -205,7 +204,6 @@ interface PackItem {
   category: Category
   quantity: number // aus dem Bestand zu packen
   missing: number // nicht gedeckt
-  toCut: number // vor Ort zu schlagen (nur cuttable)
   perTent: Record<string, number> // TentConfig.id → Stückzahl
   checked: boolean
 }
@@ -253,8 +251,7 @@ Ablauf von `allocate` – Zelte in Listenreihenfolge, Bestand als Arbeitskopie:
 
 1. **Dach** (`roof.ts`): bevorzugte Dachkonfiguration nehmen, wenn alle Teile frei sind;
    sonst die nächste vollständig verfügbare; sonst die bevorzugte mit Fehlbestand.
-2. **Feste Teile und Teile der Wandoption** abbuchen. Fehlendes wird `missing`, bei
-   `cuttable`-Artikeln `toCut`.
+2. **Feste Teile und Teile der Wandoption** abbuchen. Fehlendes wird `missing`.
 3. **Wand** (`walls.ts`), siehe unten.
 4. Abweichungen je Zelt zusammenfassen.
 
@@ -342,10 +339,10 @@ technischem Risiko und wird deshalb zuerst und einzeln geklärt.
 
 ## 7. Oberfläche
 
-| Route      | Ansicht        | Inhalt                                                                                        |
-| ---------- | -------------- | --------------------------------------------------------------------------------------------- |
-| `/liste/…` | PacklistEditor | Statusbanner; Reiter **Zelte** (Konfigurator), **Material pro Zelt**, **Packliste** (abhaken) |
-| `/bestand` | InventoryView  | Artikel nach Kategorie, Suche, Stückzahlen bearbeiten                                         |
+| Route      | Ansicht        | Inhalt                                                                                                 |
+| ---------- | -------------- | ------------------------------------------------------------------------------------------------------ |
+| `/liste/…` | PacklistEditor | Statusbanner; Reiter **Packliste** (abhaken, Vorgabe), **Zelte** (Konfigurator), **Material pro Zelt** |
+| `/bestand` | InventoryView  | Artikel nach Kategorie, Suche, Stückzahlen bearbeiten                                                  |
 
 - Einstieg ist die Dateiansicht: `appInfo.extensions` verknüpft `.packliste` und `.bestand` mit
   den Routen und trägt „Packliste“ ins „Neu“-Menü ein (`newFileMenu`). Einen Eintrag im
@@ -365,7 +362,7 @@ technischem Risiko und wird deshalb zuerst und einzeln geklärt.
 
 - `domain/`: Unit-Tests für jede Regel aus Anforderungen 5.3–5.5, mit Grenzfällen:
   Bestand 0, zwei Zelte konkurrieren um dieselben Bahnen, ungerade Segmentreste mit nur
-  Doppelteilen, gemischte Einzel-/Doppellagen, Dach-Ausweichen, `cuttable`, Haken-Übernahme.
+  Doppelteilen, gemischte Einzel-/Doppellagen, Dach-Ausweichen, Haken-Übernahme.
 - Katalog: Konsistenztest über alle Zelttypen (F-17).
 - `storage/`: Tests gegen `MemoryDataStore`; `WebDavDataStore` mit nachgebildetem Client
   (Konflikt, fehlende Datei, defekte Datei).

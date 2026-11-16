@@ -50,7 +50,6 @@ export function allocate(
         category: a.category,
         quantity: 0,
         missing: 0,
-        toCut: 0,
         perTent: {}
       }
       rows.set(articleId, r)
@@ -62,18 +61,14 @@ export function allocate(
     r.perTent[tent.id] = (r.perTent[tent.id] ?? 0) + n
   }
 
-  /** Bucht aus dem Bestand; Fehlendes wird missing bzw. toCut. */
+  /** Bucht aus dem Bestand; Fehlendes wird missing. */
   const book = (tent: TentConfig, part: Part) => {
     if (part.quantity <= 0) return
     const r = row(tent, part.articleId)
     const got = Math.min(part.quantity, Math.max(0, work[part.articleId] ?? 0))
     work[part.articleId] = (work[part.articleId] ?? 0) - got
     r.quantity += got
-    const short = part.quantity - got
-    if (short > 0) {
-      if (articles.get(part.articleId)?.cuttable) r.toCut += short
-      else r.missing += short
-    }
+    r.missing += part.quantity - got
     addDemand(tent, r, part.quantity)
   }
 
@@ -141,8 +136,7 @@ export function allocate(
       }
       for (const part of plan.missing) {
         const r = row(tent, part.articleId)
-        if (articles.get(part.articleId)?.cuttable) r.toCut += part.quantity
-        else r.missing += part.quantity
+        r.missing += part.quantity
         addDemand(tent, r, part.quantity)
       }
 

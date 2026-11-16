@@ -63,15 +63,13 @@ describe('ChecklistTab', () => {
     expect(ui(w).text()).toContain('Kohtenblatt')
   })
 
-  it('shows missing and cut hints', async () => {
+  it('shows missing hints', async () => {
     const { pl, list } = await setup()
     const w = render(pl)
-    const hering = list.items.find((i) => i.articleId === 'hering')!
-    expect(hering.missing).toBeGreaterThan(0)
-    expect(rowFor(w, hering.name).text()).toContain(`${hering.missing} fehlen`)
-    const mast = list.items.find((i) => i.articleId === 'mast-375')!
-    expect(mast.toCut).toBeGreaterThan(0)
-    expect(rowFor(w, mast.name).text()).toContain(`${mast.toCut} vor Ort schlagen`)
+    const tProfil = list.items.find((i) => i.articleId === 't-profil')!
+    expect(tProfil.missing).toBeGreaterThan(0)
+    expect(rowFor(w, tProfil.name).text()).toContain(`${tProfil.missing} fehlen`)
+    expect(w.text()).not.toContain('vor Ort schlagen')
   })
 
   it('renders items without stock without checkbox', async () => {

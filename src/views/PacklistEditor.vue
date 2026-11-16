@@ -4,9 +4,12 @@
       <span v-if="pl.saving.value" class="zk-no-print" role="status">{{
         $gettext('Wird gespeichert …')
       }}</span>
-      <router-link class="zk-no-print ext:underline" :to="{ name: 'zeltkonfigurator-bestand' }">{{
-        $gettext('Bestand')
-      }}</router-link>
+      <oc-button
+        class="zk-no-print"
+        size="small"
+        @click="router.push({ name: 'zeltkonfigurator-bestand' })"
+        >{{ $gettext('Bestand') }}</oc-button
+      >
       <oc-button v-if="doc.close" class="zk-no-print" size="small" @click="close">{{
         $gettext('Schließen')
       }}</oc-button>
@@ -23,7 +26,7 @@
           @update:model-value="(v: string) => pl.setDate(v || undefined)"
         />
         <p v-else-if="pl.list.value.date">{{ pl.list.value.date }}</p>
-        <p v-if="!pl.canWrite.value" class="zk-hint">{{ $gettext('Nur Lesezugriff') }}</p>
+        <p v-if="!pl.canWrite.value" class="zk-hint">{{ $gettext('(schreibgeschützt)') }}</p>
       </section>
 
       <StatusBanner :status="status" />
@@ -103,14 +106,14 @@ const doc = usePacklistDocument({
 const pl = usePacklist(doc)
 
 const tabs = computed<{ id: TabId; label: string }[]>(() => [
+  { id: 'packliste', label: $gettext('Packliste') },
   { id: 'zelte', label: $gettext('Zelte') },
-  { id: 'material', label: $gettext('Material pro Zelt') },
-  { id: 'packliste', label: $gettext('Packliste') }
+  { id: 'material', label: $gettext('Material pro Zelt') }
 ])
 
 const activeTab = computed<TabId>(() => {
   const q = route.value.query.tab
-  return q === 'material' || q === 'packliste' ? q : 'zelte'
+  return q === 'zelte' || q === 'material' ? q : 'packliste'
 })
 
 const status = computed(() =>

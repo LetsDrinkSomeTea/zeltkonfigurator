@@ -52,16 +52,13 @@
               <oc-table-th scope="col" align-h="right" width="shrink">{{
                 $gettext('Fehlt')
               }}</oc-table-th>
-              <oc-table-th v-if="anyToCut" scope="col" align-h="right" width="shrink">{{
-                $gettext('Vor Ort schlagen')
-              }}</oc-table-th>
             </oc-table-tr>
           </oc-table-head>
           <oc-table-body>
             <oc-table-tr v-for="item in pl.list.value.items" :key="item.articleId">
               <oc-table-td>{{ item.name }}</oc-table-td>
               <oc-table-td align-h="right" class="zk-num">{{
-                item.quantity + item.missing + item.toCut
+                item.quantity + item.missing
               }}</oc-table-td>
               <oc-table-td align-h="right" class="zk-num">{{ item.quantity }}</oc-table-td>
               <oc-table-td
@@ -70,9 +67,6 @@
                 :class="{ 'zk-missing': item.missing > 0 }"
                 >{{ item.missing }}</oc-table-td
               >
-              <oc-table-td v-if="anyToCut" align-h="right" class="zk-num">{{
-                item.toCut
-              }}</oc-table-td>
             </oc-table-tr>
           </oc-table-body>
         </oc-table-simple>
@@ -97,8 +91,6 @@ interface Group {
   category: Category
   rows: { item: PackItem; quantity: number }[]
 }
-
-const anyToCut = computed(() => props.pl.list.value?.items.some((i) => i.toCut > 0) ?? false)
 
 const perTent = computed(() => {
   const list = props.pl.list.value

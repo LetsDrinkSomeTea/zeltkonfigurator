@@ -19,9 +19,6 @@
       <oc-tag v-if="missing > 0" class="zk-hint zk-hint-missing" size="small">{{
         $gettext('%{n} fehlen', { n: String(missing) })
       }}</oc-tag>
-      <oc-tag v-if="toCut > 0" class="zk-hint zk-hint-cut" size="small">{{
-        $gettext('%{n} vor Ort schlagen', { n: String(toCut) })
-      }}</oc-tag>
     </span>
   </li>
 </template>
@@ -38,10 +35,9 @@ const props = withDefaults(
     /** false: keine Checkbox (nichts aus dem Bestand zu packen) */
     checkable?: boolean
     missing?: number
-    toCut?: number
     disabled?: boolean
   }>(),
-  { checked: false, checkable: true, missing: 0, toCut: 0, disabled: false }
+  { checked: false, checkable: true, missing: 0, disabled: false }
 )
 const emit = defineEmits<{ toggle: [] }>()
 const { $gettext } = useGettext()

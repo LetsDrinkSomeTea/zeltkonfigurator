@@ -92,7 +92,7 @@ Nicht Teil der App:
 | F-27 | Was auf keinem Weg gedeckt werden kann, wird als fehlend ausgewiesen – gezählt in der Wunsch-Variante.                                                                                                                                                                          |
 | F-28 | Zelte werden in Listenreihenfolge bedient: Das erste Zelt bekommt seine Wünsche zuerst. Die Reihenfolge ist änderbar.                                                                                                                                                           |
 | F-29 | Eine Zusammenfassung oben zeigt: „alles vorhanden“, „mit Ausweichmaterial machbar“ oder „es fehlt Material“.                                                                                                                                                                    |
-| F-2A | Stangen, die laut Artikelliste auch vor Ort geschlagen werden können, zählen nicht als fehlend. Was der Bestand nicht deckt, erscheint als „vor Ort schlagen“ mit Anzahl und Länge.                                                                                             |
+| F-2A | Entfällt. Stangen, die der Bestand nicht deckt, zählen wie jedes andere Material als fehlend.                                                                                                                                                                                   |
 | F-2B | Die Ausweichreihenfolge der Ausführungen ist je Packliste einstellbar (drei Einträge umsortieren). Vorgabe: Gaze, Fenster, Blanko.                                                                                                                                              |
 
 ### 5.4 Ausweichregeln
@@ -195,18 +195,18 @@ Je Wandsegment:
 Die Mengen der Jurten stammen aus den Komplettangeboten (T). Werte mit (A) sind daraus
 hochgerechnete Platzhalter.
 
-| Zelttyp          | Aufhängung              | Mittelmast (schlagbar) | Seitenstangen (schlagbar) | Abspannseile | Heringe | Bodennägel¹ | Sonstiges                     |
-| ---------------- | ----------------------- | ---------------------- | ------------------------- | ------------ | ------- | ----------- | ----------------------------- |
-| Kohte            | Kohtenkreuz             | 2 × 375 cm             | –                         | –            | 8       | –           | Aufzugseil                    |
-| Hochkohte        | Kohtenkreuz             | 2 × 500 cm (A)         | 8                         | 8 (A)        | 8 (A)   | 16 (A)      | Aufzugseil                    |
-| Jurte            | Jurtenspinne 6er        | 3 × 375 cm             | 12                        | 12           | 12      | 24          | Blockseilrolle, Aufzugseil    |
-| Großjurte        | Jurtenspinne 8er        | 3 × 500 cm             | 16                        | 16           | 16      | 32          | Blockseilrolle, Aufzugseil    |
-| Gigajurte 9 m    | Jurtenspinne 9er        | 3 × 500 cm (A)         | 18                        | 18 (A)       | 18 (A)  | 36 (A)      | Blockseilrolle, Aufzugseil    |
-| Gigajurte 12 m   | Jurtenspinne 9er (A)    | 3 × 500 cm (A)         | 24                        | 24 (A)       | 24 (A)  | 48 (A)      | Blockseilrolle, Aufzugseil    |
-| Ovaljurte        | Ovaljurtenspinne 1-Feld | 2 × 375 cm             | 14                        | 14           | 14      | 28          | 2 Blockseilrollen, Aufzugseil |
-| Dreierjurtenburg | 3 Jurtenspinnen 6er (A) | 9 × 375 cm (A)         | 27 (A)                    | 27 (A)       | 27 (A)  | 54 (A)      | 3 Blockseilrollen (A)         |
-| Sudan            | –                       | Gestängesatz (A)       | –                         | –            | 16 (A)  | –           | Bodenplane rund (A)           |
-| Yellowstone      | –                       | 1 Mittelmast (T)       | –                         | –            | 16 (A)  | –           | Bodenplane eckig (T, A)       |
+| Zelttyp          | Aufhängung              | Mittelmast       | Seitenstangen | Abspannseile | Heringe | Bodennägel¹ | Sonstiges                     |
+| ---------------- | ----------------------- | ---------------- | ------------- | ------------ | ------- | ----------- | ----------------------------- |
+| Kohte            | Kohtenkreuz             | 2 × 375 cm       | –             | –            | 8       | –           | Aufzugseil                    |
+| Hochkohte        | Kohtenkreuz             | 2 × 500 cm (A)   | 8             | 8 (A)        | 8 (A)   | 16 (A)      | Aufzugseil                    |
+| Jurte            | Jurtenspinne 6er        | 3 × 375 cm       | 12            | 12           | 12      | 24          | Blockseilrolle, Aufzugseil    |
+| Großjurte        | Jurtenspinne 8er        | 3 × 500 cm       | 16            | 16           | 16      | 32          | Blockseilrolle, Aufzugseil    |
+| Gigajurte 9 m    | Jurtenspinne 9er        | 3 × 500 cm (A)   | 18            | 18 (A)       | 18 (A)  | 36 (A)      | Blockseilrolle, Aufzugseil    |
+| Gigajurte 12 m   | Jurtenspinne 9er (A)    | 3 × 500 cm (A)   | 24            | 24 (A)       | 24 (A)  | 48 (A)      | Blockseilrolle, Aufzugseil    |
+| Ovaljurte        | Ovaljurtenspinne 1-Feld | 2 × 375 cm       | 14            | 14           | 14      | 28          | 2 Blockseilrollen, Aufzugseil |
+| Dreierjurtenburg | 3 Jurtenspinnen 6er (A) | 9 × 375 cm (A)   | 27 (A)        | 27 (A)       | 27 (A)  | 54 (A)      | 3 Blockseilrollen (A)         |
+| Sudan            | –                       | Gestängesatz (A) | –             | –            | 16 (A)  | –           | Bodenplane rund (A)           |
+| Yellowstone      | –                       | 1 Mittelmast (T) | –             | –            | 16 (A)  | –           | Bodenplane eckig (T, A)       |
 
 ¹ Bodennägel nur, wenn eine Seitenwand gewählt ist (2 je Wandsegment).
 
@@ -241,6 +241,6 @@ dort korrigieren.
 | O-3 | Dreierjurtenburg: 27 Wandsegmente sind geometrisch abgeleitet; Masten und Dächle geschätzt.              | siehe 7.2.                                           |
 | O-4 | Ovaljurte: eigenes Dächle (Tortuga hat eine Ovaljurtenabdeckplane) oder Jurtendächle?                    | Jurtendächle.                                        |
 | O-5 | Erdstreifen der Kohte: anknüpfbarer Streifen oder eigene Kohtenblätter?                                  | Ein anknüpfbarer Streifen pro Kohte.                 |
-| O-6 | Welche Stangen werden vor Ort geschlagen?                                                                | Mittelmasten und Seitenstangen der Schwarzzelte.     |
+| O-6 | Welche Stangen werden vor Ort geschlagen?                                                                | Entfällt: fehlende Stangen gelten als fehlend.       |
 | O-7 | Soll je Zelt ein Segment für den Eingang Einzelbahn bleiben (Tortuga liefert z. B. 5 Doppel + 2 Einzel)? | Nein, Doppelteile zuerst, Einzelteile füllen auf.    |
 | O-8 | Ort der Bestandsdatei.                                                                                   | Frei konfigurierbar (F-41).                          |

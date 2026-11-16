@@ -17,7 +17,7 @@ export const sampleStock: StockFile = {
     'jurtenspinne-8': q(1),
     blockseilrolle: q(3),
     aufzugseil: q(6),
-    hering: q(80, 'Kiste 3'),
+    't-profil': q(80, 'Kiste 3'),
     abspannseil: q(40),
     bodennagel: q(120),
     seitenstange: q(20),

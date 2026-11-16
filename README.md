@@ -15,8 +15,7 @@ gegen den Bestand prüfen, Packlisten speichern, abhaken und drucken.
 - **Konfigurator:** Jedes Zelt startet in der Standardkonfiguration seines Typs; über „Anpassen“
   lassen sich Dach, Seitenwand, Bauart und Ausführung ändern. Reicht der Bestand
   nicht, weicht die App in einstellbarer Reihenfolge aus und zeigt die Abweichung am Zelt.
-- **Material:** Bedarf pro Zelt und gesamt, abgeglichen mit dem Bestand (vorhanden, fehlt,
-  vor Ort schlagen).
+- **Material:** Bedarf pro Zelt und gesamt, abgeglichen mit dem Bestand (vorhanden, fehlt).
 - **Abhaken und Drucken:** gemeinsamer Abhak-Stand für alle mit Zugriff, Druckansicht mit Kästchen.
 - **Bestand:** Stückzahlen und Notizen je Artikel bearbeiten.
 
