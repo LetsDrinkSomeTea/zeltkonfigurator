@@ -135,7 +135,7 @@ describe('stock', () => {
     const etag = await store.saveStock(stock, null)
     expect(etag).toBeTruthy()
     expect([...files.folders]).toEqual(['Zeltkonfigurator', 'Zeltkonfigurator/packlisten'])
-    const raw = files.files.get('Zeltkonfigurator/bestand.yaml')!.content
+    const raw = files.files.get('Zeltkonfigurator/Zeltmaterial.bestand')!.content
     expect(parseYaml(raw)).toEqual(stock)
     expect(raw.trimStart().startsWith('{')).toBe(false)
     expect(await store.loadStock()).toEqual({ data: stock, etag })
@@ -167,13 +167,13 @@ describe('stock', () => {
   it('re-reads the etag when the write does not return one', async () => {
     files.omitEtagOnWrite = true
     const etag = await store.saveStock(stock, null)
-    expect(etag).toBe(files.files.get('Zeltkonfigurator/bestand.yaml')!.etag)
+    expect(etag).toBe(files.files.get('Zeltkonfigurator/Zeltmaterial.bestand')!.etag)
   })
 
   it('maps 403 to ForbiddenError', async () => {
-    files.failWith['write Zeltkonfigurator/bestand.yaml'] = 403
+    files.failWith['write Zeltkonfigurator/Zeltmaterial.bestand'] = 403
     await expect(store.saveStock(stock, null)).rejects.toBeInstanceOf(ForbiddenError)
-    files.failWith['read Zeltkonfigurator/bestand.yaml'] = 401
+    files.failWith['read Zeltkonfigurator/Zeltmaterial.bestand'] = 401
     await expect(store.loadStock()).rejects.toBeInstanceOf(ForbiddenError)
   })
 
@@ -182,12 +182,15 @@ describe('stock', () => {
   })
 
   it('rejects invalid YAML with InvalidFileError', async () => {
-    files.put('Zeltkonfigurator/bestand.yaml', '{ nicht json')
+    files.put('Zeltkonfigurator/Zeltmaterial.bestand', '{ nicht json')
     await expect(store.loadStock()).rejects.toBeInstanceOf(InvalidFileError)
   })
 
   it('rejects an unknown schema version with InvalidFileError', async () => {
-    files.put('Zeltkonfigurator/bestand.yaml', JSON.stringify({ schemaVersion: 2, stock: {} }))
+    files.put(
+      'Zeltkonfigurator/Zeltmaterial.bestand',
+      JSON.stringify({ schemaVersion: 2, stock: {} })
+    )
     await expect(store.loadStock()).rejects.toBeInstanceOf(InvalidFileError)
   })
 
@@ -201,12 +204,12 @@ describe('stock', () => {
       },
       parsePacklistFile
     })
-    files.put('Z/bestand.yaml', '{}')
+    files.put('Z/Zeltmaterial.bestand', '{}')
     await expect(strict.loadStock()).rejects.toBeInstanceOf(InvalidFileError)
   })
 
   it('does not swallow unrelated errors', async () => {
-    files.failWith['read Zeltkonfigurator/bestand.yaml'] = 500
+    files.failWith['read Zeltkonfigurator/Zeltmaterial.bestand'] = 500
     await expect(store.loadStock()).rejects.toBeInstanceOf(HttpErr)
   })
 })
@@ -231,7 +234,7 @@ describe('packlists', () => {
   it('lists summaries sorted by updatedAt desc and skips broken files', async () => {
     await store.savePacklist(packlist('alt', '2026-01-01T00:00:00Z'), null)
     await store.savePacklist(packlist('neu', '2026-03-01T00:00:00Z', true), null)
-    files.put('Zeltkonfigurator/packlisten/kaputt.yaml', '{ nope')
+    files.put('Zeltkonfigurator/packlisten/kaputt.packliste', '{ nope')
     files.put('Zeltkonfigurator/packlisten/readme.txt', 'ignored')
 
     const list = await store.listPacklists()
@@ -256,7 +259,7 @@ describe('packlists', () => {
   it('deletes a packlist; deleting a missing one throws NotFoundError', async () => {
     await store.savePacklist(packlist('p1', '2026-01-01T00:00:00Z'), null)
     await store.deletePacklist('p1')
-    expect(files.files.has('Zeltkonfigurator/packlisten/p1.yaml')).toBe(false)
+    expect(files.files.has('Zeltkonfigurator/packlisten/p1.packliste')).toBe(false)
     await expect(store.deletePacklist('p1')).rejects.toBeInstanceOf(NotFoundError)
   })
 

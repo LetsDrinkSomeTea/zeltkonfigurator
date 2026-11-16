@@ -20,7 +20,22 @@ export default defineWebApplication({
       id: 'zeltkonfigurator',
       name: $gettext('Zeltkonfigurator'),
       icon: 'home-3',
-      color: '#1f3a2d'
+      color: '#1f3a2d',
+      // Dateien der App lassen sich aus der Dateiansicht heraus öffnen.
+      extensions: [
+        {
+          extension: 'packliste',
+          routeName: 'zeltkonfigurator-datei',
+          label: $gettext('Im Zeltkonfigurator öffnen'),
+          icon: 'list-check'
+        },
+        {
+          extension: 'bestand',
+          routeName: 'zeltkonfigurator-datei',
+          label: $gettext('Im Zeltkonfigurator öffnen'),
+          icon: 'archive'
+        }
+      ]
     }
 
     const routes: RouteRecordRaw[] = [
@@ -39,6 +54,13 @@ export default defineWebApplication({
         name: 'zeltkonfigurator-liste',
         component: () => import('./views/PacklistEditor.vue'),
         meta: { authContext: 'user', title: $gettext('Packliste') }
+      },
+      {
+        // Einstieg aus der Dateiansicht: leitet zur passenden Ansicht weiter.
+        path: '/datei/:driveAliasAndItem(.*)?',
+        name: 'zeltkonfigurator-datei',
+        component: () => import('./views/OpenFile.vue'),
+        meta: { authContext: 'user', title: $gettext('Zeltkonfigurator'), patchCleanPath: true }
       },
       {
         path: '/bestand',

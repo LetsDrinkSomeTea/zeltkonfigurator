@@ -135,12 +135,12 @@ Dabei gilt:
 
 ### 5.6 Einbindung in OpenCloud
 
-| ID   | Anforderung                                                                                                                   |
-| ---- | ----------------------------------------------------------------------------------------------------------------------------- |
-| F-40 | Die App erscheint im App-Umschalter von OpenCloud.                                                                            |
-| F-41 | Der Ablageort (Space und Ordner) wird einmal in der App-Konfiguration des Servers festgelegt. Vorgabe: Space „Material Team“. |
-| F-42 | Fehlt die Konfiguration, der Space oder der Zugriff, zeigt die App eine verständliche Meldung statt einer leeren Seite.       |
-| F-43 | Packlisten-Dateien lassen sich auch aus der Dateiansicht heraus mit der App öffnen. _(Wunsch, nicht für Version 1 zugesagt)_  |
+| ID   | Anforderung                                                                                                                                                                                                             |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F-40 | Die App erscheint im App-Umschalter von OpenCloud.                                                                                                                                                                      |
+| F-41 | Der Ablageort (Space und Ordner) wird einmal in der App-Konfiguration des Servers festgelegt. Vorgabe: Space „Material Team“.                                                                                           |
+| F-42 | Fehlt die Konfiguration, der Space oder der Zugriff, zeigt die App eine verständliche Meldung statt einer leeren Seite.                                                                                                 |
+| F-43 | Packlisten (`.packliste`) und der Bestand (`.bestand`) lassen sich aus der Dateiansicht des Space heraus mit der App öffnen. Die Packlisten-Datei heißt wie die Liste und wird beim Umbenennen der Liste mit umbenannt. |
 
 ## 6. Nichtfunktionale Anforderungen
 

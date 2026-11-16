@@ -39,13 +39,16 @@ einem App-Update. Im Space liegen nur Stückzahlen und Packlisten.
 4. Einen Projekt-Space **„Material Team“** anlegen bzw. verwenden. Wer dort schreiben darf,
    kann Bestand und Packlisten bearbeiten; alle anderen Mitglieder sehen sie nur.
 
-Die App legt ihre Dateien beim ersten Speichern selbst an:
+Die App legt ihre Dateien beim ersten Speichern selbst an. Der Inhalt ist YAML; die eigenen
+Endungen sorgen dafür, dass ein Klick auf die Datei im Space direkt die Packliste bzw. den
+Bestand in der App öffnet. Eine Packlisten-Datei heißt wie die Liste und wird beim Umbenennen
+der Liste mit umbenannt.
 
 ```
 Material Team/
   Zeltkonfigurator/
-    bestand.yaml
-    packlisten/<id>.yaml
+    Zeltmaterial.bestand
+    packlisten/<Name>.packliste
 ```
 
 ### Anderer Space oder Ordner
