@@ -27,12 +27,12 @@ Die App ist eine OpenCloud-Web-Erweiterung auf Basis des `web-app-skeleton`
 
 Was wo liegt:
 
-| Inhalt                                        | Ort                 | Ändert sich durch |
-| --------------------------------------------- | ------------------- | ----------------- |
-| Artikelliste, Zelttypen, Dachkonfigurationen  | Code (`catalog/`)   | App-Update        |
-| Zuweisungs- und Ausweichlogik                 | Code (`domain/`)    | App-Update        |
-| Stückzahlen und Notizen                       | Space               | Bestandseditor    |
-| Packlisten mit Abhak-Stand                    | Space               | Nutzer            |
+| Inhalt                                       | Ort               | Ändert sich durch |
+| -------------------------------------------- | ----------------- | ----------------- |
+| Artikelliste, Zelttypen, Dachkonfigurationen | Code (`catalog/`) | App-Update        |
+| Zuweisungs- und Ausweichlogik                | Code (`domain/`)  | App-Update        |
+| Stückzahlen und Notizen                      | Space             | Bestandseditor    |
+| Packlisten mit Abhak-Stand                   | Space             | Nutzer            |
 
 Leitlinien:
 
@@ -151,11 +151,7 @@ export const jurte: TentType = {
       parts: [{ articleId: 'kohtenblatt', quantity: 6 }]
     }
   ],
-  walls: [
-    keineWand(),
-    normaleWand({ segmente: 12 }),
-    hoheWand({ segmente: 12 })
-  ],
+  walls: [keineWand(), normaleWand({ segmente: 12 }), hoheWand({ segmente: 12 })],
   fixed: [
     { articleId: 'jurtendaechle', quantity: 1 },
     { articleId: 'jurtenspinne-6', quantity: 1 },
@@ -367,17 +363,17 @@ technischem Risiko und wird deshalb zuerst und einzeln geklärt.
 Die Arbeitspakete werden von Subagenten umgesetzt, je Paket in einem eigenen Arbeitsbaum.
 Verträge (AP 0), Review und Zusammenführen liegen beim Hauptagenten.
 
-| AP  | Inhalt                                                                                                 | Hängt ab von | Parallel |
-| --- | ------------------------------------------------------------------------------------------------------ | ------------ | -------- |
-| 0   | Grundgerüst: Skeleton umbenennen, Routen, `types.ts`, `DataStore`-Schnittstelle, leere Ansichten       | –            | –        |
-| 1   | Klärung OpenCloud-Anbindung (Konfiguration, WebDAV, ETag, Rechte), `WebDavDataStore`, `location.ts`    | 0            | ja       |
-| 2   | Rechenkern: `roof.ts`, `walls.ts`, `allocation.ts`, `packlist.ts`, `schema.ts` mit Tests               | 0            | ja       |
-| 3   | Katalog: `articles.ts`, `walls.ts`, alle Zelttypen, Konsistenztest, `docs/zelttyp-anlegen.md`          | 0            | ja       |
-| 4   | `MemoryDataStore` und Composables (`useStore`, `useStock`, `usePacklist` mit Konfliktbehandlung)       | 0            | ja       |
-| 5   | Bestandsansicht                                                                                        | 4            | ja       |
-| 6   | Packlisten-Übersicht und Konfigurator (Reiter „Zelte“, „Material pro Zelt“, Statusbanner)              | 2, 4         | ja       |
-| 7   | Packliste abhaken, freie Zeilen, Druckansicht                                                          | 2, 4         | ja       |
-| 8   | Zusammenbau, Test gegen OpenCloud im Container, README mit Installationsanleitung                      | alle         | –        |
+| AP  | Inhalt                                                                                              | Hängt ab von | Parallel |
+| --- | --------------------------------------------------------------------------------------------------- | ------------ | -------- |
+| 0   | Grundgerüst: Skeleton umbenennen, Routen, `types.ts`, `DataStore`-Schnittstelle, leere Ansichten    | –            | –        |
+| 1   | Klärung OpenCloud-Anbindung (Konfiguration, WebDAV, ETag, Rechte), `WebDavDataStore`, `location.ts` | 0            | ja       |
+| 2   | Rechenkern: `roof.ts`, `walls.ts`, `allocation.ts`, `packlist.ts`, `schema.ts` mit Tests            | 0            | ja       |
+| 3   | Katalog: `articles.ts`, `walls.ts`, alle Zelttypen, Konsistenztest, `docs/zelttyp-anlegen.md`       | 0            | ja       |
+| 4   | `MemoryDataStore` und Composables (`useStore`, `useStock`, `usePacklist` mit Konfliktbehandlung)    | 0            | ja       |
+| 5   | Bestandsansicht                                                                                     | 4            | ja       |
+| 6   | Packlisten-Übersicht und Konfigurator (Reiter „Zelte“, „Material pro Zelt“, Statusbanner)           | 2, 4         | ja       |
+| 7   | Packliste abhaken, freie Zeilen, Druckansicht                                                       | 2, 4         | ja       |
+| 8   | Zusammenbau, Test gegen OpenCloud im Container, README mit Installationsanleitung                   | alle         | –        |
 
 AP 5–7 arbeiten gegen `MemoryDataStore` und einen kleinen Testkatalog und sind dadurch
 weder von AP 1 noch von AP 3 blockiert. AP 3 setzt Abschnitt 7 der Anforderungen um; angenommene Werte werden im Code mit
@@ -385,14 +381,14 @@ weder von AP 1 noch von AP 3 blockiert. AP 3 setzt Abschnitt 7 der Anforderungen
 
 ## 10. Entscheidungen
 
-| Entscheidung                                     | Begründung                                                                                                 | Verworfen                                                |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| Zelttypen und Artikel im Code                    | Vom Stamm so gewünscht; typgeprüft, testbar, keine Fehler durch defekte Dateien im Space.                  | Stücklisten als Datei im Space                           |
-| Im Space nur Stückzahlen und Packlisten          | Kein Backend zu betreiben; Rechte, Versionen und Sicherung kommen von OpenCloud.                           | Eigener Dienst mit Datenbank                             |
-| Wandmaterial über Rollen, Lagen und Einzel/Doppel | Zuweisung steht einmal im Code; neue Bahnen sind nur neue Artikel, neue Zelte nur neue Segmentzahlen.      | Alternativen je Zelttyp ausformulieren                   |
-| Dach als wählbare Konfiguration je Zelttyp       | Deckt „Jurtendach oder 6 Kohtenblätter“ und zusammengesetzte Dächer (Gigajurte 12 m) mit demselben Modell. | Dach als feste Stücklistenzeile                          |
-| Zuteilung in Listenreihenfolge                   | Vorhersehbar und erklärbar.                                                                                | Globale Optimierung                                      |
-| Packliste speichert das Rechenergebnis           | Eine abgehakte Liste ändert sich nicht unbemerkt durch Bestandskorrektur oder App-Update.                  | Immer live berechnen                                     |
-| ETag + erneutes Anwenden kleiner Operationen     | Gleichzeitiges Abhaken ohne Server-Logik.                                                                  | Sperren; „letzter gewinnt“                               |
-| Druck über Browser                               | Keine zusätzliche Abhängigkeit.                                                                            | PDF-Bibliothek                                           |
-| Kein zentraler Store (Pinia) für App-Zustand     | Drei Ansichten mit wenig geteiltem Zustand; Composables genügen.                                           | Pinia-Module                                             |
+| Entscheidung                                      | Begründung                                                                                                 | Verworfen                              |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Zelttypen und Artikel im Code                     | Vom Stamm so gewünscht; typgeprüft, testbar, keine Fehler durch defekte Dateien im Space.                  | Stücklisten als Datei im Space         |
+| Im Space nur Stückzahlen und Packlisten           | Kein Backend zu betreiben; Rechte, Versionen und Sicherung kommen von OpenCloud.                           | Eigener Dienst mit Datenbank           |
+| Wandmaterial über Rollen, Lagen und Einzel/Doppel | Zuweisung steht einmal im Code; neue Bahnen sind nur neue Artikel, neue Zelte nur neue Segmentzahlen.      | Alternativen je Zelttyp ausformulieren |
+| Dach als wählbare Konfiguration je Zelttyp        | Deckt „Jurtendach oder 6 Kohtenblätter“ und zusammengesetzte Dächer (Gigajurte 12 m) mit demselben Modell. | Dach als feste Stücklistenzeile        |
+| Zuteilung in Listenreihenfolge                    | Vorhersehbar und erklärbar.                                                                                | Globale Optimierung                    |
+| Packliste speichert das Rechenergebnis            | Eine abgehakte Liste ändert sich nicht unbemerkt durch Bestandskorrektur oder App-Update.                  | Immer live berechnen                   |
+| ETag + erneutes Anwenden kleiner Operationen      | Gleichzeitiges Abhaken ohne Server-Logik.                                                                  | Sperren; „letzter gewinnt“             |
+| Druck über Browser                                | Keine zusätzliche Abhängigkeit.                                                                            | PDF-Bibliothek                         |
+| Kein zentraler Store (Pinia) für App-Zustand      | Drei Ansichten mit wenig geteiltem Zustand; Composables genügen.                                           | Pinia-Module                           |
