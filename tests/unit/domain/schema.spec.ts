@@ -116,7 +116,7 @@ describe('parsePacklistFile', () => {
   })
 
   it('lehnt Nicht-Objekte ab', () => {
-    for (const v of [null, 1, 'x', [], undefined]) {
+    for (const v of [null, 1, 'x', [], undefined] as unknown[]) {
       expect(() => parsePacklistFile(v)).toThrow(InvalidFileError)
     }
   })
