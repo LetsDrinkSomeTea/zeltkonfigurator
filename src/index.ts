@@ -4,9 +4,11 @@ import '@opencloud-eu/extension-sdk/tailwind.css'
 import { RouteRecordRaw } from 'vue-router'
 import { computed } from 'vue'
 import { useGettext } from 'vue3-gettext'
+import { setAppConfig } from './storage/appConfig'
 
 export default defineWebApplication({
-  setup() {
+  setup({ applicationConfig }) {
+    setAppConfig(applicationConfig)
     const { $gettext } = useGettext()
 
     const appInfo = {
