@@ -1,23 +1,27 @@
 <template>
-  <app-layout :title="$gettext('Bestand')" :framed="!!resource" :loading="loading" :error="error">
-    <template #actions>
-      <span v-if="canWrite" class="zk-status ext:text-sm" role="status" aria-live="polite">
-        <template v-if="saving">{{ $gettext('Wird gespeichert …') }}</template>
-        <template v-else-if="saved">{{ $gettext('Gespeichert') }}</template>
-      </span>
-    </template>
-
-    <p v-if="!canWrite" class="zk-hint ext:mb-4">{{ $gettext('(schreibgeschützt)') }}</p>
-
-    <oc-text-input
-      id="zk-inventory-search"
-      v-model="query"
-      class="zk-search ext:mb-4"
-      :label="$gettext('Artikel suchen')"
-      :default-value="$gettext('Name oder Kategorie')"
-      :clear-button-enabled="true"
-      :clear-button-accessible-label="$gettext('Suche zurücksetzen')"
-    />
+  <app-layout
+    :title="$gettext('Bestand')"
+    :framed="!!resource"
+    :loading="loading"
+    :error="error"
+    :read-only="!canWrite"
+  >
+    <div class="zk-toolbar ext:mb-4">
+      <oc-text-input
+        id="zk-inventory-search"
+        v-model="query"
+        class="zk-search"
+        :label="$gettext('Artikel suchen')"
+        :default-value="$gettext('Name oder Kategorie')"
+        :clear-button-enabled="true"
+        :clear-button-accessible-label="$gettext('Suche zurücksetzen')"
+      />
+      <oc-switch
+        v-model:checked="onlyAvailable"
+        class="zk-filter"
+        :label="$gettext('Nur vorhandene')"
+      />
+    </div>
 
     <p v-if="noMatches" class="zk-hint" role="status">{{ $gettext('keine Treffer') }}</p>
 
@@ -72,12 +76,16 @@
               </oc-button>
             </div>
             <oc-text-input
+              v-if="editingNote === article.id"
               :id="`zk-note-${article.id}`"
               class="zk-note"
               :label="$gettext('%{name}: Notiz', { name: article.name })"
               :default-value="$gettext('Notiz')"
               :model-value="noteOf(article.id)"
-              @change="onNote(article.id, $event)"
+              @change="commitNote(article.id, $event)"
+              @keydown.enter.prevent="onNoteEnter(article.id, $event)"
+              @keydown.esc.stop="cancelNote(article.id)"
+              @focusout="onNoteFocusOut(article.id, $event)"
             >
               <template #label>
                 <label class="ext:sr-only" :for="`zk-note-${article.id}`">{{
@@ -85,6 +93,17 @@
                 }}</label>
               </template>
             </oc-text-input>
+            <button
+              v-else
+              :id="`zk-note-btn-${article.id}`"
+              type="button"
+              class="zk-note zk-note-button"
+              :class="{ 'zk-note-empty': noteOf(article.id) === '' }"
+              :aria-label="$gettext('%{name}: Notiz bearbeiten', { name: article.name })"
+              @click="startNote(article.id)"
+            >
+              {{ noteOf(article.id) || $gettext('Notiz hinzufügen') }}
+            </button>
           </template>
           <template v-else>
             <span class="zk-qty-text">{{ quantityOf(article.id) }}</span>
@@ -113,6 +132,24 @@
           </div>
           <span class="zk-qty-text">{{ item.quantity }}</span>
           <span class="zk-note-text">{{ item.note }}</span>
+          <oc-button
+            v-if="canWrite"
+            size="large"
+            class="zk-remove"
+            :class="{ 'zk-remove-confirm': confirmRemove === item.id }"
+            :aria-label="
+              confirmRemove === item.id
+                ? $gettext('%{id} wirklich entfernen?', { id: item.id })
+                : $gettext('%{id} entfernen', { id: item.id })
+            "
+            @click="onRemove(item.id)"
+            @blur="confirmRemove = null"
+            @keydown.esc="confirmRemove = null"
+          >
+            {{
+              confirmRemove === item.id ? $gettext('Wirklich entfernen?') : $gettext('Entfernen')
+            }}
+          </oc-button>
         </li>
       </ul>
     </section>
@@ -120,7 +157,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useGettext } from 'vue3-gettext'
 import type { Resource } from '@opencloud-eu/web-client'
 import AppLayout from '../components/AppLayout.vue'
@@ -132,10 +169,30 @@ import { CATEGORIES, type Category } from '../domain/types'
 defineProps<{ resource?: Resource }>()
 
 const { $gettext } = useGettext()
-const { entries, loading, saving, error, canWrite, load, setQuantity, setNote, flush } = useStock()
+const { entries, loading, error, canWrite, load, setQuantity, setNote, removeEntry, flush } =
+  useStock()
 
 const query = ref('')
-const saved = ref(false)
+const confirmRemove = ref<string | null>(null)
+const editingNote = ref<string | null>(null)
+
+// Filter „Nur vorhandene“: pro Betrachter im Browser gemerkt, Vorgabe aus.
+const FILTER_KEY = 'zeltkonfigurator.inventory.onlyAvailable'
+function readFilter(): boolean {
+  try {
+    return localStorage.getItem(FILTER_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+const onlyAvailable = ref(readFilter())
+watch(onlyAvailable, (value) => {
+  try {
+    localStorage.setItem(FILTER_KEY, value ? '1' : '0')
+  } catch {
+    // Speicher nicht verfügbar: Der Filter gilt dann nur für diese Sitzung.
+  }
+})
 
 const categoryTitle = (category: Category): string => {
   switch (category) {
@@ -161,7 +218,9 @@ const groups = computed(() => {
     const categoryMatches = q !== '' && title.toLowerCase().includes(q)
     const articles = catalog.articles.filter(
       (a) =>
-        a.category === category && (q === '' || categoryMatches || a.name.toLowerCase().includes(q))
+        a.category === category &&
+        (!onlyAvailable.value || quantityOf(a.id) > 0) &&
+        (q === '' || categoryMatches || a.name.toLowerCase().includes(q))
     )
     return { category, title, articles }
   }).filter((g) => g.articles.length > 0)
@@ -172,6 +231,7 @@ const unknown = computed(() => {
   const q = query.value.trim().toLowerCase()
   return Object.entries(entries.value)
     .filter(([id]) => !known.has(id))
+    .filter(([, e]) => !onlyAvailable.value || e.quantity > 0)
     .filter(([id]) => q === '' || id.toLowerCase().includes(q))
     .map(([id, e]) => ({ id, quantity: e.quantity, note: e.note ?? '' }))
 })
@@ -192,15 +252,51 @@ function onQuantity(id: string, value: string) {
   }
 }
 
-function onNote(id: string, value: string) {
+/** Öffnet das Notizfeld und setzt den Fokus hinein. */
+async function startNote(id: string) {
+  editingNote.value = id
+  await nextTick()
+  document.getElementById(`zk-note-${id}`)?.focus()
+}
+
+/** Speichert die Notiz und schließt das Feld; doppelte Auslöser (change, blur) sind wirkungslos. */
+function commitNote(id: string, value: string) {
+  if (editingNote.value !== id) {
+    return
+  }
+  editingNote.value = null
   setNote(id, value)
 }
 
-watch(saving, (now, before) => {
-  if (before && !now && !error.value) {
-    saved.value = true
+function focusNoteButton(id: string) {
+  void nextTick(() => document.getElementById(`zk-note-btn-${id}`)?.focus())
+}
+
+function onNoteEnter(id: string, event: KeyboardEvent) {
+  commitNote(id, (event.target as HTMLInputElement).value)
+  focusNoteButton(id)
+}
+
+function cancelNote(id: string) {
+  if (editingNote.value === id) {
+    editingNote.value = null
+    focusNoteButton(id)
   }
-})
+}
+
+function onNoteFocusOut(id: string, event: FocusEvent) {
+  commitNote(id, (event.target as HTMLInputElement).value)
+}
+
+/** Zweistufiges Entfernen: erster Klick fragt nach, zweiter entfernt den Eintrag. */
+function onRemove(id: string) {
+  if (confirmRemove.value === id) {
+    confirmRemove.value = null
+    removeEntry(id)
+  } else {
+    confirmRemove.value = id
+  }
+}
 
 onMounted(async () => {
   await load()
@@ -223,14 +319,40 @@ onBeforeUnmount(() => {
   padding: 0.75rem 0;
   border-bottom: 1px solid var(--oc-role-outline-variant, #ccc);
 }
+.zk-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.5rem;
+}
+.zk-search {
+  flex: 1 1 16rem;
+}
+.zk-note-button {
+  min-height: 44px;
+  padding: 0.25rem 0.5rem;
+  text-align: left;
+  background: none;
+  border: 1px dashed var(--oc-role-outline, #888);
+  border-radius: 0.25rem;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.zk-note-empty {
+  color: var(--oc-role-on-surface-variant, inherit);
+}
+.zk-remove-confirm {
+  background-color: var(--oc-role-error, #b3261e);
+  color: var(--oc-role-on-error, #fff);
+}
 .zk-qty {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 .zk-hint,
-.zk-count,
-.zk-status {
+.zk-count {
   color: var(--oc-role-on-surface-variant, inherit);
 }
 .zk-qty-input {
