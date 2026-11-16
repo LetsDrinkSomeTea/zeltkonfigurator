@@ -27,17 +27,29 @@ Die App ist eine OpenCloud-Web-Erweiterung auf Basis des `web-app-skeleton`
 
 Was wo liegt:
 
-| Inhalt                                       | Ort               | Ändert sich durch |
-| -------------------------------------------- | ----------------- | ----------------- |
-| Artikelliste, Zelttypen, Dachkonfigurationen | Code (`catalog/`) | App-Update        |
-| Zuweisungs- und Ausweichlogik                | Code (`domain/`)  | App-Update        |
-| Stückzahlen und Notizen                      | Space             | Bestandseditor    |
-| Packlisten mit Abhak-Stand                   | Space             | Nutzer            |
+| Inhalt                                            | Ort                                                            | Ändert sich durch        |
+| ------------------------------------------------- | -------------------------------------------------------------- | ------------------------ |
+| Kategorien, Material, Dächer, Zelttypen (Vorgabe) | Code (`catalog/`)                                              | App-Update               |
+| Kategorien, Material, Dächer, Zelttypen (eigene)  | Space, `catalog` in der Materialliste (`Zeltmaterial.bestand`) | Materialliste in der App |
+| Wandmaterial (Rollen, Spannweite, Ausführung)     | Code (`catalog/articles.ts`)                                   | App-Update               |
+| Zuweisungs- und Ausweichlogik                     | Code (`domain/`)                                               | App-Update               |
+| Stückzahlen und Notizen                           | Space (Materialliste)                                          | Materialliste            |
+| Packlisten mit Abhak-Stand und weiterem Material  | Space                                                          | Nutzer                   |
+
+Der Katalog ist Daten (`CatalogData`: Kategorien, Material, Dach-Bausteine, Zelttypen).
+`resolveCatalog` ergänzt das Wandmaterial, setzt die Dach-Bausteine in die Zelttypen ein und
+baut die Wandoptionen aus `wall: { segments, options }`. Fehlt der Abschnitt `catalog` in der
+Materialliste, gilt die Vorgabe aus dem Code; die erste Änderung in der App schreibt den ganzen
+Katalog in die Datei. Ein Zelttyp besteht aus einem oder mehreren **Dächern** (Bausteinen);
+jedes Dach hat Varianten (Ausweichen), Aufbauten mit Gestänge (z. B. gestellt, gehängt,
+Holzgestänge) und feste Teile. Eine Packliste speichert je Zelt pro Dach Variante und Aufbau
+(`TentConfig.roofs`) und zusätzlich weiteres Material (`materials`), das nach den Zelten gebucht
+wird.
 
 Leitlinien:
 
-- **Ein Zelttyp ist eine kurze, deklarative Datei.** Sie nennt Dachkonfigurationen,
-  Wandoptionen und feste Teile – keine Logik.
+- **Ein Zelttyp ist deklarativ.** Er nennt Dächer, Wandoptionen und weiteres Material – keine
+  Logik.
 - **Die Wandzuweisung steht genau einmal** und arbeitet nur mit Rollen, nicht mit
   konkreten Zelttypen.
 - **Rechenkern ohne Abhängigkeiten**, dadurch vollständig testbar.

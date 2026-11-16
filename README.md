@@ -1,30 +1,40 @@
 # Zeltkonfigurator
 
-OpenCloud-Web-App für das Zeltmaterial des Stammes: Zelte zusammenstellen, Materialbedarf
-gegen den Bestand prüfen, Packlisten speichern, abhaken und drucken.
+OpenCloud-Web-App für das Material des Stammes: Materialliste pflegen (Zeltmaterial und alles
+andere, z. B. Küche oder Werkzeug), Zelttypen zusammenstellen, Packlisten anlegen, gegen den
+Bestand prüfen, abhaken und drucken. Alles geht in der Oberfläche, ohne Dateien von Hand zu
+bearbeiten.
 
 - [Anforderungen](docs/anforderungen.md)
 - [Architektur](docs/architektur.md)
-- [Zelttyp, Dach oder Artikel anlegen](docs/zelttyp-anlegen.md)
+- [Zelttypen, Dächer und Material pflegen](docs/zelttyp-anlegen.md)
 - [OpenCloud-Anbindung: Befunde und offene Prüfungen](docs/opencloud-anbindung.md)
 
 ## Was die App kann
 
-- **Packlisten:** je Lager eine Liste mit beliebig vielen Zelten. Jede Packliste ist eine Datei,
-  die über „Neu → Packliste“ in jedem beliebigen Ordner angelegt wird.
-- **Konfigurator:** Jedes Zelt startet in der Standardkonfiguration seines Typs; über „Anpassen“
-  lassen sich Dach, Seitenwand, Bauart und Ausführung ändern. Reicht der Bestand
-  nicht, weicht die App in einstellbarer Reihenfolge aus und zeigt die Abweichung am Zelt.
-- **Bedarf:** Reiter „Bedarf“ mit dem Gesamtbedarf, abgeglichen mit dem Bestand (benötigt, aus
-  Bestand, fehlt). Am Zelt steht, wie viele Teile dort fehlen; Zelte lassen sich per Pfeil oder
-  Ziehen umsortieren, Löschen fragt nach.
-- **Abhaken und Drucken:** gemeinsamer Abhak-Stand für alle mit Zugriff; „Pro Zelt“ zeigt den
-  Stand nur zur Ansicht. „Drucken“ in der Kopfleiste öffnet die Druckansicht mit Kästchen.
-- **Bestand:** Stückzahlen und Notizen je Artikel bearbeiten, nur vorhandene Artikel filtern,
-  unbekannte Einträge entfernen. Ohne Schreibrecht zeigt die Kopfleiste „Schreibgeschützt“.
+- **Materialliste** (Datei `Zeltmaterial.bestand`, Knopf „Materialliste“ in jeder Packliste):
+  - _Material:_ Stückzahlen und Notizen; neues Material jeder Art anlegen, umbenennen, löschen;
+    eigene Kategorien (z. B. Küche, Werkzeug). Material, das ein Zelttyp oder Dach noch
+    braucht, lässt sich nicht löschen; die App sagt, wo es verwendet wird.
+  - _Zelttypen:_ aus einem oder mehreren Dächern zusammenstellen (z. B. Dreierjurtenburg =
+    3 × Jurte, Cafélounge = Großjurte + Jurte + Kohte), Wandsegmente und wählbare Wände,
+    Standard-Wand und weiteres Material (Seitenstangen, Heringe …). Kopieren, ändern, löschen.
+  - _Dächer:_ Bausteine der Zelttypen mit Dach-Varianten (z. B. Jurtendach oder 6 Kohtenblätter),
+    Aufbauten mit ihrem Gestänge (Gestellt, Gehängt, Holzgestänge) und festen Teilen.
+- **Packlisten:** eine Datei je Lager, angelegt über „Neu → Packliste“ in einem beliebigen Ordner.
+  - _Zelte:_ Kachel je Zelttyp mit − / +. Dach-Variante, Aufbau (z. B. „Gehängt“), Seitenwand,
+    Bauart und Ausführung als Knopfleisten direkt am Zelt. Gleiche Zelte erscheinen als eine
+    Karte („3 × Jurte“). Reicht der Bestand nicht, weicht die App in einstellbarer Reihenfolge aus
+    und zeigt die Abweichung und fehlende Teile am Zelt.
+  - _Weiteres Material:_ beliebiges Material aus der Materialliste (z. B. Bräter, Spülstraße),
+    wird wie Zeltmaterial gegen den Bestand geprüft.
+  - _Bedarf:_ Gesamtbedarf mit „aus Bestand“ und „fehlt“.
+  - _Packliste:_ gemeinsamer Abhak-Stand, „Pro Zelt“ zur Ansicht, Drucken mit Kästchen.
+- Ohne Schreibrecht zeigt die Kopfleiste „Schreibgeschützt“.
 
-Zelttypen, Dachkonfigurationen und Artikel sind Code (`src/domain/catalog/`) und kommen mit
-einem App-Update. Im Space liegen nur Stückzahlen und Packlisten.
+Mitgeliefert sind die Zelttypen und Dächer des Stammes als Vorgabe (`src/domain/catalog/`).
+Sobald jemand in der Materialliste etwas am Material, an Kategorien, Dächern oder Zelttypen
+ändert, speichert die App den ganzen Katalog in der Datei der Materialliste; ab dann gilt dieser.
 
 ## Installation in OpenCloud
 
