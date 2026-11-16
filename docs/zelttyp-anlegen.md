@@ -24,8 +24,8 @@ Er prüft eindeutige IDs, bekannte Artikel, positive Mengen und passende Wandrol
 2. Wände mit den Helfern aus `walls.ts` bauen: `keineWand()`, `normaleWand({ segmente })`,
    `hoheWand({ segmente })`, `nurStreifen({ segmente })`, `erdstreifen()`.
 3. Feste Teile (Dächle, Spinne, Masten, Seitenstangen, Abspannseile, …) in `fixed`. Heringe über
-   `heringe({ seitenwand, masten })`: 30-cm-T-Profile für Seitenwand und Abspannung, 60-cm-T-Profile
-   je Mast, dazu je T-Profil ein PacMan. Feste Teile gelten auch ohne Seitenwand.
+   `heringe({ seitenwand, lang })`: 30-cm-T-Profile für Seitenwand und Abspannung, 60-cm-T-Profile
+   nur wo nötig (Gigajurte: 8), dazu je T-Profil ein PacMan. Feste Teile gelten auch ohne Seitenwand.
 4. Den Zelttyp in `src/domain/catalog/tents/index.ts` importieren und in `tentTypes` einreihen.
 5. Unsichere Werte mit einem Kommentar `// PLATZHALTER` am Ende der Zeile kennzeichnen und
    in die Tabelle unten eintragen.

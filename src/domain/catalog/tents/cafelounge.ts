@@ -33,7 +33,7 @@ export const cafelounge: TentType = {
     { articleId: 'kohtenkreuz', quantity: 1 },
     { articleId: 'mast-375', quantity: 2 },
     { articleId: 'abspannseil', quantity: 24 }, // PLATZHALTER
-    ...heringe({ seitenwand: 24 + 8, masten: 2 }), // PLATZHALTER: Jurten-Seitenwand + Kohte
+    ...heringe({ seitenwand: 24 + 8 }), // PLATZHALTER: Jurten-Seitenwand + Kohte
     { articleId: 'aufzugseil', quantity: 1 } // PLATZHALTER
   ]
 }

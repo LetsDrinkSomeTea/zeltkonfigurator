@@ -33,7 +33,7 @@ export const dreierjurtenburg: TentType = {
     { articleId: 'mast-375', quantity: 9 }, // PLATZHALTER
     { articleId: 'seitenstange', quantity: 27 }, // PLATZHALTER
     { articleId: 'abspannseil', quantity: 27 }, // PLATZHALTER
-    ...heringe({ seitenwand: 27, masten: 9 }), // PLATZHALTER
+    ...heringe({ seitenwand: 27 }), // PLATZHALTER
     { articleId: 'blockseilrolle', quantity: 3 }, // PLATZHALTER
     { articleId: 'aufzugseil', quantity: 3 } // PLATZHALTER
   ]

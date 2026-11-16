@@ -32,7 +32,7 @@ export const theaterjurte: TentType = {
     { articleId: 'mast-375', quantity: 2 },
     { articleId: 'seitenstange', quantity: 14 },
     { articleId: 'abspannseil', quantity: 14 },
-    ...heringe({ seitenwand: 14, masten: 2 }),
+    ...heringe({ seitenwand: 14 }),
     { articleId: 'blockseilrolle', quantity: 2 },
     { articleId: 'aufzugseil', quantity: 1 }
   ]

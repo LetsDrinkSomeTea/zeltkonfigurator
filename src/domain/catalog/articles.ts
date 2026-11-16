@@ -78,7 +78,11 @@ export const articles: Article[] = [
   { id: 'seitenstange', name: 'Seitenstange (verstellbar)', category: 'stange' },
   { id: 'gestaengesatz-sudan', name: 'Gestängesatz Sudan', category: 'stange' },
   { id: 'mittelmast-yellowstone', name: 'Mittelmast Yellowstone', category: 'stange' },
-  { id: 'holzgestaenge-cafelounge', name: 'Holzgestänge Cafélounge', category: 'stange' },
+  {
+    id: 'holzgestaenge-cafelounge',
+    name: 'Holzgestänge Cafélounge (mit Winkeln)',
+    category: 'stange'
+  },
 
   // Heringe und Abspannung
   { id: 'abspannseil', name: 'Abspannseil', category: 'abspannung' },

@@ -165,10 +165,10 @@ describe('Katalog: Stichproben aus den Anforderungen', () => {
     expect(count(t.fixed, 'theaterjurtenspinne')).toBe(1)
   })
 
-  it('60-cm-T-Profile für jeden Mast, 30 cm für die Seitenwand, PacMan auf jedes T-Profil', () => {
+  it('60-cm-T-Profile nur bei der Gigajurte (8), PacMan auf jedes T-Profil', () => {
     for (const t of tentTypes) {
-      const masten = count(t.fixed, 'mast-375') + count(t.fixed, 'mast-500')
-      expect(count(t.fixed, 't-profil-60'), t.id).toBe(masten)
+      const giga = t.id === 'gigajurte9' || t.id === 'gigajurte12'
+      expect(count(t.fixed, 't-profil-60'), t.id).toBe(giga ? 8 : 0)
       expect(count(t.fixed, 'pacman'), t.id).toBe(
         count(t.fixed, 't-profil-30') + count(t.fixed, 't-profil-60')
       )
