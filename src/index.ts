@@ -21,7 +21,8 @@ export default defineWebApplication({
           extension: 'packliste',
           routeName: 'zeltkonfigurator-liste',
           label: $gettext('Im Zeltkonfigurator öffnen'),
-          icon: 'list-check',
+          // Datei-Icon in der Dateiliste und im „Neu“-Menü
+          icon: { name: 'resource-type-form', fillType: 'fill' as const },
           newFileMenu: {
             menuTitle: () => $gettext('Packliste'),
             defaultName: () => $gettext('Neue Packliste')
@@ -31,7 +32,7 @@ export default defineWebApplication({
           extension: 'bestand',
           routeName: 'zeltkonfigurator-bestand',
           label: $gettext('Im Zeltkonfigurator öffnen'),
-          icon: 'archive'
+          icon: { name: 'resource-type-spreadsheet', fillType: 'fill' as const }
         }
       ]
     }

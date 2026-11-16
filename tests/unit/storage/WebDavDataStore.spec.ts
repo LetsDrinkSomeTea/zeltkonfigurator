@@ -104,7 +104,7 @@ beforeEach(() => {
   writable = true
   store = new WebDavDataStore({
     files,
-    folder: 'Zeltkonfigurator',
+    path: 'Zeltkonfigurator/Zeltmaterial.bestand',
     canWrite: async () => writable,
     parseStockFile
   })
@@ -126,6 +126,30 @@ describe('stock', () => {
     expect(parseYaml(raw)).toEqual(stock)
     expect(raw.trimStart().startsWith('{')).toBe(false)
     expect(await store.loadStock()).toEqual({ data: stock, etag })
+  })
+
+  it('creates no folders for a file on the top level and uses the configured file name', async () => {
+    const top = new WebDavDataStore({
+      files,
+      path: 'Material.bestand',
+      canWrite: async () => true,
+      parseStockFile
+    })
+    await top.saveStock(stock, null)
+    expect(files.calls.filter((c) => c.startsWith('mkdir'))).toEqual([])
+    expect(files.files.has('Material.bestand')).toBe(true)
+    expect((await top.loadStock()).data).toEqual(stock)
+  })
+
+  it('creates all parent folders of a nested file', async () => {
+    const nested = new WebDavDataStore({
+      files,
+      path: 'Lager/Zelte/Material.bestand',
+      canWrite: async () => true,
+      parseStockFile
+    })
+    await nested.saveStock(stock, null)
+    expect([...files.folders]).toEqual(['Lager', 'Lager/Zelte'])
   })
 
   it('only creates folders once', async () => {
@@ -184,7 +208,7 @@ describe('stock', () => {
   it('wraps unexpected parser errors in InvalidFileError', async () => {
     const strict = new WebDavDataStore({
       files,
-      folder: 'Z',
+      path: 'Z/Zeltmaterial.bestand',
       canWrite: async () => true,
       parseStockFile: () => {
         throw new TypeError('kaputt')

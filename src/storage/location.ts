@@ -1,13 +1,16 @@
+import { STOCK_FILE } from '../domain/fileNames'
 import { NotConfiguredError } from './DataStore'
 
+/** Wo die Bestandsdatei liegt. */
 export interface StorageConfig {
   /** Name oder ID des Space */
   space: string
-  /** Ordner innerhalb des Space (ohne führenden/abschließenden Schrägstrich) */
-  folder: string
+  /** Pfad der Bestandsdatei im Space, ohne führenden Schrägstrich, z. B. "Lager/Zeltmaterial.bestand" */
+  path: string
 }
 
-export const DEFAULT_CONFIG: StorageConfig = { space: 'Material Team', folder: 'Zeltkonfigurator' }
+/** Vorgabe: Space „Material-Team“, Datei auf oberster Ebene. */
+export const DEFAULT_CONFIG: StorageConfig = { space: 'Material-Team', path: STOCK_FILE }
 
 export interface SpaceLike {
   id: string
@@ -17,35 +20,49 @@ export interface SpaceLike {
 
 export interface ResolvedLocation<S extends SpaceLike = SpaceLike> {
   space: S
-  folder: string
+  path: string
 }
 
 function str(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
 }
 
-/** Liest `{ space, folder }` aus der rohen App-Konfiguration; fehlende Werte ergeben die Vorgabe. */
+/** Liest `{ space, path }` aus der rohen App-Konfiguration; fehlende Werte ergeben die Vorgabe. */
 export function readStorageConfig(raw: unknown): StorageConfig {
   const obj = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {}
-  const folder = str(obj.folder).replace(/^\/+|\/+$/g, '')
-  if (folder.split('/').some((part) => part === '..' || part === '.')) {
+  const path = str(obj.path).replace(/^\/+|\/+$/g, '')
+  if (path && path.split('/').some((part) => part === '..' || part === '.' || part === '')) {
     throw new NotConfiguredError(
-      `Der konfigurierte Ordner „${folder}“ ist ungültig (kein „.“ oder „..“ erlaubt).`
+      `Der konfigurierte Pfad „${path}“ ist ungültig (kein „.“, „..“ oder leerer Abschnitt erlaubt).`
     )
   }
   return {
     space: str(obj.space) || DEFAULT_CONFIG.space,
-    folder: folder || DEFAULT_CONFIG.folder
+    path: path || DEFAULT_CONFIG.path
   }
 }
 
-/** Sucht zuerst nach der Space-ID, dann nach dem Namen (Groß-/Kleinschreibung egal), Projekt-Spaces zuerst. */
+/** Vergleichsform eines Space-Namens: „Material-Team“, „Material Team“ und „material_team“ sind gleich. */
+function nameKey(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, ' ')
+}
+
+/**
+ * Sucht zuerst nach der Space-ID, dann nach dem Namen. Beim Namen sind Groß-/Kleinschreibung
+ * sowie Leerzeichen, Binde- und Unterstriche egal; ein exakt gleich geschriebener Space und
+ * Projekt-Spaces haben Vorrang.
+ */
 export function findSpace<S extends SpaceLike>(spaces: S[], wanted: string): S | undefined {
   const key = wanted.trim().toLowerCase()
   if (!key) return undefined
   const byId = spaces.find((s) => s.id.toLowerCase() === key)
   if (byId) return byId
-  const byName = spaces.filter((s) => (s.name ?? '').trim().toLowerCase() === key)
+  const exact = spaces.filter((s) => (s.name ?? '').trim().toLowerCase() === key)
+  const loose = spaces.filter((s) => nameKey(s.name ?? '') === nameKey(wanted))
+  const byName = exact.length > 0 ? exact : loose
   return byName.find((s) => s.driveType === 'project') ?? byName[0]
 }
 
@@ -60,5 +77,5 @@ export function resolveLocation<S extends SpaceLike>(
         'Bitte den Ablageort in der App-Konfiguration des Servers prüfen.'
     )
   }
-  return { space, folder: config.folder }
+  return { space, path: config.path }
 }

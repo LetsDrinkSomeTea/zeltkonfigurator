@@ -21,16 +21,16 @@ kein OpenCloud-Server; alles Unbelegte steht im Abschnitt „Nicht verifiziert�
   (also auch ein `config`) aus `src/manifest.json` werden unverändert übernommen. Es gibt dafür
   keine Option in `defineConfig` (nur `name`, `opencloudWebHostUrl` und Vite-Optionen).
 - Umsetzung: `src/index.ts` ruft `setAppConfig(applicationConfig)` (neues Modul
-  `src/storage/appConfig.ts`); `createStore()` liest `{ space, folder }` daraus mit den Vorgaben
-  `Material Team` / `Zeltkonfigurator`.
+  `src/storage/appConfig.ts`); `createStore()` liest `{ space, path }` daraus mit den Vorgaben
+  `Material-Team` / `Zeltmaterial.bestand`.
 
 Beispiel `apps.yaml` (Schema aus dem Gedächtnis, nicht belegt):
 
 ```yaml
 zeltkonfigurator:
   config:
-    space: Material Team
-    folder: Zeltkonfigurator
+    space: Material-Team
+    path: Zeltmaterial.bestand
 ```
 
 ## 2. WebDAV (`useClientService().webdav`)
@@ -82,7 +82,8 @@ Anlegen ohne Überschreiben: `saveX(file, null)` ruft `putFileContents` ohne `pr
 | `src/storage/appConfig.ts`       | Hält `applicationConfig` zwischen `setup()` der App und `createStore()`.                                                                                            |
 | `src/domain/schema.ts`           | Platzhalter (Objekt + `schemaVersion === 1`), wird beim Merge ersetzt.                                                                                              |
 
-Verhalten: Der Bestand liegt in `<folder>/Zeltmaterial.bestand`; fehlende Ordner werden vor dem
+Verhalten: Der Bestand liegt in der Datei `<path>` des konfigurierten Space (Vorgabe: oberste
+Ebene); fehlende Ordner oberhalb der Datei werden vor dem
 ersten Schreiben per MKCOL angelegt (405 = existiert schon). Packlisten (`<Name>.packliste`)
 liegen an beliebiger Stelle: `src/storage/createDocument.ts` löst Space und Pfad über
 `useAppDefaults` aus der Adresse auf und liest und schreibt die Datei an Ort und Stelle
@@ -123,8 +124,8 @@ Admin-Dokumentation „Web Applications“:
   ```yaml
   zeltkonfigurator:
     config:
-      space: 'Material Team'
-      folder: 'Zeltkonfigurator'
+      space: 'Material-Team'
+      path: 'Zeltmaterial.bestand'
   ```
 
   Alternativ über eine `config.json` im App-Ordner (`{ "config": { … } }`).

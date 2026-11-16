@@ -24,7 +24,7 @@ export function createStore(): DataStore {
   async function build(): Promise<WebDavDataStore> {
     const config = readStorageConfig(getAppConfig())
     await spacesReady()
-    const { space, folder } = resolveLocation<SpaceResource>(config, spacesStore.spaces)
+    const { space, path } = resolveLocation<SpaceResource>(config, spacesStore.spaces)
 
     const canWrite = async (): Promise<boolean> => {
       // Die Berechtigungen eines Space werden erst beim Öffnen geladen.
@@ -38,7 +38,7 @@ export function createStore(): DataStore {
 
     return new WebDavDataStore({
       files: createWebDavFiles(clientService.webdav, space),
-      folder,
+      path,
       canWrite,
       parseStockFile
     })

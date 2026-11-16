@@ -21,7 +21,7 @@ Die App ist eine OpenCloud-Web-Erweiterung auf Basis des `web-app-skeleton`
                                                        │ WebDAV (Client aus web-pkg)
                                               ┌────────▼─────────┐
                                               │ Space            │  Zeltmaterial.bestand (fester Ort)
-                                              │ „Material Team“  │  *.packliste (beliebiger Ort, auch andere Spaces)
+                                              │ „Material-Team“  │  *.packliste (beliebiger Ort, auch andere Spaces)
                                               └──────────────────┘
 ```
 
@@ -66,7 +66,7 @@ src/
     DataStore.ts            Schnittstelle + Fehlerklassen
     WebDavDataStore.ts      Umsetzung über den WebDAV-Client von web-pkg
     MemoryDataStore.ts      Umsetzung im Speicher für Tests und Entwicklung
-    location.ts             Space und Ordner aus der App-Konfiguration auflösen
+    location.ts             Space und Pfad der Bestandsdatei aus der App-Konfiguration
   composables/
     useStore.ts  useStock.ts  usePacklist.ts
   views/
@@ -327,7 +327,7 @@ Haken werden gebündelt gespeichert (ca. 1 s Verzögerung).
 Aus der App-Konfiguration des Servers (F-41), mit Vorgabe:
 
 ```json
-{ "space": "Material Team", "folder": "Zeltkonfigurator" }
+{ "space": "Material-Team", "path": "Zeltmaterial.bestand" }
 ```
 
 `location.ts` sucht den Space unter den Spaces des Nutzers und liefert die WebDAV-Basis.

@@ -39,8 +39,9 @@ einem App-Update. Im Space liegen nur Stückzahlen und Packlisten.
    Der Ordner muss genau so heißen.
 3. OpenCloud neu starten. Die App hat keinen Eintrag im App-Umschalter; sie öffnet sich über
    ihre Dateien (siehe unten).
-4. Einen Projekt-Space **„Material Team“** anlegen bzw. verwenden. Wer dort schreiben darf,
-   kann Bestand und Packlisten bearbeiten; alle anderen Mitglieder sehen sie nur.
+4. Einen Projekt-Space **„Material-Team“** anlegen bzw. verwenden (oder den Ablageort des
+   Bestands anders konfigurieren, siehe unten). Wer dort schreiben darf, kann den Bestand
+   bearbeiten; alle anderen Mitglieder sehen ihn nur.
 
 ### Bedienung über die Dateiansicht
 
@@ -49,28 +50,32 @@ einem App-Update. Im Space liegen nur Stückzahlen und Packlisten.
   Zeltkonfigurator. Die Liste heißt wie die Datei; umbenennen, verschieben, kopieren und löschen
   läuft über die Dateiansicht.
 - **Packliste öffnen:** Klick auf die Datei.
-- **Bestand:** liegt immer am selben Ort und wird beim ersten Speichern angelegt. Geöffnet wird
-  er über die Datei `Zeltmaterial.bestand` oder über den Link „Bestand“ in jeder Packliste.
-
-```
-Material Team/
-  Zeltkonfigurator/
-    Zeltmaterial.bestand
-```
+- **Bestand:** eine einzige Datei an einem konfigurierten Ort, Vorgabe
+  `Zeltmaterial.bestand` auf oberster Ebene des Space „Material-Team“. Sie wird beim ersten
+  Speichern angelegt. Geöffnet wird der Bestand über diese Datei oder über den Link „Bestand“
+  in jeder Packliste.
 
 Der Inhalt beider Dateiarten ist YAML. Wer eine Packliste bearbeiten will, braucht Schreibrecht
 auf die Datei und Leserecht auf den Space mit dem Bestand.
 
-### Anderer Space oder Ordner für den Bestand
+### Ablageort des Bestands
 
-In `$OC_CONFIG_DIR/apps.yaml`:
+Die Bestandsdatei kann in jedem Space an beliebiger Stelle liegen. Space und Pfad stehen in
+`$OC_CONFIG_DIR/apps.yaml`; ohne Eintrag gilt die Vorgabe:
 
 ```yaml
 zeltkonfigurator:
   config:
-    space: 'Material Team'
-    folder: 'Zeltkonfigurator'
+    space: 'Material-Team' # Name oder ID des Space
+    path: 'Zeltmaterial.bestand' # Pfad der Datei im Space, z. B. 'Lager/Zelte/Material.bestand'
 ```
+
+- Beim Space-Namen sind Groß-/Kleinschreibung sowie Leerzeichen, Binde- und Unterstriche egal:
+  „Material-Team“ findet auch einen Space namens „Material Team“.
+- Der Dateiname ist frei. Damit ein Klick auf die Datei die App öffnet, muss er auf `.bestand`
+  enden.
+- Wer die Datei verschiebt oder umbenennt, muss `path` anpassen und OpenCloud neu starten;
+  sonst legt die App am konfigurierten Ort einen neuen, leeren Bestand an.
 
 ## Entwicklung
 

@@ -1,4 +1,4 @@
-import { packlistName, STOCK_FILE } from '../domain/fileNames'
+import { packlistName } from '../domain/fileNames'
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml'
 import type { PacklistFile, StockFile } from '../domain/types'
 import {
@@ -24,8 +24,8 @@ export interface WebDavFiles {
 
 export interface WebDavDataStoreOptions {
   files: WebDavFiles
-  /** Ordner im Space, z. B. "Zeltkonfigurator" */
-  folder: string
+  /** Pfad der Bestandsdatei im Space, z. B. "Zeltmaterial.bestand" oder "Lager/Zeltmaterial.bestand" */
+  path: string
   canWrite: () => Promise<boolean>
   parseStockFile: (json: unknown) => StockFile
 }
@@ -90,7 +90,7 @@ async function writeFile(
   return reread.etag
 }
 
-/** Bestand am festen Ablageort. */
+/** Bestand am konfigurierten Ablageort. */
 export class WebDavDataStore implements DataStore {
   private foldersReady = false
 
@@ -122,12 +122,13 @@ export class WebDavDataStore implements DataStore {
   }
 
   private stockPath(): string {
-    return `${this.options.folder}/${STOCK_FILE}`
+    return this.options.path
   }
 
   private async ensureFolders(): Promise<void> {
     if (this.foldersReady) return
-    const parts = this.options.folder.split('/').filter(Boolean)
+    // alle Ordner oberhalb der Datei
+    const parts = this.options.path.split('/').filter(Boolean).slice(0, -1)
     for (const path of parts.map((_, i) => parts.slice(0, i + 1).join('/'))) {
       try {
         await this.options.files.mkdir(path)

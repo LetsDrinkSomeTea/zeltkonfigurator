@@ -30,8 +30,8 @@ Nicht Teil der App:
 
 | Rolle      | Erkennung                              | Darf                                                          |
 | ---------- | -------------------------------------- | ------------------------------------------------------------- |
-| Bearbeiter | Schreibrecht im Space „Material Team“  | Bestand pflegen, Packlisten anlegen, ändern, abhaken, löschen |
-| Betrachter | nur Leserecht im Space „Material Team“ | Bestand und Packlisten ansehen und drucken                    |
+| Bearbeiter | Schreibrecht im Space „Material-Team“  | Bestand pflegen, Packlisten anlegen, ändern, abhaken, löschen |
+| Betrachter | nur Leserecht im Space „Material-Team“ | Bestand und Packlisten ansehen und drucken                    |
 
 ## 4. Begriffe
 
@@ -136,12 +136,12 @@ Dabei gilt:
 
 ### 5.6 Einbindung in OpenCloud
 
-| ID   | Anforderung                                                                                                                                                 |
-| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| F-40 | Die App hat keinen Eintrag im App-Umschalter. Sie wird über ihre Dateien und den Eintrag „Packliste“ im „Neu“-Menü geöffnet.                                |
-| F-41 | Der Ablageort des Bestands (Space und Ordner) wird einmal in der App-Konfiguration des Servers festgelegt. Vorgabe: Space „Material Team“.                  |
-| F-42 | Fehlt die Konfiguration, der Space oder der Zugriff, zeigt die App eine verständliche Meldung statt einer leeren Seite.                                     |
-| F-43 | Packlisten (`.packliste`) und der Bestand (`.bestand`) lassen sich aus der Dateiansicht heraus mit der App öffnen. Jede Packliste verlinkt auf den Bestand. |
+| ID   | Anforderung                                                                                                                                                                                      |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| F-40 | Die App hat keinen Eintrag im App-Umschalter. Sie wird über ihre Dateien und den Eintrag „Packliste“ im „Neu“-Menü geöffnet.                                                                     |
+| F-41 | Der Ablageort des Bestands (Space und Pfad der Datei) wird einmal in der App-Konfiguration des Servers festgelegt. Vorgabe: `Zeltmaterial.bestand` auf oberster Ebene des Space „Material-Team“. |
+| F-42 | Fehlt die Konfiguration, der Space oder der Zugriff, zeigt die App eine verständliche Meldung statt einer leeren Seite.                                                                          |
+| F-43 | Packlisten (`.packliste`) und der Bestand (`.bestand`) lassen sich aus der Dateiansicht heraus mit der App öffnen. Jede Packliste verlinkt auf den Bestand.                                      |
 
 ## 6. Nichtfunktionale Anforderungen
 
@@ -222,7 +222,7 @@ einen Artikel „Seitenstange“ für alle Wandhöhen (A).
 | Doppelbahnen, Doppelstreifen?            | Ja, jeweils einzel und doppelt vorhanden.                                       |
 | Kohte / Hochkohte Varianten              | Kohte mit und ohne Erdstreifen; Hochkohte auch nur mit Erweiterungsstreifen.    |
 | Stangen aus dem Bestand?                 | Teils, teils – siehe F-2A.                                                      |
-| Ablageort                                | Space „Material Team“.                                                          |
+| Ablageort                                | Space „Material-Team“.                                                          |
 | Stücklisten als Daten oder Code?         | Code, kommt mit dem App-Update.                                                 |
 | Ausweichreihenfolge der Ausführungen     | Gaze, Fenster, Blanko; je Packliste änderbar.                                   |
 | Gigajurte 12 m                           | Gigajurtendach (9 m) + 6 Kohtenblätter + 12 Zwischendachteile, 24 Wandsegmente. |
@@ -243,4 +243,4 @@ dort korrigieren.
 | O-5 | Erdstreifen der Kohte: anknüpfbarer Streifen oder eigene Kohtenblätter?                                  | Ein anknüpfbarer Streifen pro Kohte.                 |
 | O-6 | Welche Stangen werden vor Ort geschlagen?                                                                | Mittelmasten und Seitenstangen der Schwarzzelte.     |
 | O-7 | Soll je Zelt ein Segment für den Eingang Einzelbahn bleiben (Tortuga liefert z. B. 5 Doppel + 2 Einzel)? | Nein, Doppelteile zuerst, Einzelteile füllen auf.    |
-| O-8 | Ordner im Space „Material Team“.                                                                         | „Zeltkonfigurator“.                                  |
+| O-8 | Ort der Bestandsdatei.                                                                                   | Frei konfigurierbar (F-41).                          |
