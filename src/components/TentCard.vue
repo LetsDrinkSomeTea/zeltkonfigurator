@@ -10,7 +10,7 @@
     <div class="ext:flex ext:flex-wrap ext:items-center ext:gap-2">
       <!-- Ziehen ist nur eine Mausabkürzung; per Tastatur und Touch dienen die Pfeil-Knöpfe. -->
       <span
-        v-if="pl.canWrite.value"
+        v-if="pl.canWrite.value && single"
         class="zk-drag-handle zk-no-print"
         draggable="true"
         aria-hidden="true"
@@ -21,8 +21,8 @@
         <oc-icon name="draggable" size="small" />
       </span>
       <h3 class="ext:font-bold ext:text-lg ext:grow ext:text-left">{{ title }}</h3>
-      <div v-if="pl.canWrite.value" class="zk-no-print ext:flex ext:gap-1">
-        <template v-if="type">
+      <div v-if="pl.canWrite.value" class="zk-no-print ext:flex ext:flex-wrap ext:gap-1">
+        <template v-if="type && single">
           <oc-button
             size="small"
             :disabled="index === 0"
@@ -40,18 +40,16 @@
             <oc-icon name="arrow-down" size="small" />
           </oc-button>
         </template>
-        <oc-button
-          v-if="type"
-          size="small"
-          :aria-expanded="expanded"
-          :aria-controls="`${uid}-details`"
-          @click="expanded = !expanded"
-        >
-          {{ expanded ? $gettext('Fertig') : $gettext('Anpassen') }}
+        <oc-button v-if="!single" size="small" @click="emit('split')">
+          {{ $gettext('Einzeln bearbeiten') }}
         </oc-button>
         <oc-button
           size="small"
-          :aria-label="$gettext('%{name} entfernen', { name: title })"
+          :aria-label="
+            single
+              ? $gettext('%{name} entfernen', { name: title })
+              : $gettext('Alle %{name} entfernen', { name: title })
+          "
           @click="confirmRemove = true"
         >
           <oc-icon name="delete-bin" size="small" />
@@ -69,7 +67,6 @@
     </p>
 
     <template v-else>
-      <!-- Eine Zeile statt vieler Felder: Die Auswahl steckt hinter „Anpassen“. -->
       <p class="zk-tent-summary">
         {{ summary }}
         <span v-if="!isDefault" class="zk-tent-custom">· {{ $gettext('angepasst') }}</span>
@@ -80,77 +77,63 @@
         }}</oc-tag>
       </p>
 
-      <div v-if="expanded && pl.canWrite.value" :id="`${uid}-details`" class="zk-no-print ext:mt-3">
-        <div class="zk-tent-fields">
+      <div v-if="pl.canWrite.value" :id="`${uid}-details`" class="zk-no-print ext:mt-2">
+        <template v-for="r in roofRows" :key="r.index">
+          <ChoiceGroup
+            v-if="r.module.roofs.length > 1"
+            :class="`${uid}-roof-${r.index}`"
+            :label="r.roofLabel"
+            :options="r.module.roofs"
+            :model-value="r.roof?.id ?? ''"
+            @update:model-value="(id: string) => setRoof(r.index, { roofId: id })"
+          />
+          <ChoiceGroup
+            v-if="r.module.setups.length > 1"
+            :class="`${uid}-setup-${r.index}`"
+            :label="r.setupLabel"
+            :options="r.module.setups"
+            :model-value="r.setup?.id ?? ''"
+            @update:model-value="(id: string) => setRoof(r.index, { setupId: id })"
+          />
+        </template>
+        <ChoiceGroup
+          v-if="type.walls.length > 1"
+          :class="`${uid}-wall`"
+          :label="$gettext('Seitenwand')"
+          :options="type.walls"
+          :model-value="tent.wallId"
+          @update:model-value="(id: string) => update({ wallId: id })"
+        />
+        <ChoiceGroup
+          v-if="wall && wall.builds.length > 1"
+          :class="`${uid}-build`"
+          :label="$gettext('Bauart')"
+          :options="wall.builds"
+          :model-value="build?.id ?? ''"
+          @update:model-value="(id: string) => update({ buildId: id })"
+        />
+        <ChoiceGroup
+          v-if="showFinish"
+          :class="`${uid}-finish`"
+          :label="$gettext('Ausführung')"
+          :options="finishes"
+          :model-value="tent.finish"
+          @update:model-value="(id: string) => update({ finish: id as Finish })"
+        />
+
+        <div class="ext:flex ext:flex-wrap ext:items-end ext:gap-2 ext:mt-2">
           <oc-text-input
+            v-if="single"
             :id="`${uid}-label`"
-            :label="$gettext('Bezeichnung')"
+            class="zk-tent-label"
+            :label="$gettext('Bezeichnung (optional)')"
             :model-value="tent.label ?? ''"
             @update:model-value="onLabel"
           />
-
-          <template v-for="r in roofRows" :key="r.index">
-            <oc-select
-              v-if="r.module.roofs.length > 1"
-              :id="`${uid}-roof-${r.index}`"
-              :label="r.roofLabel"
-              :options="r.module.roofs"
-              :model-value="r.roof"
-              :clearable="false"
-              :searchable="false"
-              @update:model-value="(o: { id: string }) => setRoof(r.index, { roofId: o.id })"
-            />
-            <oc-select
-              v-if="r.module.setups.length > 1"
-              :id="`${uid}-setup-${r.index}`"
-              :label="r.setupLabel"
-              :options="r.module.setups"
-              :model-value="r.setup"
-              :clearable="false"
-              :searchable="false"
-              @update:model-value="(o: { id: string }) => setRoof(r.index, { setupId: o.id })"
-            />
-          </template>
-
-          <oc-select
-            v-if="type.walls.length > 1"
-            :id="`${uid}-wall`"
-            :label="$gettext('Seitenwand')"
-            :options="type.walls"
-            :model-value="wall"
-            :clearable="false"
-            :searchable="false"
-            @update:model-value="(o: { id: string }) => pl.updateTent(tent.id, { wallId: o.id })"
-          />
-
-          <oc-select
-            v-if="wall && wall.builds.length > 1"
-            :id="`${uid}-build`"
-            :label="$gettext('Bauart')"
-            :options="wall.builds"
-            :model-value="build"
-            :clearable="false"
-            :searchable="false"
-            @update:model-value="(o: { id: string }) => pl.updateTent(tent.id, { buildId: o.id })"
-          />
-
-          <oc-select
-            v-if="showFinish"
-            :id="`${uid}-finish`"
-            :label="$gettext('Ausführung')"
-            :options="finishes"
-            :model-value="finishes.find((f) => f.id === tent.finish)"
-            :clearable="false"
-            :searchable="false"
-            @update:model-value="(o: { id: Finish }) => pl.updateTent(tent.id, { finish: o.id })"
-          />
-        </div>
-
-        <div class="ext:flex ext:flex-wrap ext:gap-1 ext:mt-3">
-          <oc-button size="small" :disabled="isDefault" @click="pl.resetTent(tent.id)">{{
+          <oc-button size="small" :disabled="isDefault" @click="reset">{{
             $gettext('Zurücksetzen')
           }}</oc-button>
-          <oc-button size="small" @click="pl.duplicateTent(tent.id)">
+          <oc-button v-if="single" size="small" @click="pl.duplicateTent(tent.id)">
             <oc-icon name="file-copy" size="small" />
             <span>{{ $gettext('Duplizieren') }}</span>
           </oc-button>
@@ -171,7 +154,11 @@
 
     <ConfirmDialog
       v-if="confirmRemove"
-      :title="$gettext('%{name} entfernen?', { name: title })"
+      :title="
+        single
+          ? $gettext('%{name} entfernen?', { name: title })
+          : $gettext('Alle %{name} entfernen?', { name: title })
+      "
       @confirm="onRemove"
       @cancel="confirmRemove = false"
     />
@@ -186,11 +173,18 @@ import { defaultTentRoofs, hasDefaultOptions } from '../domain/packlist'
 import type { Finish, TentConfig, TentRoof } from '../domain/types'
 import { describeDeviation } from '../domain/view/deviations'
 import { hasFinishLayer } from '../domain/walls'
+import ChoiceGroup from './ChoiceGroup.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
 import './forms.css'
 
+/**
+ * Karte für ein Zelt oder eine Gruppe gleich eingestellter Zelte („3 × Jurte“). Bei einer Gruppe
+ * gelten Änderungen für alle; „Einzeln bearbeiten“ zeigt die Zelte als eigene Karten.
+ */
 const props = defineProps<{
-  tent: TentConfig
+  /** ein Zelt oder mehrere gleich eingestellte */
+  tents: TentConfig[]
+  /** Position des (ersten) Zeltes in der Liste */
   index: number
   count: number
   pl: UsePacklist
@@ -199,28 +193,44 @@ const props = defineProps<{
   /** Wird gerade zum Sortieren gezogen. */
   dragging?: boolean
 }>()
-const emit = defineEmits<{ dragstart: [event: DragEvent]; dragend: [event: DragEvent] }>()
+const emit = defineEmits<{
+  dragstart: [event: DragEvent]
+  dragend: [event: DragEvent]
+  split: []
+}>()
 const { $gettext, $ngettext } = useGettext()
 
+const tent = computed(() => props.tents[0])
+const single = computed(() => props.tents.length === 1)
+const ids = computed(() => props.tents.map((t) => t.id))
 const confirmRemove = ref(false)
 
 function onRemove() {
   confirmRemove.value = false
-  props.pl.removeTent(props.tent.id)
+  for (const id of ids.value) props.pl.removeTent(id)
 }
 
-const uid = computed(() => `zk-tent-${props.tent.id}`)
+function update(patch: Partial<Omit<TentConfig, 'id' | 'typeId'>>) {
+  for (const id of ids.value) props.pl.updateTent(id, patch)
+}
+
+function reset() {
+  for (const id of ids.value) props.pl.resetTent(id)
+}
+
+const uid = computed(() => `zk-tent-${tent.value.id}`)
 const type = computed(() =>
-  props.pl.catalog.value.tentTypes.find((t) => t.id === props.tent.typeId)
+  props.pl.catalog.value.tentTypes.find((t) => t.id === tent.value.typeId)
 )
-const wall = computed(() => type.value?.walls.find((w) => w.id === props.tent.wallId))
+const wall = computed(() => type.value?.walls.find((w) => w.id === tent.value.wallId))
+
 /** Je Dach-Baustein: gewähltes Dach und Aufbau samt Beschriftung. */
 const roofRows = computed(() => {
   const t = type.value
   if (!t) return []
   const many = t.modules.length > 1
   const roofs =
-    props.tent.roofs.length === t.modules.length ? props.tent.roofs : defaultTentRoofs(t)
+    tent.value.roofs.length === t.modules.length ? tent.value.roofs : defaultTentRoofs(t)
   return t.modules.map((module, index) => {
     const pick = roofs[index]
     const prefix = many ? `${module.name} ${index + 1}: ` : ''
@@ -239,20 +249,20 @@ function setRoof(index: number, patch: Partial<TentRoof>) {
   const t = type.value
   if (!t) return
   const current =
-    props.tent.roofs.length === t.modules.length ? props.tent.roofs : defaultTentRoofs(t)
-  const roofs = current.map((r, i) => (i === index ? { ...r, ...patch } : r))
-  props.pl.updateTent(props.tent.id, { roofs })
+    tent.value.roofs.length === t.modules.length ? tent.value.roofs : defaultTentRoofs(t)
+  update({ roofs: current.map((r, i) => (i === index ? { ...r, ...patch } : r)) })
 }
-const build = computed(() => wall.value?.builds.find((b) => b.id === props.tent.buildId))
-const showFinish = computed(() => !!build.value && hasFinishLayer(build.value))
-const isDefault = computed(() => !type.value || hasDefaultOptions(props.tent, type.value))
 
-/** Aufgeklappt wird nur auf Wunsch; ein neues Zelt steht in seiner Standardkonfiguration. */
-const expanded = ref(false)
+const build = computed(
+  () => wall.value?.builds.find((b) => b.id === tent.value.buildId) ?? wall.value?.builds[0]
+)
+const showFinish = computed(() => !!build.value && hasFinishLayer(build.value))
+const isDefault = computed(() => !type.value || hasDefaultOptions(tent.value, type.value))
 
 const title = computed(() => {
-  const name = type.value?.name ?? props.tent.typeId
-  const label = props.tent.label?.trim()
+  const name = type.value?.name ?? tent.value.typeId
+  if (!single.value) return `${props.tents.length} × ${name}`
+  const label = tent.value.label?.trim()
   return `${props.index + 1}. ${name}${label ? ` – ${label}` : ''}`
 })
 
@@ -278,21 +288,24 @@ const summary = computed(() => {
     parts.push(build.value?.label)
   }
   if (showFinish.value) {
-    parts.push(finishes.value.find((f) => f.id === props.tent.finish)?.label)
+    parts.push(finishes.value.find((f) => f.id === tent.value.finish)?.label)
   }
   return parts.filter(Boolean).join(' · ')
 })
 
 const lines = computed(() =>
   (props.pl.list.value?.deviations ?? [])
-    .filter((d) => d.tentId === props.tent.id)
+    .filter((d) => ids.value.includes(d.tentId))
     .map((d) => describeDeviation(d, $gettext))
 )
 
-/** Fehlende Artikel dieses Zeltes, z. B. „4 × T-Profil fehlen“. */
+/** Fehlende Artikel dieser Zelte, z. B. „4 × T-Profil fehlen“. */
 const missingItems = computed(() =>
   (props.pl.list.value?.items ?? [])
-    .map((item) => ({ name: item.name, n: item.missingPerTent[props.tent.id] ?? 0 }))
+    .map((item) => ({
+      name: item.name,
+      n: ids.value.reduce((sum, id) => sum + (item.missingPerTent[id] ?? 0), 0)
+    }))
     .filter((m) => m.n > 0)
 )
 const missingTotal = computed(() => missingItems.value.reduce((sum, m) => sum + m.n, 0))
@@ -306,7 +319,7 @@ const missingLines = computed(() =>
 )
 
 function onLabel(value: string) {
-  props.pl.updateTent(props.tent.id, { label: value })
+  props.pl.updateTent(tent.value.id, { label: value })
 }
 </script>
 
@@ -350,6 +363,13 @@ function onLabel(value: string) {
 .zk-missing-list {
   color: var(--oc-role-error, #b3261e);
   list-style: disc inside;
+}
+.zk-tent-label {
+  flex: 1 1 14rem;
+}
+.zk-tent-label input {
+  width: 100%;
+  box-sizing: border-box;
 }
 .zk-deviations {
   color: var(--oc-role-on-surface-variant, inherit);

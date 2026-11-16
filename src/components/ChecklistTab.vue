@@ -55,7 +55,7 @@
         </template>
 
         <template v-else>
-          <section v-for="t in tentSections" :key="t.tent.id" class="ext:mt-4">
+          <section v-for="t in tentSections" :key="t.key" class="ext:mt-4">
             <h2 class="ext:text-lg ext:font-bold">{{ t.title }}</h2>
             <oc-list raw>
               <ChecklistRow
@@ -88,6 +88,7 @@
 import { computed, ref } from 'vue'
 import { useGettext } from 'vue3-gettext'
 import type { UsePacklist } from '../composables/usePacklist'
+import { MATERIAL_KEY } from '../domain/allocation'
 import type { PackItem } from '../domain/types'
 import ChecklistRow from './ChecklistRow.vue'
 import ExtraItems from './ExtraItems.vue'
@@ -128,13 +129,18 @@ const tentSections = computed(() => {
   if (!l) {
     return []
   }
-  return l.tents
-    .map((tent) => ({
-      tent,
-      title: tentTitle(l, tent, props.pl.catalog.value),
-      entries: itemsForTent(l, tent.id).filter((e: TentItem) => visible(e.item))
-    }))
-    .filter((s) => s.entries.length > 0)
+  const sections = l.tents.map((tent) => ({
+    key: tent.id,
+    title: tentTitle(l, tent, props.pl.catalog.value),
+    entries: itemsForTent(l, tent.id).filter((e: TentItem) => visible(e.item))
+  }))
+  // weiteres Material als eigener Abschnitt nach den Zelten
+  sections.push({
+    key: MATERIAL_KEY,
+    title: $gettext('Weiteres Material'),
+    entries: itemsForTent(l, MATERIAL_KEY).filter((e: TentItem) => visible(e.item))
+  })
+  return sections.filter((s) => s.entries.length > 0)
 })
 </script>
 

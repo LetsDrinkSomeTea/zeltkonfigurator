@@ -3,8 +3,6 @@ import PacklistEditor from '../../../src/views/PacklistEditor.vue'
 import type { PacklistFile, Stock, TentConfig } from '../../../src/domain/types'
 import {
   bareTent,
-  choose,
-  expandTents,
   fullStock,
   listFor,
   mountWithStore,
@@ -41,12 +39,29 @@ async function open(
   return { ...mounted, store, list }
 }
 
-function select(wrapper: VueWrapper, suffix: string) {
-  return ocSelect(wrapper, suffix)
-}
-
 async function savedList(store: ReturnType<typeof storeWith>): Promise<PacklistFile> {
   return (await store.loadPacklist('p1')).data
+}
+
+/** Knopfleiste einer Zeltoption (Beschriftung beginnt mit `label`) */
+function choiceGroup(wrapper: VueWrapper, label: string) {
+  return wrapper.findAll('[role="radiogroup"]').find((g) => g.text().startsWith(label))
+}
+
+/** Wählt in der Knopfleiste `label` die Möglichkeit `option`. */
+async function chooseOption(wrapper: VueWrapper, label: string, option: string) {
+  const group = choiceGroup(wrapper, label)
+  expect(group, label).toBeDefined()
+  const button = group!.findAll('button[role="radio"]').find((b) => b.text() === option)
+  expect(button, `${label}: ${option}`).toBeDefined()
+  await button!.trigger('click')
+  await flushPromises()
+}
+
+/** Fügt über die Kachel ein Zelt des Typs hinzu. */
+async function addViaTile(wrapper: VueWrapper, name: string) {
+  await wrapper.find(`button[aria-label="Eine ${name} mehr"]`).trigger('click')
+  await flushPromises()
 }
 
 describe('PacklistEditor status banner', () => {
@@ -178,9 +193,7 @@ describe('PacklistEditor tabs', () => {
   it('starts on "Zelte" for a list without tents and stays there after adding one', async () => {
     const { wrapper } = await open([], fullStock(100), { query: '' })
     expect(wrapper.find('[role="tab"][aria-selected="true"]').text()).toBe('Zelte')
-    await choose(ocSelect(wrapper, 'zk-add-tent-type'), 'kohte')
-    await wrapper.find('form').trigger('submit')
-    await flushPromises()
+    await addViaTile(wrapper, 'Kohte')
     expect(wrapper.find('[role="tab"][aria-selected="true"]').text()).toBe('Zelte')
   })
 })
@@ -242,13 +255,10 @@ describe('PacklistEditor header', () => {
 })
 
 describe('PacklistEditor configurator', () => {
-  it('adds a Jurte in its default configuration, collapsed', async () => {
+  it('adds a Jurte in its default configuration', async () => {
     const { wrapper, store } = await open([], fullStock(100))
-    await choose(ocSelect(wrapper, 'zk-add-tent-type'), 'jurte')
-    await wrapper.find('form').trigger('submit')
-    await flushPromises()
+    await addViaTile(wrapper, 'Jurte')
     expect(wrapper.find('.zk-tent-summary').text()).toBe('Jurtendach · Hoch · Superbahn · Gaze')
-    expect(select(wrapper, 'wall')).toBeUndefined()
     await wrapper.unmount()
     await flushPromises()
     expect((await savedList(store)).tents[0]).toMatchObject({
@@ -267,53 +277,42 @@ describe('PacklistEditor configurator', () => {
     ])
   })
 
-  it('shows the selects only after "Anpassen" and hides them again with "Fertig"', async () => {
+  it('shows the options of a tent directly as button rows', async () => {
     const { wrapper } = await open([tentOf('jurte')], fullStock(100))
-    const toggle = () => wrapper.find('article button[aria-expanded]')
-    expect(toggle().text()).toBe('Anpassen')
-    expect(toggle().attributes('aria-expanded')).toBe('false')
-    await toggle().trigger('click')
-    expect(toggle().text()).toBe('Fertig')
-    expect(select(wrapper, 'roof-0')).toBeDefined()
-    expect(select(wrapper, 'wall')).toBeDefined()
-    expect(select(wrapper, 'build')).toBeDefined()
-    expect(select(wrapper, 'finish')).toBeDefined()
-    await toggle().trigger('click')
-    expect(select(wrapper, 'wall')).toBeUndefined()
+    expect(wrapper.find('article button[aria-expanded]').exists()).toBe(false)
+    for (const label of ['Dach', 'Aufbau', 'Seitenwand', 'Bauart', 'Ausführung']) {
+      expect(choiceGroup(wrapper, label), label).toBeDefined()
+    }
+    const selected = choiceGroup(wrapper, 'Ausführung')!.find('[aria-checked="true"]')
+    expect(selected.text()).toBe('Gaze')
   })
 
-  it('shows build and finish selects only where they apply', async () => {
+  it('shows build and finish only where they apply', async () => {
     const { wrapper } = await open([bareTent('jurte')], fullStock(100))
-    await expandTents(wrapper)
-    expect(select(wrapper, 'build')).toBeUndefined()
-    expect(select(wrapper, 'finish')).toBeUndefined()
-    await choose(select(wrapper, 'wall'), 'hoch')
-    await flushPromises()
-    expect(select(wrapper, 'build')).toBeDefined()
-    expect(select(wrapper, 'finish')).toBeDefined()
-    await choose(select(wrapper, 'build'), 'normal+streifen')
-    await flushPromises()
-    expect(select(wrapper, 'finish')).toBeDefined()
-    await choose(select(wrapper, 'wall'), 'normal')
-    await flushPromises()
-    expect(select(wrapper, 'build')).toBeUndefined()
-    expect(select(wrapper, 'finish')).toBeUndefined()
+    expect(choiceGroup(wrapper, 'Bauart')).toBeUndefined()
+    expect(choiceGroup(wrapper, 'Ausführung')).toBeUndefined()
+    await chooseOption(wrapper, 'Seitenwand', 'Hoch')
+    expect(choiceGroup(wrapper, 'Bauart')).toBeDefined()
+    expect(choiceGroup(wrapper, 'Ausführung')).toBeDefined()
+    await chooseOption(wrapper, 'Bauart', 'Normalbahn + Erweiterungsstreifen')
+    expect(choiceGroup(wrapper, 'Ausführung')).toBeDefined()
+    await chooseOption(wrapper, 'Seitenwand', 'Normal')
+    expect(choiceGroup(wrapper, 'Bauart')).toBeUndefined()
+    expect(choiceGroup(wrapper, 'Ausführung')).toBeUndefined()
   })
 
-  it('shows no roof select for a Kohte', async () => {
+  it('shows no roof choice for a Kohte', async () => {
     const { wrapper } = await open([tentOf('kohte')], fullStock(100))
-    await expandTents(wrapper)
-    expect(select(wrapper, 'roof-0')).toBeUndefined()
-    expect(select(wrapper, 'wall')).toBeDefined()
+    expect(choiceGroup(wrapper, 'Dach')).toBeUndefined()
+    expect(choiceGroup(wrapper, 'Seitenwand')).toBeDefined()
   })
 
   it('writes option changes to the list and marks the tent as customised', async () => {
     const { wrapper, store } = await open([tentOf('jurte')], fullStock(100))
     expect(wrapper.find('.zk-tent-custom').exists()).toBe(false)
-    await expandTents(wrapper)
-    await choose(select(wrapper, 'roof-0'), 'kohtenblaetter')
-    await choose(select(wrapper, 'setup-0'), 'gehaengt')
-    await choose(select(wrapper, 'finish'), 'fenster')
+    await chooseOption(wrapper, 'Dach', '6 Kohtenblätter')
+    await chooseOption(wrapper, 'Aufbau', 'Gehängt')
+    await chooseOption(wrapper, 'Ausführung', 'Fenster')
     await wrapper.find('input[id$="-label"]').setValue('Küche')
     await flushPromises()
     expect(wrapper.find('.zk-tent-summary').text()).toContain('6 Kohtenblätter (Gehängt) · Hoch')
@@ -332,7 +331,6 @@ describe('PacklistEditor configurator', () => {
 
   it('resets a tent to its default configuration', async () => {
     const { wrapper, store } = await open([bareTent('jurte', { label: 'Küche' })], fullStock(100))
-    await expandTents(wrapper)
     const reset = () => wrapper.findAll('article button').find((b) => b.text() === 'Zurücksetzen')!
     await reset().trigger('click')
     await flushPromises()
@@ -350,7 +348,6 @@ describe('PacklistEditor configurator', () => {
 
   it('moves, duplicates and removes tents', async () => {
     const { wrapper, store } = await open([tentOf('kohte'), tentOf('jurte')], fullStock(100))
-    await expandTents(wrapper)
     const cards = () => wrapper.findAll('article')
     expect(cards()[0].find('button[aria-label="Nach oben"]').attributes('disabled')).toBeDefined()
     expect(cards()[1].find('button[aria-label="Nach unten"]').attributes('disabled')).toBeDefined()
@@ -362,11 +359,12 @@ describe('PacklistEditor configurator', () => {
       .findAll('button')
       .find((b) => b.text() === 'Duplizieren')!
       .trigger('click')
-    expect(wrapper.findAll('article')).toHaveLength(3)
+    // die Kopie ist gleich eingestellt: eine gemeinsame Karte
+    expect(wrapper.findAll('article h3').map((h) => h.text())).toEqual(['2 × Jurte', '3. Kohte'])
 
-    await cards()[2].find('button[aria-label$="entfernen"]').trigger('click')
+    await cards()[1].find('button[aria-label$="entfernen"]').trigger('click')
     await wrapper.find('.zk-confirm-ok').trigger('click')
-    expect(wrapper.findAll('article')).toHaveLength(2)
+    expect(wrapper.findAll('article')).toHaveLength(1)
     await wrapper.unmount()
     await flushPromises()
     expect((await savedList(store)).tents.map((t) => t.typeId)).toEqual(['jurte', 'jurte'])

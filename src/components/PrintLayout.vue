@@ -56,6 +56,18 @@
           </li>
         </ul>
       </div>
+      <div v-if="materialItems.length > 0" class="zk-print-tent">
+        <h3>{{ $gettext('Weiteres Material') }}</h3>
+        <ul class="zk-print-list">
+          <li v-for="t in materialItems" :key="t.item.articleId" class="zk-print-row">
+            <span class="zk-print-box" aria-hidden="true">{{
+              isCheckable(t.item) ? (t.item.checked ? '☑' : '☐') : '–'
+            }}</span>
+            <span class="zk-print-qty">{{ t.quantity }} ×</span>
+            <span>{{ t.item.name }}</span>
+          </li>
+        </ul>
+      </div>
     </section>
 
     <section v-if="list.deviations.length > 0" class="zk-print-section">
@@ -71,6 +83,7 @@
 </template>
 
 <script setup lang="ts">
+import { MATERIAL_KEY } from '../domain/allocation'
 import { computed } from 'vue'
 import { useGettext } from 'vue3-gettext'
 import type { Deviation, PacklistFile, Catalog } from '../domain/types'
@@ -87,6 +100,7 @@ import {
 const props = defineProps<{ list: PacklistFile; catalog: Catalog }>()
 const { $gettext } = useGettext()
 
+const materialItems = computed(() => itemsForTent(props.list, MATERIAL_KEY))
 const groups = computed(() => groupByCategory(props.list.items, props.catalog.categories))
 const printedAt = new Date().toLocaleString('de-DE')
 
