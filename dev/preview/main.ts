@@ -34,6 +34,11 @@ const router = createRouter({
       component: () => import('../../src/views/PacklistEditor.vue')
     },
     {
+      path: '/datei/:driveAliasAndItem(.*)?',
+      name: 'zeltkonfigurator-datei',
+      component: () => import('../../src/views/OpenFile.vue')
+    },
+    {
       path: '/bestand',
       name: 'zeltkonfigurator-bestand',
       component: () => import('../../src/views/InventoryView.vue')

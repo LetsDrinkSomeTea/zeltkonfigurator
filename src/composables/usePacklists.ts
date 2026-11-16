@@ -2,7 +2,7 @@ import { ref, type Ref } from 'vue'
 import { catalog } from '../domain/catalog'
 import { createPacklist } from '../domain/packlist'
 import type { PacklistFile, PacklistSummary } from '../domain/types'
-import { newId } from './packlistOps'
+import { packlistFileId } from '../domain/fileNames'
 import { toError, toStock } from './useStock'
 import { useStore } from './useStore'
 
@@ -47,7 +47,9 @@ export function usePacklists(): UsePacklists {
   async function create(name: string): Promise<string> {
     const stockFile = await store.loadStock()
     const created = createPacklist(name, catalog, toStock(stockFile.data.stock))
-    const file: PacklistFile = { ...created, id: created.id || newId() }
+    // Die Datei heißt wie die Liste.
+    const taken = (await store.listPacklists()).map((s) => s.id)
+    const file: PacklistFile = { ...created, id: packlistFileId(name, taken) }
     await store.savePacklist(file, null)
     await refresh()
     return file.id
@@ -55,10 +57,12 @@ export function usePacklists(): UsePacklists {
 
   async function duplicate(id: string): Promise<string> {
     const { data } = await store.loadPacklist(id)
+    const name = `${data.name} (Kopie)`
+    const taken = (await store.listPacklists()).map((s) => s.id)
     const file: PacklistFile = {
       ...data,
-      id: newId(),
-      name: `${data.name} (Kopie)`,
+      id: packlistFileId(name, taken),
+      name,
       items: data.items.map((item) => ({ ...item, checked: false })),
       extraItems: data.extraItems.map((extra) => ({ ...extra, checked: false })),
       updatedAt: new Date().toISOString()

@@ -10,6 +10,7 @@ import {
   type Ref
 } from 'vue'
 import { catalog } from '../domain/catalog'
+import { packlistFileId, sanitizeFileName } from '../domain/fileNames'
 import { createTentConfig, fingerprint } from '../domain/packlist'
 import type { Finish, PacklistFile, Stock, TentConfig } from '../domain/types'
 import { ConflictError } from '../storage/DataStore'
@@ -30,6 +31,11 @@ export interface UsePacklist {
   load(): Promise<void>
   flush(): Promise<void>
   setName(name: string): void
+  /**
+   * Benennt die Liste um und zieht die Datei nach, damit sie wie die Liste heißt.
+   * Liefert die (ggf. neue) Kennung; bei einer neuen Kennung muss der Aufrufer dorthin wechseln.
+   */
+  rename(name: string): Promise<string>
   setDate(date: string | undefined): void
   setFinishOrder(order: Finish[]): void
   addTent(typeId: string): void
@@ -181,6 +187,38 @@ export function usePacklist(id: MaybeRefOrGetter<string>): UsePacklist {
     push({ type: 'addTent', tent: { ...createTentConfig(type), id: newId() } })
   }
 
+  async function rename(name: string): Promise<string> {
+    const current = toValue(id)
+    if (!canWrite.value || !list.value) {
+      return current
+    }
+    if (list.value.name !== name) {
+      push({ type: 'setName', name })
+    }
+    await flush()
+    if (error.value || !list.value) {
+      return current
+    }
+    if (sanitizeFileName(name).toLowerCase() === current.toLowerCase()) {
+      return current
+    }
+    try {
+      const taken = (await store.listPacklists()).map((s) => s.id).filter((t) => t !== current)
+      const nextId = packlistFileId(name, taken)
+      if (nextId === current) {
+        return current
+      }
+      // Erst die neue Datei anlegen, dann die alte entfernen: Bricht es dazwischen ab, gibt es
+      // die Liste doppelt, aber nie gar nicht.
+      await store.savePacklist({ ...plain(list.value), id: nextId }, null)
+      await store.deletePacklist(current)
+      return nextId
+    } catch (e) {
+      error.value = toError(e)
+      return current
+    }
+  }
+
   watch(
     () => toValue(id),
     async () => {
@@ -208,6 +246,7 @@ export function usePacklist(id: MaybeRefOrGetter<string>): UsePacklist {
     load,
     flush,
     setName: (name) => push({ type: 'setName', name }),
+    rename,
     setDate: (date) => push({ type: 'setDate', date }),
     setFinishOrder: (order) => push({ type: 'setFinishOrder', order }),
     addTent,

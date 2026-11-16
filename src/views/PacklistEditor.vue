@@ -22,6 +22,7 @@
             :label="$gettext('Name')"
             :model-value="pl.list.value.name"
             @update:model-value="pl.setName"
+            @change="onRename"
           />
           <oc-text-input
             id="zk-list-date"
@@ -112,6 +113,20 @@ const activeTab = computed<TabId>(() => {
 const status = computed(() =>
   pl.list.value ? derivePacklistStatus(pl.list.value) : ('leer' as const)
 )
+
+// Nach dem Bearbeiten des Namens die Datei nachziehen und zur neuen Adresse wechseln.
+async function onRename() {
+  const name = pl.list.value?.name ?? ''
+  const before = route.value.params.id as string
+  const id = await pl.rename(name)
+  if (id !== before) {
+    await router.replace({
+      name: 'zeltkonfigurator-liste',
+      params: { id },
+      query: route.value.query
+    })
+  }
+}
 
 function select(id: TabId) {
   void router.replace({ query: { ...route.value.query, tab: id } })

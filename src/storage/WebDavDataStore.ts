@@ -1,3 +1,4 @@
+import { isValidPacklistId, PACKLIST_DIR, PACKLIST_EXT, STOCK_FILE } from '../domain/fileNames'
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml'
 import type { PacklistFile, PacklistSummary, StockFile } from '../domain/types'
 import {
@@ -33,10 +34,7 @@ export interface WebDavDataStoreOptions {
   parsePacklistFile: (json: unknown) => PacklistFile
 }
 
-const EXT = '.yaml'
-const STOCK_FILE = 'bestand.yaml'
-const PACKLIST_DIR = 'packlisten'
-const ID_PATTERN = /^[A-Za-z0-9_-]+$/
+const EXT = PACKLIST_EXT
 
 export function statusOf(error: unknown): number | undefined {
   const e = error as { statusCode?: unknown; response?: { status?: unknown } } | null
@@ -114,7 +112,9 @@ export class WebDavDataStore implements DataStore {
     const path = this.packlistPath(id)
     try {
       const { body, etag } = await this.options.files.read(path)
-      return { data: this.parse(body, this.options.parsePacklistFile, 'Die Packliste'), etag }
+      const data = this.parse(body, this.options.parsePacklistFile, 'Die Packliste')
+      // Maßgeblich ist der Dateiname – auch wenn die Datei im Space umbenannt wurde.
+      return { data: { ...data, id }, etag }
     } catch (e) {
       throw mapError(e, 'Die Packliste')
     }
@@ -143,7 +143,7 @@ export class WebDavDataStore implements DataStore {
   }
 
   private packlistPath(id: string): string {
-    if (!ID_PATTERN.test(id)) throw new InvalidFileError(`Ungültige Packlisten-ID „${id}“.`)
+    if (!isValidPacklistId(id)) throw new InvalidFileError(`Ungültige Packlisten-ID „${id}“.`)
     return `${this.packlistDir()}/${id}${EXT}`
   }
 
