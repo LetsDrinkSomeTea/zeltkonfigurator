@@ -36,11 +36,11 @@ describe('InventoryView', () => {
 
   it('filters by search and shows no-match message', async () => {
     const wrapper = await mountView(new MemoryDataStore())
-    await wrapper.find('input[type="search"]').setValue('kohtenblatt')
+    await wrapper.find('#zk-inventory-search').setValue('kohtenblatt')
     expect(wrapper.findAll('h2')).toHaveLength(1)
-    await wrapper.find('input[type="search"]').setValue('Bodenplanen')
+    await wrapper.find('#zk-inventory-search').setValue('Bodenplanen')
     expect(wrapper.findAll('h2')).toHaveLength(1)
-    await wrapper.find('input[type="search"]').setValue('xyzxyz')
+    await wrapper.find('#zk-inventory-search').setValue('xyzxyz')
     expect(wrapper.findAll('h2')).toHaveLength(0)
     expect(wrapper.text()).toContain('keine Treffer')
   })
@@ -48,7 +48,7 @@ describe('InventoryView', () => {
   it('persists quantity changes', async () => {
     const store = new MemoryDataStore()
     const wrapper = await mountView(store)
-    const input = wrapper.find<HTMLInputElement>(`input[aria-label^="${first.name}: Stückzahl"]`)
+    const input = wrapper.find<HTMLInputElement>(`#zk-qty-${first.id}`)
     await input.setValue('7')
     await input.trigger('change')
     wrapper.unmount()
@@ -64,18 +64,22 @@ describe('InventoryView', () => {
     await wrapper.find(`button[aria-label^="${first.name}: eins mehr"]`).trigger('click')
     await wrapper.find(`button[aria-label^="${first.name}: eins mehr"]`).trigger('click')
     await wrapper.find(`button[aria-label^="${first.name}: eins weniger"]`).trigger('click')
-    expect(
-      wrapper.find<HTMLInputElement>(`input[aria-label^="${first.name}: Stückzahl"]`).element.value
-    ).toBe('3')
+    expect(wrapper.find<HTMLInputElement>(`#zk-qty-${first.id}`).element.value).toBe('3')
     wrapper.unmount()
     await flushPromises()
     expect((await store.loadStock()).data.stock[first.id].quantity).toBe(3)
   })
 
+  it('labels quantity and note fields with the article name', async () => {
+    const wrapper = await mountView(new MemoryDataStore())
+    expect(wrapper.find(`label[for="zk-qty-${first.id}"]`).text()).toBe(`${first.name}: Stückzahl`)
+    expect(wrapper.find(`label[for="zk-note-${first.id}"]`).text()).toBe(`${first.name}: Notiz`)
+  })
+
   it('persists notes', async () => {
     const store = new MemoryDataStore()
     const wrapper = await mountView(store)
-    const input = wrapper.find(`input[aria-label^="${first.name}: Notiz"]`)
+    const input = wrapper.find(`#zk-note-${first.id}`)
     await input.setValue('im Keller')
     await input.trigger('change')
     wrapper.unmount()
@@ -102,7 +106,7 @@ describe('InventoryView', () => {
     const wrapper = await mountView(store)
     expect(wrapper.text()).toContain('Unbekannte Artikel')
     expect(wrapper.text()).toContain('alt-artikel')
-    const input = wrapper.find(`input[aria-label^="${first.name}: Stückzahl"]`)
+    const input = wrapper.find(`#zk-qty-${first.id}`)
     await input.setValue('1')
     await input.trigger('change')
     wrapper.unmount()

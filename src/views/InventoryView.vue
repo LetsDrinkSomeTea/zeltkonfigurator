@@ -9,18 +9,15 @@
 
     <p v-if="!canWrite" class="zk-hint ext:mb-4">{{ $gettext('Nur Lesezugriff') }}</p>
 
-    <div class="ext:mb-4">
-      <label class="ext:block ext:mb-1" for="zk-inventory-search">{{
-        $gettext('Artikel suchen')
-      }}</label>
-      <input
-        id="zk-inventory-search"
-        v-model="query"
-        class="zk-input ext:w-full"
-        type="search"
-        :placeholder="$gettext('Name oder Kategorie')"
-      />
-    </div>
+    <oc-text-input
+      id="zk-inventory-search"
+      v-model="query"
+      class="zk-search ext:mb-4"
+      :label="$gettext('Artikel suchen')"
+      :default-value="$gettext('Name oder Kategorie')"
+      :clear-button-enabled="true"
+      :clear-button-accessible-label="$gettext('Suche zurücksetzen')"
+    />
 
     <p v-if="noMatches" class="zk-hint" role="status">{{ $gettext('keine Treffer') }}</p>
 
@@ -44,42 +41,53 @@
           </div>
           <template v-if="canWrite">
             <div class="zk-qty">
-              <button
-                type="button"
-                class="zk-btn"
+              <oc-button
+                size="large"
                 :aria-label="$gettext('%{name}: eins weniger', { name: article.name })"
                 :disabled="quantityOf(article.id) <= 0"
                 @click="setQuantity(article.id, quantityOf(article.id) - 1)"
               >
-                −
-              </button>
-              <input
-                class="zk-input zk-qty-input"
+                <oc-icon name="subtract" />
+              </oc-button>
+              <oc-text-input
+                :id="`zk-qty-${article.id}`"
+                class="zk-qty-input"
                 type="number"
                 min="0"
                 step="1"
                 inputmode="numeric"
-                :aria-label="$gettext('%{name}: Stückzahl', { name: article.name })"
-                :value="quantityOf(article.id)"
+                :label="$gettext('%{name}: Stückzahl', { name: article.name })"
+                :model-value="String(quantityOf(article.id))"
                 @change="onQuantity(article.id, $event)"
-              />
-              <button
-                type="button"
-                class="zk-btn"
+              >
+                <template #label>
+                  <label class="ext:sr-only" :for="`zk-qty-${article.id}`">{{
+                    $gettext('%{name}: Stückzahl', { name: article.name })
+                  }}</label>
+                </template>
+              </oc-text-input>
+              <oc-button
+                size="large"
                 :aria-label="$gettext('%{name}: eins mehr', { name: article.name })"
                 @click="setQuantity(article.id, quantityOf(article.id) + 1)"
               >
-                +
-              </button>
+                <oc-icon name="add" />
+              </oc-button>
             </div>
-            <input
-              class="zk-input zk-note"
-              type="text"
-              :aria-label="$gettext('%{name}: Notiz', { name: article.name })"
-              :placeholder="$gettext('Notiz')"
-              :value="noteOf(article.id)"
+            <oc-text-input
+              :id="`zk-note-${article.id}`"
+              class="zk-note"
+              :label="$gettext('%{name}: Notiz', { name: article.name })"
+              :default-value="$gettext('Notiz')"
+              :model-value="noteOf(article.id)"
               @change="onNote(article.id, $event)"
-            />
+            >
+              <template #label>
+                <label class="ext:sr-only" :for="`zk-note-${article.id}`">{{
+                  $gettext('%{name}: Notiz', { name: article.name })
+                }}</label>
+              </template>
+            </oc-text-input>
           </template>
           <template v-else>
             <span class="zk-qty-text">{{ quantityOf(article.id) }}</span>
@@ -174,14 +182,17 @@ const noMatches = computed(
 const quantityOf = (id: string): number => entries.value[id]?.quantity ?? 0
 const noteOf = (id: string): string => entries.value[id]?.note ?? ''
 
-function onQuantity(id: string, event: Event) {
-  const input = event.target as HTMLInputElement
-  setQuantity(id, input.valueAsNumber)
-  input.value = String(quantityOf(id))
+function onQuantity(id: string, value: string) {
+  setQuantity(id, value.trim() === '' ? NaN : Number(value))
+  // Ungültige Eingaben (leer, negativ, Dezimalzahl) im Feld auf den normalisierten Wert zurücksetzen.
+  const input = document.getElementById(`zk-qty-${id}`) as HTMLInputElement | null
+  if (input) {
+    input.value = String(quantityOf(id))
+  }
 }
 
-function onNote(id: string, event: Event) {
-  setNote(id, (event.target as HTMLInputElement).value)
+function onNote(id: string, value: string) {
+  setNote(id, value)
 }
 
 watch(saving, (now, before) => {
@@ -216,42 +227,22 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 0.5rem;
 }
-.zk-btn {
-  min-width: 3rem;
-  min-height: 3rem;
-  font-size: 1.5rem;
-  line-height: 1;
-  border: 1px solid var(--oc-role-outline, #888);
-  border-radius: 0.5rem;
-  background: var(--oc-role-surface-container, transparent);
-  color: var(--oc-role-on-surface, inherit);
-  cursor: pointer;
-}
-.zk-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-.zk-input {
-  min-height: 3rem;
-  padding: 0 0.75rem;
-  border: 1px solid var(--oc-role-outline, #888);
-  border-radius: 0.5rem;
-  background: var(--oc-role-surface, transparent);
-  color: var(--oc-role-on-surface, inherit);
-}
-.zk-qty-input {
-  width: 5rem;
-  text-align: center;
-}
-.zk-btn:focus-visible,
-.zk-input:focus-visible {
-  outline: 2px solid var(--oc-role-primary, #06c);
-  outline-offset: 2px;
-}
 .zk-hint,
 .zk-count,
 .zk-status {
   color: var(--oc-role-on-surface-variant, inherit);
+}
+.zk-qty-input {
+  width: 5rem;
+}
+.zk-qty-input :deep(input),
+.zk-note :deep(input),
+.zk-search :deep(input) {
+  width: 100%;
+  box-sizing: border-box;
+}
+.zk-qty-input :deep(input) {
+  text-align: center;
 }
 .zk-qty-text {
   font-weight: bold;
