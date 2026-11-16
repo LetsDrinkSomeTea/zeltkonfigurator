@@ -1,7 +1,6 @@
 import type { Catalog } from '../types'
+import { articles } from './articles'
+import { tentTypes } from './tents'
 
-/** Der mitgelieferte Katalog: Artikel und Zelttypen. Umsetzung: AP 3. */
-export const catalog: Catalog = {
-  articles: [],
-  tentTypes: []
-}
+/** Der mitgelieferte Katalog: Artikel und Zelttypen. */
+export const catalog: Catalog = { articles, tentTypes }

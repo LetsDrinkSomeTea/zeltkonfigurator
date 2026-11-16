@@ -1,0 +1,25 @@
+import type { TentType } from '../../types'
+import { hoheWand, keineWand, normaleWand } from '../walls'
+
+export const gigajurte9: TentType = {
+  id: 'gigajurte9',
+  name: 'Gigajurte 9 m',
+  roofs: [
+    {
+      id: 'gigajurtendach',
+      label: 'Gigajurtendach',
+      parts: [{ articleId: 'gigajurtendach', quantity: 1 }]
+    }
+  ],
+  walls: [keineWand(), normaleWand({ segmente: 18 }), hoheWand({ segmente: 18 })],
+  fixed: [
+    { articleId: 'gigajurtendaechle', quantity: 1 },
+    { articleId: 'jurtenspinne-9', quantity: 1 },
+    { articleId: 'mast-500', quantity: 3 }, // PLATZHALTER
+    { articleId: 'seitenstange', quantity: 18 },
+    { articleId: 'abspannseil', quantity: 18 }, // PLATZHALTER
+    { articleId: 'hering', quantity: 18 }, // PLATZHALTER
+    { articleId: 'blockseilrolle', quantity: 1 },
+    { articleId: 'aufzugseil', quantity: 1 }
+  ]
+}
