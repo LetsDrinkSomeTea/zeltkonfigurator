@@ -20,8 +20,8 @@ Die App ist eine OpenCloud-Web-Erweiterung auf Basis des `web-app-skeleton`
 └──────────────────────────────────────────────────────┼───────────────────────────┘
                                                        │ WebDAV (Client aus web-pkg)
                                               ┌────────▼─────────┐
-                                              │ Space            │  bestand.json
-                                              │ „Material Team“  │  packlisten/*.json
+                                              │ Space            │  bestand.yaml
+                                              │ „Material Team“  │  packlisten/*.yaml
                                               └──────────────────┘
 ```
 
@@ -174,7 +174,7 @@ Wandrolle hat mindestens einen Artikel (F-17).
 
 ## 4. Dateien im Space
 
-### 4.1 `bestand.json`
+### 4.1 `bestand.yaml`
 
 ```ts
 interface StockFile {
@@ -185,7 +185,7 @@ interface StockFile {
 
 Einträge zu unbekannten Artikel-IDs bleiben beim Speichern erhalten (F-07).
 
-### 4.2 `packlisten/<id>.json`
+### 4.2 `packlisten/<id>.yaml`
 
 ```ts
 interface TentConfig {

@@ -69,15 +69,15 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { useGettext } from 'vue3-gettext'
 import AppLayout from '../components/AppLayout.vue'
 import '../components/forms.css'
+import { useAppRouter } from '../composables/useAppRouter'
 import { usePacklists } from '../composables/usePacklists'
 import type { PacklistSummary } from '../domain/types'
 
 const { $gettext } = useGettext()
-const router = useRouter()
+const { router } = useAppRouter()
 const { summaries, loading, error, canWrite, load, create, duplicate, remove } = usePacklists()
 
 const newName = ref('')
