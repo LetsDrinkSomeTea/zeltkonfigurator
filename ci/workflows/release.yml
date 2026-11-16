@@ -1,0 +1,43 @@
+name: Release
+
+# Baut das Installationspaket und legt einen GitHub-Release an, sobald ein Tag vX.Y.Z
+# gepusht wird. Der Tag muss zur Version in package.json passen.
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Tag und package.json vergleichen
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME passt nicht zur Version $version in package.json"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm check:types
+      - run: pnpm test:unit --run
+      - run: pnpm package
+      - name: Paket benennen
+        run: mv package/zeltkonfigurator.zip "zeltkonfigurator-$VERSION.zip"
+      - name: Release anlegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "zeltkonfigurator-$VERSION.zip" \
+            --title "Zeltkonfigurator $VERSION" \
+            --generate-notes
