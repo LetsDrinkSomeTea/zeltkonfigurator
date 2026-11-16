@@ -22,7 +22,9 @@ describe('PacklistOverview', () => {
     expect(text).toContain('04.07.2026')
     expect(text).toContain('2 Zelte')
     expect(text).toContain(`1 von ${list.items.length} abgehakt`)
-    expect(wrapper.find('progress').attributes('max')).toBe(String(list.items.length))
+    const progress = wrapper.findComponent({ name: 'OcProgress' })
+    expect(progress.props('max')).toBe(list.items.length)
+    expect(progress.props('value')).toBe(1)
   })
 
   it('shows an empty state', async () => {
@@ -35,7 +37,7 @@ describe('PacklistOverview', () => {
     const store = storeWith(fullStock(1), [])
     const { wrapper, router } = await mountWithStore(PacklistOverview, store)
     await flushPromises()
-    await wrapper.find('#zk-new-list-name').setValue('Pfingstlager')
+    await wrapper.find('input#zk-new-list-name').setValue('Pfingstlager')
     await wrapper.find('form').trigger('submit')
     await flushPromises()
     const summaries = await store.listPacklists()
@@ -48,7 +50,7 @@ describe('PacklistOverview', () => {
     const store = storeWith({}, [])
     const { wrapper } = await mountWithStore(PacklistOverview, store)
     await flushPromises()
-    await wrapper.find('#zk-new-list-name').setValue('   ')
+    await wrapper.find('input#zk-new-list-name').setValue('   ')
     await wrapper.find('form').trigger('submit')
     await flushPromises()
     expect(await store.listPacklists()).toHaveLength(0)

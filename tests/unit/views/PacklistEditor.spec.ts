@@ -1,7 +1,7 @@
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import PacklistEditor from '../../../src/views/PacklistEditor.vue'
 import type { PacklistFile, Stock, TentConfig } from '../../../src/domain/types'
-import { fullStock, listFor, mountWithStore, storeWith, tentOf } from './support'
+import { choose, fullStock, listFor, mountWithStore, ocSelect, storeWith, tentOf } from './support'
 
 async function open(
   tents: TentConfig[],
@@ -21,7 +21,7 @@ async function open(
 }
 
 function select(wrapper: VueWrapper, suffix: string) {
-  return wrapper.find(`select[id$="-${suffix}"]`)
+  return ocSelect(wrapper, suffix)
 }
 
 async function savedList(store: ReturnType<typeof storeWith>): Promise<PacklistFile> {
@@ -111,13 +111,13 @@ describe('PacklistEditor tabs', () => {
 describe('PacklistEditor configurator', () => {
   it('adds a Jurte with roof and wall selects', async () => {
     const { wrapper, store } = await open([], fullStock(100))
-    await wrapper.find('#zk-add-tent-type').setValue('jurte')
+    await choose(ocSelect(wrapper, 'zk-add-tent-type'), 'jurte')
     await wrapper.find('form').trigger('submit')
     await flushPromises()
-    expect(select(wrapper, 'roof').exists()).toBe(true)
-    expect(select(wrapper, 'wall').exists()).toBe(true)
-    expect(select(wrapper, 'build').exists()).toBe(false)
-    expect(select(wrapper, 'finish').exists()).toBe(false)
+    expect(select(wrapper, 'roof')).toBeDefined()
+    expect(select(wrapper, 'wall')).toBeDefined()
+    expect(select(wrapper, 'build')).toBeUndefined()
+    expect(select(wrapper, 'finish')).toBeUndefined()
     await wrapper.unmount()
     await flushPromises()
     expect((await savedList(store)).tents.map((t) => t.typeId)).toEqual(['jurte'])
@@ -125,31 +125,31 @@ describe('PacklistEditor configurator', () => {
 
   it('shows build and finish selects for a high wall', async () => {
     const { wrapper } = await open([tentOf('jurte')], fullStock(100))
-    await select(wrapper, 'wall').setValue('hoch')
+    await choose(select(wrapper, 'wall'), 'hoch')
     await flushPromises()
-    expect(select(wrapper, 'build').exists()).toBe(true)
-    expect(select(wrapper, 'finish').exists()).toBe(true)
+    expect(select(wrapper, 'build')).toBeDefined()
+    expect(select(wrapper, 'finish')).toBeDefined()
     // Bauart ohne Ausführungs-Lage: keine Ausführung
-    await select(wrapper, 'build').setValue('normal+streifen')
+    await choose(select(wrapper, 'build'), 'normal+streifen')
     await flushPromises()
-    expect(select(wrapper, 'finish').exists()).toBe(true)
-    await select(wrapper, 'wall').setValue('normal')
+    expect(select(wrapper, 'finish')).toBeDefined()
+    await choose(select(wrapper, 'wall'), 'normal')
     await flushPromises()
-    expect(select(wrapper, 'build').exists()).toBe(false)
-    expect(select(wrapper, 'finish').exists()).toBe(false)
+    expect(select(wrapper, 'build')).toBeUndefined()
+    expect(select(wrapper, 'finish')).toBeUndefined()
   })
 
   it('shows no roof select for a Kohte', async () => {
     const { wrapper } = await open([tentOf('kohte')], fullStock(100))
-    expect(select(wrapper, 'roof').exists()).toBe(false)
-    expect(select(wrapper, 'wall').exists()).toBe(true)
+    expect(select(wrapper, 'roof')).toBeUndefined()
+    expect(select(wrapper, 'wall')).toBeDefined()
   })
 
   it('writes option changes to the list', async () => {
     const { wrapper, store } = await open([tentOf('jurte')], fullStock(100))
-    await select(wrapper, 'roof').setValue('kohtenblaetter')
-    await select(wrapper, 'wall').setValue('hoch')
-    await select(wrapper, 'finish').setValue('gaze')
+    await choose(select(wrapper, 'roof'), 'kohtenblaetter')
+    await choose(select(wrapper, 'wall'), 'hoch')
+    await choose(select(wrapper, 'finish'), 'gaze')
     await wrapper.find('input[id$="-label"]').setValue('Küche')
     await flushPromises()
     await wrapper.unmount()
@@ -220,19 +220,20 @@ describe('PacklistEditor configurator', () => {
     expect(wrapper.text()).toContain('Dieser Zelttyp ist nicht mehr im Katalog')
     const buttons = wrapper.findAll('article button')
     expect(buttons.map((b) => b.text())).toEqual(['Entfernen'])
-    expect(wrapper.find('article select').exists()).toBe(false)
+    expect(wrapper.find('article .vs__dropdown-toggle').exists()).toBe(false)
   })
 
   it('hides all controls in read-only mode', async () => {
     const { wrapper } = await open([tentOf('jurte')], fullStock(100), { writable: false })
-    expect(wrapper.find('#zk-add-tent-type').exists()).toBe(false)
-    expect(wrapper.find('article button').exists()).toBe(false)
+    expect(ocSelect(wrapper, 'zk-add-tent-type')).toBeUndefined()
+    expect(wrapper.findAll('article button:not(.vs__clear)')).toHaveLength(0)
     expect(wrapper.find('button[aria-label="Blanko nach oben"]').exists()).toBe(false)
-    expect(wrapper.find('#zk-list-name').exists()).toBe(false)
+    expect(wrapper.find('input#zk-list-name').exists()).toBe(false)
     expect(wrapper.text()).toContain('Sommerlager')
-    expect(
-      wrapper.findAll('article select').every((s) => s.attributes('disabled') !== undefined)
-    ).toBe(true)
+    const selects = wrapper.findAllComponents({ name: 'OcSelect' })
+    expect(selects.length).toBeGreaterThan(0)
+    expect(selects.every((s) => s.props('disabled'))).toBe(true)
+    expect(wrapper.find('input[id$="-label"]').attributes('disabled')).toBeDefined()
   })
 
   it('shows an error for an unknown list', async () => {

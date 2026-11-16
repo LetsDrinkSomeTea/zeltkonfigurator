@@ -5,12 +5,16 @@
       class="zk-no-print ext:flex ext:flex-wrap ext:items-end ext:gap-2 ext:mb-4"
       @submit.prevent="add"
     >
-      <div class="zk-field ext:grow">
-        <label for="zk-add-tent-type">{{ $gettext('Zelttyp') }}</label>
-        <select id="zk-add-tent-type" v-model="selectedType">
-          <option v-for="t in catalog.tentTypes" :key="t.id" :value="t.id">{{ t.name }}</option>
-        </select>
-      </div>
+      <oc-select
+        id="zk-add-tent-type"
+        v-model="selectedType"
+        class="ext:grow"
+        :label="$gettext('Zelttyp')"
+        :options="catalog.tentTypes"
+        option-label="name"
+        :clearable="false"
+        :searchable="false"
+      />
       <oc-button submit="submit" appearance="filled" color-role="primary">{{
         $gettext('Zelt hinzufügen')
       }}</oc-button>
@@ -48,11 +52,11 @@ import TentCard from './TentCard.vue'
 const props = defineProps<{ pl: UsePacklist }>()
 const { $gettext } = useGettext()
 
-const selectedType = ref(catalog.tentTypes[0]?.id ?? '')
+const selectedType = ref(catalog.tentTypes[0])
 
 function add() {
   if (selectedType.value) {
-    props.pl.addTent(selectedType.value)
+    props.pl.addTent(selectedType.value.id)
   }
 }
 </script>

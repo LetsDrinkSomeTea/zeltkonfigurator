@@ -1,4 +1,6 @@
 import { defaultPlugins, mount } from '@opencloud-eu/web-test-helpers'
+import type { VueWrapper } from '@vue/test-utils'
+import { expect } from 'vitest'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 import type { Component } from 'vue'
 import { catalog } from '../../../src/domain/catalog'
@@ -67,9 +69,29 @@ export async function mountWithStore(
   await router.isReady()
   const wrapper = mount(component, {
     props: options.props,
-    global: { plugins: [...defaultPlugins(), router], provide: { [storeKey as symbol]: store } }
+    global: {
+      plugins: [...defaultPlugins(), router],
+      stubs: { OcIcon: true },
+      provide: { [storeKey as symbol]: store }
+    }
   })
   return { wrapper, router }
+}
+
+/** Findet das OcSelect einer Zeltoption (IDs enden auf -roof, -wall, -build, -finish) oder per ID. */
+export function ocSelect(wrapper: VueWrapper, idOrSuffix: string) {
+  return wrapper
+    .findAllComponents({ name: 'OcSelect' })
+    .find((c) => c.props('id') === idOrSuffix || String(c.props('id')).endsWith(`-${idOrSuffix}`))
+}
+
+/** Wählt in einem OcSelect die Option mit der angegebenen id. */
+export async function choose(select: ReturnType<typeof ocSelect>, optionId: string) {
+  const options = select!.vm.$attrs.options as { id: string }[]
+  const option = options.find((o) => o.id === optionId)
+  expect(option).toBeDefined()
+  select!.vm.$emit('update:modelValue', option)
+  await Promise.resolve()
 }
 
 export async function settle(ms = 0) {

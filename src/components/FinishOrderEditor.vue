@@ -10,7 +10,7 @@
         )
       }}
     </p>
-    <ol class="ext:flex ext:flex-col ext:gap-1">
+    <oc-list raw class="ext:flex ext:flex-col ext:gap-1">
       <li
         v-for="(finish, index) in order"
         :key="finish"
@@ -23,18 +23,20 @@
             :disabled="index === 0"
             :aria-label="$gettext('%{name} nach oben', { name: finishLabel(finish) })"
             @click="move(index, -1)"
-            >↑</oc-button
           >
+            <oc-icon name="arrow-up" size="small" />
+          </oc-button>
           <oc-button
             size="small"
             :disabled="index === order.length - 1"
             :aria-label="$gettext('%{name} nach unten', { name: finishLabel(finish) })"
             @click="move(index, 1)"
-            >↓</oc-button
           >
+            <oc-icon name="arrow-down" size="small" />
+          </oc-button>
         </template>
       </li>
-    </ol>
+    </oc-list>
   </section>
 </template>
 

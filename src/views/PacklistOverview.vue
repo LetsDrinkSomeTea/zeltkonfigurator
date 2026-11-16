@@ -5,10 +5,13 @@
       class="zk-no-print ext:flex ext:flex-wrap ext:items-end ext:gap-2 ext:mb-4"
       @submit.prevent="onCreate"
     >
-      <div class="zk-field ext:grow">
-        <label for="zk-new-list-name">{{ $gettext('Name der neuen Packliste') }}</label>
-        <input id="zk-new-list-name" v-model="newName" type="text" required />
-      </div>
+      <oc-text-input
+        id="zk-new-list-name"
+        v-model="newName"
+        class="ext:grow"
+        :label="$gettext('Name der neuen Packliste')"
+        required-mark
+      />
       <oc-button submit="submit" appearance="filled" color-role="primary">{{
         $gettext('Neue Packliste')
       }}</oc-button>
@@ -18,36 +21,45 @@
     <p v-if="!loading && summaries.length === 0">
       {{ $gettext('Es gibt noch keine Packlisten. Lege die erste an.') }}
     </p>
-    <ul v-else class="ext:flex ext:flex-col ext:gap-3">
-      <li v-for="s in summaries" :key="s.id" class="zk-list-card ext:p-3 ext:rounded">
-        <h2 class="ext:font-bold">
-          <router-link :to="{ name: 'zeltkonfigurator-liste', params: { id: s.id } }">{{
-            s.name
-          }}</router-link>
-        </h2>
-        <p v-if="s.date">{{ formatDate(s.date) }}</p>
-        <p>{{ $gettext('%{n} Zelte', { n: s.tentCount }) }}</p>
-        <p>
-          <progress :max="s.itemCount" :value="s.checkedCount" :aria-label="progressText(s)" />
-          <span class="ext:ml-2">{{ progressText(s) }}</span>
-        </p>
-        <div v-if="canWrite" class="zk-no-print ext:flex ext:gap-2 ext:mt-2">
-          <template v-if="confirmId === s.id">
-            <span>{{ $gettext('Packliste wirklich löschen?') }}</span>
-            <oc-button size="small" @click="onRemove(s.id)">{{
-              $gettext('Ja, löschen')
-            }}</oc-button>
-            <oc-button size="small" @click="confirmId = null">{{
-              $gettext('Abbrechen')
-            }}</oc-button>
-          </template>
-          <template v-else>
-            <oc-button size="small" @click="onDuplicate(s.id)">{{
-              $gettext('Duplizieren')
-            }}</oc-button>
-            <oc-button size="small" @click="confirmId = s.id">{{ $gettext('Löschen') }}</oc-button>
-          </template>
-        </div>
+    <ul v-else class="ext:flex ext:flex-col ext:gap-3 ext:list-none ext:p-0">
+      <li v-for="s in summaries" :key="s.id">
+        <oc-card class="zk-card" body-class="ext:p-3">
+          <h2 class="ext:font-bold ext:text-lg ext:mb-1">
+            <router-link :to="{ name: 'zeltkonfigurator-liste', params: { id: s.id } }">{{
+              s.name
+            }}</router-link>
+          </h2>
+          <p v-if="s.date">{{ formatDate(s.date) }}</p>
+          <p>{{ $gettext('%{n} Zelte', { n: s.tentCount }) }}</p>
+          <div class="ext:flex ext:items-center ext:gap-2">
+            <oc-progress
+              class="ext:grow ext:w-full"
+              :max="s.itemCount"
+              :value="s.checkedCount"
+              :aria-label="progressText(s)"
+            />
+            <span class="ext:whitespace-nowrap">{{ progressText(s) }}</span>
+          </div>
+          <div v-if="canWrite" class="zk-no-print ext:flex ext:gap-2 ext:mt-2">
+            <template v-if="confirmId === s.id">
+              <span>{{ $gettext('Packliste wirklich löschen?') }}</span>
+              <oc-button size="small" @click="onRemove(s.id)">{{
+                $gettext('Ja, löschen')
+              }}</oc-button>
+              <oc-button size="small" @click="confirmId = null">{{
+                $gettext('Abbrechen')
+              }}</oc-button>
+            </template>
+            <template v-else>
+              <oc-button size="small" @click="onDuplicate(s.id)">{{
+                $gettext('Duplizieren')
+              }}</oc-button>
+              <oc-button size="small" @click="confirmId = s.id">{{
+                $gettext('Löschen')
+              }}</oc-button>
+            </template>
+          </div>
+        </oc-card>
       </li>
     </ul>
   </AppLayout>
@@ -124,10 +136,3 @@ async function onRemove(id: string) {
   await run(() => remove(id))
 }
 </script>
-
-<style>
-.zk-list-card {
-  border: 1px solid var(--oc-role-outline-variant, #bbb);
-  background: var(--oc-role-surface-container-low, transparent);
-}
-</style>

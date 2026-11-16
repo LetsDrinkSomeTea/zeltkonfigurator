@@ -1,14 +1,13 @@
-.zk-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-.zk-field select,
-.zk-field input {
-  min-height: 2.5rem;
-  padding: 0 0.5rem;
-  border: 1px solid var(--oc-role-outline, #888);
+/* Karten (oc-card): sichtbarer Rand, damit Zelte und Listen voneinander abgesetzt sind */
+.zk-card {
+  border: 1px solid var(--oc-role-outline-variant, #bbb);
   border-radius: 0.25rem;
-  background: var(--oc-role-surface, #fff);
-  color: var(--oc-role-on-surface, inherit);
+  background: var(--oc-role-surface-container-low, transparent);
+}
+
+/* Auswahlfelder: am Handy untereinander, auf breiten Bildschirmen nebeneinander */
+.zk-tent-fields {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
 }
