@@ -16,12 +16,13 @@ git commit -m "Enable CI and release workflows" && git push
 - `release.yml` baut bei einem Tag `vX.Y.Z` das Installationspaket und legt einen GitHub-Release
   mit `zeltkonfigurator-X.Y.Z.zip` an. Der Tag muss zur Version in `package.json` passen.
 
-Einen Release auslösen:
+Einen Release auslösen: Version in `package.json` erhöhen, committen, dann den passenden Tag
+setzen und pushen (Beispiel für Version 0.1.0):
 
 ```bash
-pnpm version patch
+git tag v0.1.0
 ```
 
 ```bash
-git push --follow-tags
+git push origin v0.1.0
 ```

@@ -76,6 +76,12 @@ Nur-Lese-Modus. Daten der Vorschau gehen beim Neuladen verloren.
 Gegen eine lokale OpenCloud-Instanz: `pnpm build:w` und `docker compose up`, dann
 <https://host.docker.internal:9200> (admin / admin).
 
+## Prüfung und Release
+
+Die Workflows für die automatische Prüfung und den Release-Bau liegen unter
+[`ci/workflows/`](ci/README.md) und müssen einmalig nach `.github/workflows/` verschoben werden.
+Danach baut ein Tag `vX.Y.Z` automatisch `zeltkonfigurator-X.Y.Z.zip` als GitHub-Release.
+
 ## Stand
 
 Rechenkern, Katalog und Oberfläche sind durch automatische Tests abgedeckt und in der Vorschau

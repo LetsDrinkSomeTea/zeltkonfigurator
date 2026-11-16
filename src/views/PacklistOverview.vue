@@ -25,9 +25,11 @@
       <li v-for="s in summaries" :key="s.id">
         <oc-card class="zk-card" body-class="ext:p-3">
           <h2 class="ext:font-bold ext:text-lg ext:mb-1">
-            <router-link :to="{ name: 'zeltkonfigurator-liste', params: { id: s.id } }">{{
-              s.name
-            }}</router-link>
+            <router-link
+              class="ext:underline ext:font-bold"
+              :to="{ name: 'zeltkonfigurator-liste', params: { id: s.id } }"
+              >{{ s.name }}</router-link
+            >
           </h2>
           <p v-if="s.date">{{ formatDate(s.date) }}</p>
           <p>{{ $gettext('%{n} Zelte', { n: s.tentCount }) }}</p>

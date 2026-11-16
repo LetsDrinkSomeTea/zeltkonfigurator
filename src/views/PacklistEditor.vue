@@ -5,7 +5,7 @@
     :error="pl.error.value"
   >
     <template #actions>
-      <router-link class="zk-no-print" :to="{ name: 'zeltkonfigurator-listen' }">{{
+      <router-link class="zk-no-print ext:underline" :to="{ name: 'zeltkonfigurator-listen' }">{{
         $gettext('Zurück zu den Packlisten')
       }}</router-link>
       <span v-if="pl.saving.value" class="zk-no-print" role="status">{{
