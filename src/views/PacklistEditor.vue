@@ -1,93 +1,104 @@
 <template>
-  <AppLayout :title="doc.name" :framed="framed" :loading="pl.loading.value" :error="pl.error.value">
+  <AppLayout
+    :title="doc.name"
+    :framed="framed"
+    :loading="pl.loading.value"
+    :error="pl.error.value"
+    :error-prefix="pl.list.value ? $gettext('Nicht gespeichert:') : undefined"
+    :read-only="!!pl.list.value && !pl.canWrite.value"
+  >
     <template #actions>
-      <span v-if="pl.saving.value" class="zk-no-print" role="status">{{
-        $gettext('Wird gespeichert …')
-      }}</span>
-      <oc-button
-        class="zk-no-print"
-        size="small"
-        @click="router.push({ name: 'zeltkonfigurator-bestand' })"
-        >{{ $gettext('Bestand') }}</oc-button
-      >
+      <oc-button class="zk-no-print" size="small" @click="print">{{
+        $gettext('Drucken')
+      }}</oc-button>
+      <oc-button class="zk-no-print" size="small" @click="openStock">{{
+        $gettext('Bestand')
+      }}</oc-button>
       <oc-button v-if="doc.close" class="zk-no-print" size="small" @click="close">{{
         $gettext('Schließen')
       }}</oc-button>
     </template>
 
     <template v-if="pl.list.value">
-      <section class="ext:flex ext:flex-wrap ext:gap-3 ext:mb-4">
-        <oc-text-input
-          v-if="pl.canWrite.value"
-          id="zk-list-date"
-          type="date"
-          :label="$gettext('Datum')"
-          :model-value="pl.list.value.date ?? ''"
-          @update:model-value="(v: string) => pl.setDate(v || undefined)"
-        />
-        <p v-else-if="pl.list.value.date">{{ pl.list.value.date }}</p>
-        <p v-if="!pl.canWrite.value" class="zk-hint">{{ $gettext('(schreibgeschützt)') }}</p>
-      </section>
+      <div class="zk-no-print">
+        <section class="ext:flex ext:flex-wrap ext:gap-3 ext:mb-4">
+          <oc-text-input
+            v-if="pl.canWrite.value"
+            id="zk-list-date"
+            type="date"
+            :label="$gettext('Datum')"
+            :model-value="pl.list.value.date ?? ''"
+            @update:model-value="(v: string) => pl.setDate(v || undefined)"
+          />
+          <p v-else-if="pl.list.value.date">{{ pl.list.value.date }}</p>
+        </section>
 
-      <StatusBanner :status="status" />
+        <StatusBanner :status="status" :missing-count="missingCount" @show="select" />
 
-      <div v-if="pl.stale.value" class="zk-no-print zk-stale ext:p-3 ext:mb-4 ext:rounded">
-        <span>{{ $gettext('Bestand oder App haben sich geändert') }}</span>
-        <oc-button v-if="pl.canWrite.value" class="ext:ml-2" size="small" @click="pl.recalc()">{{
-          $gettext('Neu berechnen')
-        }}</oc-button>
-      </div>
+        <div v-if="pl.stale.value" class="zk-stale ext:p-3 ext:mb-4 ext:rounded">
+          <span>{{
+            $gettext(
+              'Der Bestand oder die Zelt-Daten haben sich geändert. „Neu berechnen“ passt die Mengen an; Haken bleiben erhalten, solange sich die Menge eines Artikels nicht ändert.'
+            )
+          }}</span>
+          <oc-button v-if="pl.canWrite.value" class="ext:ml-2" size="small" @click="pl.recalc()">{{
+            $gettext('Neu berechnen')
+          }}</oc-button>
+        </div>
 
-      <div
-        class="zk-no-print zk-tabs ext:flex ext:mb-4"
-        role="tablist"
-        :aria-label="$gettext('Bereiche der Packliste')"
-      >
-        <oc-button
-          v-for="t in tabs"
-          :id="`zk-tab-${t.id}`"
-          :key="t.id"
-          appearance="raw"
-          role="tab"
-          class="zk-tab"
-          :aria-selected="t.id === activeTab"
-          :aria-controls="`zk-panel-${t.id}`"
-          :tabindex="t.id === activeTab ? 0 : -1"
-          @click="select(t.id)"
-          @keydown="onKey($event, t.id)"
+        <div
+          class="zk-tabs ext:flex ext:mb-4"
+          role="tablist"
+          :aria-label="$gettext('Bereiche der Packliste')"
         >
-          {{ t.label }}
-        </oc-button>
+          <oc-button
+            v-for="t in tabs"
+            :id="`zk-tab-${t.id}`"
+            :key="t.id"
+            appearance="raw"
+            role="tab"
+            class="zk-tab"
+            :aria-selected="t.id === activeTab"
+            :aria-controls="`zk-panel-${t.id}`"
+            :tabindex="t.id === activeTab ? 0 : -1"
+            @click="select(t.id)"
+            @keydown="onKey($event, t.id)"
+          >
+            {{ t.label }}
+          </oc-button>
+        </div>
+        <div
+          :id="`zk-panel-${activeTab}`"
+          role="tabpanel"
+          :aria-labelledby="`zk-tab-${activeTab}`"
+          tabindex="0"
+        >
+          <TentsTab v-if="activeTab === 'zelte'" :pl="pl" />
+          <DemandTab v-else-if="activeTab === 'bedarf'" :pl="pl" />
+          <ChecklistTab v-else :pl="pl" />
+        </div>
       </div>
-      <div
-        :id="`zk-panel-${activeTab}`"
-        role="tabpanel"
-        :aria-labelledby="`zk-tab-${activeTab}`"
-        tabindex="0"
-      >
-        <TentsTab v-if="activeTab === 'zelte'" :pl="pl" />
-        <PerTentTab v-else-if="activeTab === 'material'" :pl="pl" />
-        <ChecklistTab v-else :pl="pl" />
-      </div>
+      <PrintLayout :list="pl.list.value" />
     </template>
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { computed, nextTick, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useGettext } from 'vue3-gettext'
 import type { Resource, SpaceResource } from '@opencloud-eu/web-client'
 import AppLayout from '../components/AppLayout.vue'
 import ChecklistTab from '../components/ChecklistTab.vue'
-import PerTentTab from '../components/PerTentTab.vue'
+import DemandTab from '../components/DemandTab.vue'
+import PrintLayout from '../components/PrintLayout.vue'
 import StatusBanner from '../components/StatusBanner.vue'
 import TentsTab from '../components/TentsTab.vue'
 import { useAppRouter } from '../composables/useAppRouter'
 import { usePacklist } from '../composables/usePacklist'
 import { usePacklistDocument } from '../composables/useStore'
-import { derivePacklistStatus } from '../domain/view/status'
+import { countMissingItems, derivePacklistStatus, hasCheckedItems } from '../domain/view/status'
 
-type TabId = 'zelte' | 'material' | 'packliste'
+type TabId = 'packliste' | 'zelte' | 'bedarf'
 
 const { $gettext } = useGettext()
 const { router, route } = useAppRouter()
@@ -108,20 +119,39 @@ const pl = usePacklist(doc)
 const tabs = computed<{ id: TabId; label: string }[]>(() => [
   { id: 'packliste', label: $gettext('Packliste') },
   { id: 'zelte', label: $gettext('Zelte') },
-  { id: 'material', label: $gettext('Material pro Zelt') }
+  { id: 'bedarf', label: $gettext('Bedarf') }
 ])
+
+// Ohne ?tab= beginnt eine Liste ohne Zelte beim Anlegen der Zelte. Nur einmal nach dem Laden
+// bestimmt, damit der Reiter nicht wegspringt, sobald das erste Zelt dazukommt.
+const defaultTab = ref<TabId>('packliste')
 
 const activeTab = computed<TabId>(() => {
   const q = route.value.query.tab
-  return q === 'zelte' || q === 'material' ? q : 'packliste'
+  if (q === 'packliste' || q === 'zelte' || q === 'bedarf') {
+    return q
+  }
+  return defaultTab.value
 })
 
 const status = computed(() =>
   pl.list.value ? derivePacklistStatus(pl.list.value) : ('leer' as const)
 )
 
+const missingCount = computed(() => (pl.list.value ? countMissingItems(pl.list.value) : 0))
+
 function select(id: TabId) {
   void router.replace({ query: { ...route.value.query, tab: id } })
+}
+
+function print() {
+  window.print()
+}
+
+/** Bestand in einem neuen Browser-Tab öffnen, damit die Packliste offen bleibt. */
+function openStock() {
+  const { href } = router.resolve({ name: 'zeltkonfigurator-bestand' })
+  window.open(href, '_blank', 'noopener')
 }
 
 async function onKey(event: KeyboardEvent, id: TabId) {
@@ -155,8 +185,13 @@ async function close() {
   doc.close?.()
 }
 
-onMounted(() => {
-  void pl.load()
+onMounted(async () => {
+  await pl.load()
+  defaultTab.value = pl.list.value && pl.list.value.tents.length === 0 ? 'zelte' : 'packliste'
+  // Veraltet und noch nichts abgehakt: still neu rechnen, es gibt nichts zu verlieren.
+  if (pl.list.value && pl.stale.value && pl.canWrite.value && !hasCheckedItems(pl.list.value)) {
+    pl.recalc()
+  }
 })
 onBeforeUnmount(() => {
   void pl.flush()

@@ -4,7 +4,7 @@
     :class="{ 'zk-row-done': checked && checkable, 'zk-row-inactive': !checkable }"
   >
     <oc-checkbox
-      v-if="checkable"
+      v-if="checkable && !readonly"
       class="zk-row-label ext:grow"
       size="large"
       :label="label"
@@ -12,9 +12,12 @@
       :disabled="disabled"
       @update:model-value="emit('toggle')"
     />
-    <span v-else class="zk-row-label ext:flex ext:items-center ext:grow zk-row-text">{{
-      label
-    }}</span>
+    <span v-else class="zk-row-label ext:flex ext:items-center ext:grow zk-row-text"
+      >{{ label
+      }}<span v-if="readonly && checkable && checked" class="ext:sr-only"
+        >({{ $gettext('abgehakt') }})</span
+      ></span
+    >
     <span class="ext:flex ext:flex-wrap ext:gap-2">
       <oc-tag v-if="missing > 0" class="zk-hint zk-hint-missing" size="small">{{
         $gettext('%{n} fehlen', { n: String(missing) })
@@ -36,8 +39,10 @@ const props = withDefaults(
     checkable?: boolean
     missing?: number
     disabled?: boolean
+    /** nur anzeigen: keine Checkbox, abgehakte Zeilen sind durchgestrichen */
+    readonly?: boolean
   }>(),
-  { checked: false, checkable: true, missing: 0, disabled: false }
+  { checked: false, checkable: true, missing: 0, disabled: false, readonly: false }
 )
 const emit = defineEmits<{ toggle: [] }>()
 const { $gettext } = useGettext()

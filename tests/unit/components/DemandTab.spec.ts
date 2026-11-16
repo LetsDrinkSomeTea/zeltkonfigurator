@@ -1,6 +1,6 @@
 import { flushPromises } from '@vue/test-utils'
 import { defaultPlugins, mount } from '@opencloud-eu/web-test-helpers'
-import PerTentTab from '../../../src/components/PerTentTab.vue'
+import DemandTab from '../../../src/components/DemandTab.vue'
 import { usePacklist } from '../../../src/composables/usePacklist'
 import { storeKey } from '../../../src/composables/useStore'
 import { fullStock, listFor, storeWith, tentOf } from '../views/support'
@@ -14,7 +14,7 @@ async function mountTab(stock: Parameters<typeof fullStock>[1], quantity: number
     setup() {
       const pl = usePacklist(store.document('p1'))
       void pl.load()
-      return () => h(PerTentTab, { pl })
+      return () => h(DemandTab, { pl })
     }
   })
   const wrapper = mount(Host, {
@@ -24,25 +24,17 @@ async function mountTab(stock: Parameters<typeof fullStock>[1], quantity: number
   return { wrapper, list }
 }
 
-describe('PerTentTab', () => {
-  it('lists the material per tent, grouped by category', async () => {
-    const { wrapper, list } = await mountTab({}, 100)
-    const headings = wrapper.findAll('h3').map((h) => h.text())
-    expect(headings).toContain('1. Kohte')
-    expect(headings).toContain('2. Jurte – Küche')
-    const captions = wrapper.findAll('caption').map((c) => c.text())
-    expect(captions).toContain('Dächer und Planen')
-    expect(captions).toContain('Stangen und Gestänge')
-    const tProfil = list.items.find((i) => i.articleId === 't-profil')!
-    const sections = wrapper.findAll('section')
-    const jurte = sections.find((s) => s.find('h3').text().startsWith('2.'))!
-    const row = jurte.findAll('tr').find((r) => r.text().startsWith(tProfil.name))!
-    expect(row.findAll('td')[1].text()).toBe(String(tProfil.perTent[list.tents[1].id]))
+describe('DemandTab', () => {
+  it('shows only the total table, without per-tent sections', async () => {
+    const { wrapper } = await mountTab({}, 100)
+    expect(wrapper.findAll('h3')).toHaveLength(0)
+    expect(wrapper.findAll('table')).toHaveLength(1)
+    expect(wrapper.text()).not.toContain('1. Kohte')
   })
 
   it('shows totals and highlights missing material', async () => {
     const { wrapper, list } = await mountTab({ 't-profil': 5 }, 100)
-    const total = wrapper.findAll('section').at(-1)!
+    const total = wrapper
     const headers = total.findAll('th').map((t) => t.text())
     expect(headers).toEqual(['Artikel', 'Benötigt', 'Aus Bestand', 'Fehlt'])
     const item = list.items.find((i) => i.articleId === 't-profil')!
@@ -56,11 +48,5 @@ describe('PerTentTab', () => {
       String(item.missing)
     ])
     expect(row.findAll('td')[3].classes()).toContain('zk-missing')
-  })
-
-  it('counts missing poles as missing', async () => {
-    const { wrapper } = await mountTab({ 'mast-375': 0, seitenstange: 0 }, 100)
-    const total = wrapper.findAll('section').at(-1)!
-    expect(total.findAll('th').map((t) => t.text())).not.toContain('Vor Ort schlagen')
   })
 })

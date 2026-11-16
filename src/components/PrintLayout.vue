@@ -38,7 +38,7 @@
 
     <section v-if="list.tents.length > 0" class="zk-print-section">
       <h2>{{ $gettext('Pro Zelt') }}</h2>
-      <article v-for="tent in list.tents" :key="tent.id" class="zk-print-tent">
+      <div v-for="tent in list.tents" :key="tent.id" class="zk-print-tent">
         <h3>{{ tentTitle(list, tent, catalog) }}</h3>
         <dl class="zk-print-desc">
           <template v-for="line in describeTent(tent, catalog)" :key="line.label">
@@ -55,7 +55,7 @@
             <span>{{ t.item.name }}</span>
           </li>
         </ul>
-      </article>
+      </div>
     </section>
 
     <section v-if="list.deviations.length > 0" class="zk-print-section">

@@ -1,7 +1,13 @@
 <template>
   <div class="zk-banner ext:p-3 ext:mb-4 ext:rounded" :class="`zk-banner-${status}`" role="status">
     <strong>{{ headline }}</strong>
-    <span v-if="hint" class="ext:ml-2">{{ hint }}</span>
+    <oc-button
+      v-if="target"
+      class="zk-banner-action ext:ml-2"
+      appearance="raw"
+      @click="emit('show', target)"
+      >{{ actionLabel }}</oc-button
+    >
   </div>
 </template>
 
@@ -10,13 +16,17 @@ import { computed } from 'vue'
 import { useGettext } from 'vue3-gettext'
 import type { PacklistStatus } from '../domain/view/status'
 
-const props = defineProps<{ status: PacklistStatus }>()
-const { $gettext } = useGettext()
+const props = defineProps<{ status: PacklistStatus; missingCount?: number }>()
+/** Wunsch, zu einem Reiter zu wechseln („anzeigen“ bei fehlendem Material, Hinweis bei leerer Liste). */
+const emit = defineEmits<{ show: [tab: 'bedarf' | 'zelte'] }>()
+const { $gettext, $ngettext } = useGettext()
 
 const headline = computed(() => {
   switch (props.status) {
     case 'fehlt':
-      return $gettext('Es fehlt Material')
+      return $ngettext('%{n} Artikel fehlt', '%{n} Artikel fehlen', props.missingCount ?? 0, {
+        n: String(props.missingCount ?? 0)
+      })
     case 'ausweichmaterial':
       return $gettext('Mit Ausweichmaterial machbar')
     case 'ok':
@@ -26,8 +36,14 @@ const headline = computed(() => {
   }
 })
 
-const hint = computed(() =>
-  props.status === 'leer' ? $gettext('Füge im Reiter „Zelte“ das erste Zelt hinzu.') : ''
+const target = computed<'bedarf' | 'zelte' | null>(() =>
+  props.status === 'fehlt' ? 'bedarf' : props.status === 'leer' ? 'zelte' : null
+)
+
+const actionLabel = computed(() =>
+  props.status === 'fehlt'
+    ? $gettext('anzeigen')
+    : $gettext('Füge im Reiter „Zelte“ das erste Zelt hinzu.')
 )
 </script>
 
@@ -36,6 +52,10 @@ const hint = computed(() =>
   border: 1px solid var(--oc-role-outline, #888);
   background: var(--oc-role-surface-container, #f2f2f2);
   color: var(--oc-role-on-surface, #1a1a1a);
+}
+.zk-banner-action {
+  min-height: 44px;
+  text-decoration: underline;
 }
 .zk-banner-fehlt {
   border-color: var(--oc-role-error, #b3261e);

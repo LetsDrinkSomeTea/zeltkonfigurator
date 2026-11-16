@@ -17,3 +17,13 @@ export function derivePacklistStatus(
   }
   return 'ok'
 }
+
+/** Anzahl der Artikel, von denen Material fehlt. */
+export function countMissingItems(list: Pick<PacklistFile, 'items'>): number {
+  return list.items.filter((item) => item.missing > 0).length
+}
+
+/** Ist schon etwas abgehakt (Artikel oder freie Zeilen)? */
+export function hasCheckedItems(list: Pick<PacklistFile, 'items' | 'extraItems'>): boolean {
+  return list.items.some((i) => i.checked) || list.extraItems.some((e) => e.checked)
+}

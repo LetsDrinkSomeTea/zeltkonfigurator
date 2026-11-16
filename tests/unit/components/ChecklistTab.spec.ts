@@ -80,10 +80,11 @@ describe('ChecklistTab', () => {
     expect(rowFor(w, zero!.name).find('input').exists()).toBe(false)
   })
 
-  it('per-tent mode shows tent quantities and shares check state', async () => {
+  it('per-tent mode is read-only and shows the checked state', async () => {
     const { pl, list } = await setup()
     const w = render(pl)
     expect(w.find('[data-mode="gesamt"]').attributes('aria-pressed')).toBe('true')
+    await rowFor(w, 'Kohtenblatt').find('input').setValue(true)
     await w.find('[data-mode="zelt"]').trigger('click')
     expect(w.find('[data-mode="zelt"]').attributes('aria-pressed')).toBe('true')
     expect(w.find('[data-mode="gesamt"]').attributes('aria-pressed')).toBe('false')
@@ -92,13 +93,15 @@ describe('ChecklistTab', () => {
       .map((h) => h.text())
     expect(headings).toContain('Kohte (1)')
     expect(headings).toContain('Kohte (2)')
-    expect(ui(w).text()).toContain('Der Haken gilt für den Artikel insgesamt')
+    expect(ui(w).text()).not.toContain('Der Haken gilt für den Artikel insgesamt')
     const blatt = list.items.find((i) => i.articleId === 'kohtenblatt')!
     const sections = ui(w).findAll('section:not(.zk-extras)')
     expect(sections[0].text()).toContain(`${blatt.perTent.t1} × ${blatt.name}`)
-    await rowIn(sections[0], 'Kohtenblatt').find('input').setValue(true)
-    const second = rowIn(ui(w).findAll('section:not(.zk-extras)')[1], 'Kohtenblatt')
-    expect((second.find('input').element as HTMLInputElement).checked).toBe(true)
+    expect(sections[0].find('input').exists()).toBe(false)
+    const done = rowIn(sections[0], 'Kohtenblatt')
+    expect(done.classes()).toContain('zk-row-done')
+    expect(done.text()).toContain('abgehakt')
+    expect(rowIn(sections[0], 'Mast').classes()).not.toContain('zk-row-done')
   })
 
   it('adds, toggles and removes extras', async () => {
@@ -140,6 +143,7 @@ describe('ChecklistTab', () => {
     }
     expect(w.find('.zk-extras-form').exists()).toBe(false)
     expect(w.find('.zk-extra-remove').exists()).toBe(false)
+    expect(w.text()).not.toContain('Nur Lesezugriff')
   })
 
   it('hints at the tents tab for an empty list', async () => {
@@ -150,21 +154,10 @@ describe('ChecklistTab', () => {
     expect(ui(w).text()).toContain('Zelte')
   })
 
-  it('print button calls window.print', async () => {
-    const { pl } = await setup()
-    const original = window.print
-    const spy = vi.fn()
-    window.print = spy
-    const w = render(pl)
-    const btn = w.findAll('button').find((b) => b.text() === 'Drucken')!
-    await btn.trigger('click')
-    expect(spy).toHaveBeenCalledOnce()
-    window.print = original
-  })
-
-  it('contains the print layout', async () => {
+  it('has no print button and no print layout of its own', async () => {
     const { pl } = await setup()
     const w = render(pl)
-    expect(w.find('.zk-print').exists()).toBe(true)
+    expect(w.findAll('button').some((b) => b.text() === 'Drucken')).toBe(false)
+    expect(w.find('.zk-print').exists()).toBe(false)
   })
 })
