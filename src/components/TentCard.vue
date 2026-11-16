@@ -1,7 +1,7 @@
 <template>
-  <article class="zk-tent-card ext:p-3 ext:mb-3 ext:rounded" :aria-label="title">
-    <header class="ext:flex ext:flex-wrap ext:items-center ext:gap-2 ext:mb-2">
-      <h3 class="ext:font-bold ext:grow">{{ title }}</h3>
+  <oc-card tag="article" class="zk-card ext:mb-3" :aria-label="title" body-class="ext:p-3">
+    <div class="ext:flex ext:flex-wrap ext:items-center ext:gap-2 ext:mb-3">
+      <h3 class="ext:font-bold ext:text-lg ext:grow ext:text-left">{{ title }}</h3>
       <div v-if="pl.canWrite.value" class="zk-no-print ext:flex ext:gap-1">
         <template v-if="type">
           <oc-button
@@ -9,24 +9,28 @@
             :disabled="index === 0"
             :aria-label="$gettext('Nach oben')"
             @click="pl.moveTent(tent.id, -1)"
-            >↑</oc-button
           >
+            <oc-icon name="arrow-up" size="small" />
+          </oc-button>
           <oc-button
             size="small"
             :disabled="index === count - 1"
             :aria-label="$gettext('Nach unten')"
             @click="pl.moveTent(tent.id, 1)"
-            >↓</oc-button
           >
-          <oc-button size="small" @click="pl.duplicateTent(tent.id)">{{
-            $gettext('Duplizieren')
-          }}</oc-button>
+            <oc-icon name="arrow-down" size="small" />
+          </oc-button>
+          <oc-button size="small" @click="pl.duplicateTent(tent.id)">
+            <oc-icon name="file-copy" size="small" />
+            <span>{{ $gettext('Duplizieren') }}</span>
+          </oc-button>
         </template>
-        <oc-button size="small" @click="pl.removeTent(tent.id)">{{
-          $gettext('Entfernen')
-        }}</oc-button>
+        <oc-button size="small" @click="pl.removeTent(tent.id)">
+          <oc-icon name="delete-bin" size="small" />
+          <span>{{ $gettext('Entfernen') }}</span>
+        </oc-button>
       </div>
-    </header>
+    </div>
 
     <p v-if="!type" class="zk-error" role="alert">
       {{
@@ -37,74 +41,67 @@
     </p>
 
     <div v-else class="zk-tent-fields">
-      <div class="zk-field">
-        <label :for="`${uid}-label`">{{ $gettext('Bezeichnung') }}</label>
-        <input
-          :id="`${uid}-label`"
-          type="text"
-          :value="tent.label ?? ''"
-          :readonly="!pl.canWrite.value"
-          @input="onLabel"
-        />
-      </div>
+      <oc-text-input
+        :id="`${uid}-label`"
+        :label="$gettext('Bezeichnung')"
+        :model-value="tent.label ?? ''"
+        :read-only="!pl.canWrite.value"
+        @update:model-value="onLabel"
+      />
 
-      <div v-if="type.roofs.length > 1" class="zk-field">
-        <label :for="`${uid}-roof`">{{ $gettext('Dach') }}</label>
-        <select
-          :id="`${uid}-roof`"
-          :value="tent.roofId"
-          :disabled="!pl.canWrite.value"
-          @change="pl.updateTent(tent.id, { roofId: valueOf($event) })"
-        >
-          <option v-for="roof in type.roofs" :key="roof.id" :value="roof.id">
-            {{ roof.label }}
-          </option>
-        </select>
-      </div>
+      <oc-select
+        v-if="type.roofs.length > 1"
+        :id="`${uid}-roof`"
+        :label="$gettext('Dach')"
+        :options="type.roofs"
+        :model-value="type.roofs.find((r) => r.id === tent.roofId)"
+        :disabled="!pl.canWrite.value"
+        :clearable="false"
+        :searchable="false"
+        @update:model-value="(o: { id: string }) => pl.updateTent(tent.id, { roofId: o.id })"
+      />
 
-      <div v-if="type.walls.length > 1" class="zk-field">
-        <label :for="`${uid}-wall`">{{ $gettext('Seitenwand') }}</label>
-        <select
-          :id="`${uid}-wall`"
-          :value="tent.wallId"
-          :disabled="!pl.canWrite.value"
-          @change="pl.updateTent(tent.id, { wallId: valueOf($event) })"
-        >
-          <option v-for="w in type.walls" :key="w.id" :value="w.id">
-            {{ w.label }}
-          </option>
-        </select>
-      </div>
+      <oc-select
+        v-if="type.walls.length > 1"
+        :id="`${uid}-wall`"
+        :label="$gettext('Seitenwand')"
+        :options="type.walls"
+        :model-value="wall"
+        :disabled="!pl.canWrite.value"
+        :clearable="false"
+        :searchable="false"
+        @update:model-value="(o: { id: string }) => pl.updateTent(tent.id, { wallId: o.id })"
+      />
 
-      <div v-if="wall && wall.builds.length > 1" class="zk-field">
-        <label :for="`${uid}-build`">{{ $gettext('Bauart') }}</label>
-        <select
-          :id="`${uid}-build`"
-          :value="tent.buildId"
-          :disabled="!pl.canWrite.value"
-          @change="pl.updateTent(tent.id, { buildId: valueOf($event) })"
-        >
-          <option v-for="b in wall.builds" :key="b.id" :value="b.id">{{ b.label }}</option>
-        </select>
-      </div>
+      <oc-select
+        v-if="wall && wall.builds.length > 1"
+        :id="`${uid}-build`"
+        :label="$gettext('Bauart')"
+        :options="wall.builds"
+        :model-value="build"
+        :disabled="!pl.canWrite.value"
+        :clearable="false"
+        :searchable="false"
+        @update:model-value="(o: { id: string }) => pl.updateTent(tent.id, { buildId: o.id })"
+      />
 
-      <div v-if="showFinish" class="zk-field">
-        <label :for="`${uid}-finish`">{{ $gettext('Ausführung') }}</label>
-        <select
-          :id="`${uid}-finish`"
-          :value="tent.finish"
-          :disabled="!pl.canWrite.value"
-          @change="pl.updateTent(tent.id, { finish: valueOf($event) as Finish })"
-        >
-          <option v-for="f in finishes" :key="f.id" :value="f.id">{{ f.label }}</option>
-        </select>
-      </div>
+      <oc-select
+        v-if="showFinish"
+        :id="`${uid}-finish`"
+        :label="$gettext('Ausführung')"
+        :options="finishes"
+        :model-value="finishes.find((f) => f.id === tent.finish)"
+        :disabled="!pl.canWrite.value"
+        :clearable="false"
+        :searchable="false"
+        @update:model-value="(o: { id: Finish }) => pl.updateTent(tent.id, { finish: o.id })"
+      />
     </div>
 
     <ul v-if="lines.length" class="zk-deviations ext:mt-2" :aria-label="$gettext('Abweichungen')">
       <li v-for="(line, i) in lines" :key="i">{{ line }}</li>
     </ul>
-  </article>
+  </oc-card>
 </template>
 
 <script setup lang="ts">
@@ -144,30 +141,14 @@ const lines = computed(() =>
     .map((d) => describeDeviation(d, $gettext))
 )
 
-function valueOf(event: Event): string {
-  return (event.target as HTMLSelectElement).value
-}
-
-function onLabel(event: Event) {
-  const value = (event.target as HTMLInputElement).value
+function onLabel(value: string) {
   props.pl.updateTent(props.tent.id, { label: value })
 }
 </script>
 
 <style>
-.zk-tent-card {
-  border: 1px solid var(--oc-role-outline-variant, #bbb);
-  background: var(--oc-role-surface-container-low, transparent);
-}
 .zk-deviations {
   color: var(--oc-role-on-surface-variant, inherit);
   list-style: disc inside;
-}
-
-/* Auswahlfelder: am Handy untereinander, auf breiten Bildschirmen nebeneinander */
-.zk-tent-fields {
-  display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
 }
 </style>

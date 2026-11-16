@@ -16,24 +16,20 @@
     <template v-if="pl.list.value">
       <section class="ext:flex ext:flex-wrap ext:gap-3 ext:mb-4">
         <template v-if="pl.canWrite.value">
-          <div class="zk-field ext:grow">
-            <label for="zk-list-name">{{ $gettext('Name') }}</label>
-            <input
-              id="zk-list-name"
-              type="text"
-              :value="pl.list.value.name"
-              @input="pl.setName(($event.target as HTMLInputElement).value)"
-            />
-          </div>
-          <div class="zk-field">
-            <label for="zk-list-date">{{ $gettext('Datum') }}</label>
-            <input
-              id="zk-list-date"
-              type="date"
-              :value="pl.list.value.date ?? ''"
-              @input="pl.setDate(($event.target as HTMLInputElement).value || undefined)"
-            />
-          </div>
+          <oc-text-input
+            id="zk-list-name"
+            class="ext:grow"
+            :label="$gettext('Name')"
+            :model-value="pl.list.value.name"
+            @update:model-value="pl.setName"
+          />
+          <oc-text-input
+            id="zk-list-date"
+            type="date"
+            :label="$gettext('Datum')"
+            :model-value="pl.list.value.date ?? ''"
+            @update:model-value="(v: string) => pl.setDate(v || undefined)"
+          />
         </template>
         <p v-else>
           {{ pl.list.value.name }}<span v-if="pl.list.value.date"> · {{ pl.list.value.date }}</span>
@@ -54,11 +50,11 @@
         role="tablist"
         :aria-label="$gettext('Bereiche der Packliste')"
       >
-        <button
+        <oc-button
           v-for="t in tabs"
           :id="`zk-tab-${t.id}`"
           :key="t.id"
-          type="button"
+          appearance="raw"
           role="tab"
           class="zk-tab"
           :aria-selected="t.id === activeTab"
@@ -68,7 +64,7 @@
           @keydown="onKey($event, t.id)"
         >
           {{ t.label }}
-        </button>
+        </oc-button>
       </div>
       <div
         :id="`zk-panel-${activeTab}`"
@@ -93,7 +89,6 @@ import ChecklistTab from '../components/ChecklistTab.vue'
 import PerTentTab from '../components/PerTentTab.vue'
 import StatusBanner from '../components/StatusBanner.vue'
 import TentsTab from '../components/TentsTab.vue'
-import '../components/forms.css'
 import { usePacklist } from '../composables/usePacklist'
 import { derivePacklistStatus } from '../domain/view/status'
 
@@ -169,11 +164,10 @@ onBeforeUnmount(() => {
   min-height: 2.75rem;
   padding: 0 1rem;
   white-space: nowrap;
+  border-radius: 0;
+  box-shadow: none;
   background: transparent;
-  color: var(--oc-role-on-surface, inherit);
-  border: 0;
   border-bottom: 3px solid transparent;
-  cursor: pointer;
 }
 .zk-tab[aria-selected='true'] {
   border-bottom-color: var(--oc-role-primary, #1f3a2d);
