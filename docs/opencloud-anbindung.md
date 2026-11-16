@@ -109,3 +109,29 @@ Berechtigungs- und Netzwerkfehler werden weitergereicht. Packlisten-IDs dürfen 
    `loadSpaces` `spacesInitialized` setzt, wurde nicht geprüft.
 9. **Typkompatibilität zur Laufzeit:** `getFileContents` mit `responseType: 'text'` liefert den Text, nicht bereits geparstes JSON
    (der Store akzeptiert beides).
+
+## Nachtrag: Abgleich mit der OpenCloud-Dokumentation
+
+Geprüft gegen <https://docs.opencloud.eu/docs/next/dev/web/extension-system/> und die
+Admin-Dokumentation „Web Applications“:
+
+- **Vorgaben:** stehen unter `config` in `src/manifest.json` und landen im `manifest.json` des Builds.
+- **Entwicklung:** `src/config.json` (nicht eingecheckt) wird über die Vorgaben gelegt.
+- **Betrieb:** Admins überschreiben in `$OC_CONFIG_DIR/apps.yaml`, Schlüssel ist die App-ID:
+
+  ```yaml
+  zeltkonfigurator:
+    config:
+      space: 'Material Team'
+      folder: 'Zeltkonfigurator'
+  ```
+
+  Alternativ über eine `config.json` im App-Ordner (`{ "config": { … } }`).
+
+- **Lesen:** Die zusammengeführte Konfiguration kommt als `applicationConfig` in `setup()` an –
+  so ist es in `src/index.ts` umgesetzt. Punkt 1 der offenen Prüfungen ist damit laut
+  Dokumentation geklärt, aber nicht gegen einen laufenden Server getestet.
+- **Installation:** Der Ordner im Web-App-Verzeichnis muss wie die App-ID heißen
+  (`zeltkonfigurator`) und den Inhalt von `dist/` enthalten.
+- **Navigation:** `navItems` erscheinen in der linken Seitenleiste, sobald es mehr als einen
+  Eintrag gibt; die App nutzt das für „Packlisten“ und „Bestand“.

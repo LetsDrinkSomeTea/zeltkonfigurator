@@ -1,13 +1,5 @@
 <template>
   <main class="zk-app ext:p-4 ext:mx-auto ext:max-w-5xl">
-    <nav class="zk-no-print ext:flex ext:gap-4 ext:mb-4" :aria-label="$gettext('Bereiche')">
-      <router-link :to="{ name: 'zeltkonfigurator-listen' }">{{
-        $gettext('Packlisten')
-      }}</router-link>
-      <router-link :to="{ name: 'zeltkonfigurator-bestand' }">{{
-        $gettext('Bestand')
-      }}</router-link>
-    </nav>
     <header class="ext:flex ext:flex-wrap ext:items-center ext:gap-2 ext:mb-4">
       <h1 class="ext:text-xl ext:font-bold ext:grow">{{ title }}</h1>
       <slot name="actions" />

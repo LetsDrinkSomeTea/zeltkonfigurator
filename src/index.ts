@@ -1,4 +1,9 @@
-import { defineWebApplication, Extension, AppMenuItemExtension } from '@opencloud-eu/web-pkg'
+import {
+  defineWebApplication,
+  Extension,
+  AppMenuItemExtension,
+  AppNavigationItem
+} from '@opencloud-eu/web-pkg'
 import { urlJoin } from '@opencloud-eu/web-client'
 import '@opencloud-eu/extension-sdk/tailwind.css'
 import { RouteRecordRaw } from 'vue-router'
@@ -43,6 +48,21 @@ export default defineWebApplication({
       }
     ]
 
+    // Seitenleiste von OpenCloud; wird angezeigt, sobald es mehr als einen Eintrag gibt.
+    const navItems: AppNavigationItem[] = [
+      {
+        name: () => $gettext('Packlisten'),
+        icon: 'list-check',
+        route: { path: `/${appInfo.id}/listen` },
+        activeFor: [{ path: `/${appInfo.id}/listen` }]
+      },
+      {
+        name: () => $gettext('Bestand'),
+        icon: 'archive',
+        route: { path: `/${appInfo.id}/bestand` }
+      }
+    ]
+
     const extensions = computed<Extension[]>(() => {
       const menuItems: AppMenuItemExtension[] = [
         {
@@ -60,6 +80,7 @@ export default defineWebApplication({
 
     return {
       appInfo,
+      navItems,
       routes,
       extensions
     }
