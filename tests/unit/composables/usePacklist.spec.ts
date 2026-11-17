@@ -1,4 +1,4 @@
-import { createApp, defineComponent, h } from 'vue'
+import { createApp, defineComponent, effectScope, h } from 'vue'
 import { usePacklist, PACKLIST_SAVE_DELAY_MS } from '../../../src/composables/usePacklist'
 import { provideStore, resetStoreForTests, useStore } from '../../../src/composables/useStore'
 import { ConflictError, NotFoundError } from '../../../src/storage/DataStore'
@@ -244,6 +244,57 @@ describe('usePacklist', () => {
 
   it('uses the catalog for wall options', () => {
     expect(fakeCatalog.tentTypes[0].walls).toHaveLength(3)
+  })
+})
+
+describe('usePacklist: changes by others', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('shows a list saved by someone else without reloading the page', async () => {
+    const { store, pl } = await setup()
+    const other = { ...makeList(), name: 'Sommerlager', date: '2026-07-01' }
+    store.externalSavePacklist(other)
+    await vi.advanceTimersByTimeAsync(0)
+    expect(pl.list.value?.date).toBe('2026-07-01')
+    expect(pl.loading.value).toBe(false)
+  })
+
+  it('keeps own unsaved ticks on top of the other change and saves without conflict', async () => {
+    const { store, pl } = await setup()
+    pl.toggleItem('art-t1')
+    store.externalSavePacklist({ ...makeList(), date: '2026-07-01' })
+    await vi.advanceTimersByTimeAsync(0)
+    expect(pl.list.value?.date).toBe('2026-07-01')
+    expect(pl.list.value?.items.find((i) => i.articleId === 'art-t1')?.checked).toBe(true)
+    await vi.advanceTimersByTimeAsync(PACKLIST_SAVE_DELAY_MS)
+    const saved = await stored(store)
+    expect(saved?.date).toBe('2026-07-01')
+    expect(saved?.items.find((i) => i.articleId === 'art-t1')?.checked).toBe(true)
+    expect(pl.error.value).toBeNull()
+  })
+
+  it('marks the list as outdated when the stock changes elsewhere', async () => {
+    const { store, pl } = await setup()
+    expect(pl.stale.value).toBe(false)
+    store.externalSaveStock({ schemaVersion: 1, stock: { x: { quantity: 3 } } })
+    await vi.advanceTimersByTimeAsync(0)
+    expect(pl.stale.value).toBe(true)
+  })
+
+  it('stops listening when the scope ends', async () => {
+    const store = new MemoryDataStore({ packlists: [makeList()] })
+    const scope = effectScope()
+    const pl = withStore(store, () => scope.run(() => usePacklist(store.document('p1')))!)
+    await pl.load()
+    scope.stop()
+    store.externalSavePacklist({ ...makeList(), date: '2026-07-01' })
+    await vi.advanceTimersByTimeAsync(0)
+    expect(pl.list.value?.date).toBeUndefined()
   })
 })
 

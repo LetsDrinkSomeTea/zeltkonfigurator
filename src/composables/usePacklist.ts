@@ -18,6 +18,7 @@ import type { Catalog, Finish, PacklistFile, Part, Stock, TentConfig } from '../
 import { ConflictError, type PacklistDocument } from '../storage/DataStore'
 import { applyOp, newId, type PacklistOp } from './packlistOps'
 import { MAX_CONFLICT_RETRIES, toError, toStock } from './useStock'
+import { onVisible } from './onVisible'
 import { useStore } from './useStore'
 
 export const PACKLIST_SAVE_DELAY_MS = 800
@@ -33,6 +34,8 @@ export interface UsePacklist {
   /** Bestand oder Katalog haben sich seit der Berechnung geändert (F-37). */
   stale: ComputedRef<boolean>
   load(): Promise<void>
+  /** Lädt still nach, wenn Packliste oder Bestand woanders geändert wurden. */
+  refresh(): Promise<void>
   flush(): Promise<void>
   setDate(date: string | undefined): void
   setFinishOrder(order: Finish[]): void
@@ -84,6 +87,8 @@ export function usePacklist(doc: PacklistDocument): UsePacklist {
   let pending: PacklistOp[] = []
   let timer: ReturnType<typeof setTimeout> | undefined
   let chain: Promise<void> = Promise.resolve()
+  let stockEtag: string | null = null
+  const unwatch: (() => void)[] = []
 
   const ctx = () => ({ catalog: catalog.value, stock: stock.value })
 
@@ -108,6 +113,7 @@ export function usePacklist(doc: PacklistDocument): UsePacklist {
       stock.value = toStock(stockFile.data.stock)
       catalog.value = catalogOf(stockFile.data)
       stockLoaded.value = true
+      stockEtag = stockFile.etag
       etag = loaded.etag
       pending = []
       if (loaded.data) {
@@ -120,12 +126,65 @@ export function usePacklist(doc: PacklistDocument): UsePacklist {
         }
         list.value = created
       }
+      watchChanges()
     } catch (e) {
       list.value = null
       error.value = toError(e)
     } finally {
       loading.value = false
     }
+  }
+
+  function watchChanges() {
+    if (unwatch.length > 0) return
+    const listChanged = doc.watch?.((change) => {
+      if (change.etag === null || change.etag !== etag) void enqueue(refreshList)
+    })
+    const stockChanged = store.watchStock?.((change) => {
+      if (change.etag === null || change.etag !== stockEtag) void enqueue(refreshStock)
+    })
+    unwatch.push(onVisible(() => void refresh()))
+    for (const stop of [listChanged, stockChanged]) if (stop) unwatch.push(stop)
+  }
+
+  async function refreshList() {
+    try {
+      const fresh = await doc.load()
+      if (fresh.etag === etag || !fresh.data) return
+      let next = fresh.data
+      for (const op of pending) {
+        next = applyOp(next, op, ctx())
+      }
+      list.value = next
+      etag = fresh.etag
+    } catch (e) {
+      error.value = toError(e)
+    }
+  }
+
+  /** Neuer Bestand oder Katalog: Die Liste zeigt dann „Neu berechnen“ an (stale). */
+  async function refreshStock() {
+    try {
+      const fresh = await store.loadStock()
+      if (fresh.etag === stockEtag) return
+      stock.value = toStock(fresh.data.stock)
+      catalog.value = catalogOf(fresh.data)
+      stockEtag = fresh.etag
+    } catch (e) {
+      error.value = toError(e)
+    }
+  }
+
+  /** Läuft nach laufenden Speicherungen, damit kein halber Stand überschrieben wird. */
+  function enqueue(task: () => Promise<void>): Promise<void> {
+    const run = chain.then(task)
+    chain = run
+    return run
+  }
+
+  async function refresh() {
+    await enqueue(refreshStock)
+    await enqueue(refreshList)
   }
 
   async function doSave() {
@@ -222,6 +281,7 @@ export function usePacklist(doc: PacklistDocument): UsePacklist {
 
   if (getCurrentScope()) {
     onScopeDispose(() => {
+      for (const stop of unwatch.splice(0)) stop()
       if (pending.length > 0) {
         void flush()
       }
@@ -238,6 +298,7 @@ export function usePacklist(doc: PacklistDocument): UsePacklist {
     canWrite,
     stale,
     load,
+    refresh,
     flush,
     setDate: (date) => push({ type: 'setDate', date }),
     setFinishOrder: (order) => push({ type: 'setFinishOrder', order }),

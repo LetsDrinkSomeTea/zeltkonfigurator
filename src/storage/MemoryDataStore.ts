@@ -1,6 +1,7 @@
 /* eslint-disable require-await -- die Schnittstelle ist asynchron, die Umsetzung im Speicher nicht */
 import type { PacklistFile, StockFile } from '../domain/types'
 import {
+  type ChangeListener,
   ConflictError,
   ForbiddenError,
   NotFoundError,
@@ -28,6 +29,8 @@ export class MemoryDataStore implements DataStore {
   /** data = null: leere Datei */
   private readonly packlists = new Map<string, Entry<PacklistFile | null>>()
   private counter = 0
+  private readonly stockListeners = new Set<ChangeListener>()
+  private readonly packlistListeners = new Map<string, Set<ChangeListener>>()
 
   constructor(options: MemoryDataStoreOptions = {}) {
     this.writable = options.writable ?? true
@@ -71,6 +74,25 @@ export class MemoryDataStore implements DataStore {
     return next
   }
 
+  watchStock(listener: ChangeListener): () => void {
+    this.stockListeners.add(listener)
+    return () => this.stockListeners.delete(listener)
+  }
+
+  /** Jemand anderes speichert den Bestand: ohne ETag-Prüfung, mit Benachrichtigung. */
+  externalSaveStock(file: StockFile): void {
+    const etag = this.nextEtag()
+    this.stock = { data: structuredClone(file), etag }
+    for (const listener of [...this.stockListeners]) listener({ etag })
+  }
+
+  /** Jemand anderes speichert die Packliste `file.id`: ohne ETag-Prüfung, mit Benachrichtigung. */
+  externalSavePacklist(file: PacklistFile): void {
+    const etag = this.nextEtag()
+    this.packlists.set(file.id, { data: structuredClone(file), etag })
+    for (const listener of [...(this.packlistListeners.get(file.id) ?? [])]) listener({ etag })
+  }
+
   async loadPacklist(id: string): Promise<Versioned<PacklistFile>> {
     const entry = this.packlists.get(id)
     if (!entry?.data) {
@@ -109,7 +131,13 @@ export class MemoryDataStore implements DataStore {
         }
         return { data: structuredClone(entry.data), etag: entry.etag }
       },
-      save: (file, etag) => this.savePacklist({ ...file, id }, etag)
+      save: (file, etag) => this.savePacklist({ ...file, id }, etag),
+      watch: (listener) => {
+        const listeners = this.packlistListeners.get(id) ?? new Set<ChangeListener>()
+        this.packlistListeners.set(id, listeners)
+        listeners.add(listener)
+        return () => listeners.delete(listener)
+      }
     }
   }
 }
