@@ -306,6 +306,7 @@ interface DataStore {
   canWrite(): Promise<boolean>
   loadStock(): Promise<Versioned<StockFile>>
   saveStock(file: StockFile, etag: string | null): Promise<string> // neuer ETag
+  watchStock?(listener: ChangeListener): () => void // Änderungen durch andere
 }
 
 // Eine geöffnete Packlisten-Datei; Ort und Name kommen von der Datei.
@@ -314,6 +315,7 @@ interface PacklistDocument {
   canWrite(): Promise<boolean>
   load(): Promise<Versioned<PacklistFile | null>> // null = leere Datei, frisch über „Neu“ angelegt
   save(file: PacklistFile, etag: string | null): Promise<string>
+  watch?(listener: ChangeListener): () => void // Änderungen durch andere
   close?(): void // zurück zur Dateiansicht
 }
 ```
@@ -336,6 +338,17 @@ Operationen geführt (`setItemChecked`, `addTent`, `moveTentTo`, `removeExtra` �
 `moveTentTo` auf einen Index (Ziehen). Beim Bestand entfernt `removeEntry` einen unbekannten
 Eintrag (F-07).
 Haken werden gebündelt gespeichert (ca. 1 s Verzögerung).
+
+**Echtzeit:** OpenCloud meldet über Server-Sent Events (`file-touched`,
+`postprocessing-finished`), wenn eine Datei geschrieben wurde. `fileEvents.ts` filtert die
+Ereignisse nach Datei-ID und lässt eigene Speicherungen (gleiche `Initiator-ID`) weg.
+`useStock` und `usePacklist` laden dann still nach (`refresh`, ohne Ladeanzeige) und wenden
+noch nicht gespeicherte eigene Operationen auf den neuen Stand an. Ändert sich der Bestand,
+zeigt eine offene Packliste „Neu berechnen“. Wird der Tab wieder sichtbar, laden beide
+ebenfalls nach (verpasste Ereignisse, öffentliche Links ohne Ereignisse). Direkt nach dem
+Speichern antwortet der Server beim Lesen mitunter mit `425 Too Early`; `createWebDavFiles`
+wiederholt dann mit wachsender Wartezeit. Gemessen in der Testcloud: Änderungen erscheinen
+nach etwa 1 s beim anderen.
 
 ### 6.3 Ablageort
 
