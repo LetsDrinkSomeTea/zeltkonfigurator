@@ -23,8 +23,9 @@ Er prüft eindeutige IDs, bekannte Artikel, positive Mengen und passende Wandrol
    `id`, `name`, `roofs`, `walls`, `fixed`.
 2. Wände mit den Helfern aus `walls.ts` bauen: `keineWand()`, `normaleWand({ segmente })`,
    `hoheWand({ segmente })`, `nurStreifen({ segmente })`, `erdstreifen()`.
-3. Feste Teile (Dächle, Spinne, Masten, Seitenstangen, Abspannseile, Heringe, …) in `fixed`
-   eintragen. Sie gelten auch ohne Seitenwand.
+3. Feste Teile (Dächle, Spinne, Masten, Seitenstangen, Abspannseile, …) in `fixed`. Heringe über
+   `heringe({ seitenwand, lang })`: 30-cm-T-Profile für Seitenwand und Abspannung, 60-cm-T-Profile
+   nur wo nötig (Gigajurte: 8), dazu je T-Profil ein PacMan. Feste Teile gelten auch ohne Seitenwand.
 4. Den Zelttyp in `src/domain/catalog/tents/index.ts` importieren und in `tentTypes` einreihen.
 5. Unsichere Werte mit einem Kommentar `// PLATZHALTER` am Ende der Zeile kennzeichnen und
    in die Tabelle unten eintragen.
@@ -64,16 +65,17 @@ dass sie auf vorhandene Dächer, Wandoptionen und Bauarten verweisen.
 Alle Werte, die in `docs/anforderungen.md` mit (A) markiert sind, stehen im Code mit
 `// PLATZHALTER`. Vor dem ersten Einsatz mit dem echten Material abgleichen:
 
-| Datei                        | Wert                                                                                                                                                                                  | Prüfen                                                   |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `tents/hochkohte.ts`         | 2 × Mast 500 cm, 8 Abspannseile, 8 Heringe                                                                                                                                            | Mengen und Mastlänge                                     |
-| `tents/gigajurte9.ts`        | 3 × Mast 500 cm, 18 Abspannseile, 18 Heringe                                                                                                                                          | Mengen und Mastlänge                                     |
-| `tents/gigajurte12.ts`       | Jurtenspinne 9er, 3 × Mast 500 cm, 24 Abspannseile, 24 Heringe                                                                                                                        | Spinne, Mastzahl und -länge, Mengen                      |
-| `tents/ovaljurte.ts`         | Dach „6 Kohtenblätter + 2 Zwischendachteile“; Jurtendächle                                                                                                                            | Dachvariante vorhanden? Eigenes Ovaljurten-Dächle? (O-4) |
-| `tents/dreierjurtenburg.ts`  | 27 Wandsegmente; Dach „18 Kohtenblätter + 1 Dreiecksdachteil“; 3 Jurtendächle, 3 Jurtenspinnen 6er, 9 × Mast 375 cm, 27 Seitenstangen, 27 Abspannseile, 27 Heringe, 3 Blockseilrollen | Geometrie, alle Mengen (O-3)                             |
-| `tents/sudan.ts`             | Zelthaut, Gestängesatz, 16 Heringe, Bodenplane rund                                                                                                                                   | Gesamter Zelttyp (O-1)                                   |
-| `tents/yellowstone.ts`       | 1 Mittelmast, 16 Heringe, Bodenplane eckig                                                                                                                                            | Mittelmast, Heringe, Bodenplane (O-2)                    |
-| `walls.ts` (`erdstreifen()`) | 1 Erdstreifen je Kohte (`segments: 1`)                                                                                                                                                | Ein Streifen oder eigene Kohtenblätter? (O-5)            |
+| Datei                        | Wert                                                                                                                                                                                  | Prüfen                                        |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `tents/hochkohte.ts`         | 2 × Mast 500 cm, 8 Abspannseile, 8 Heringe                                                                                                                                            | Mengen und Mastlänge                          |
+| `tents/gigajurte9.ts`        | 3 × Mast 500 cm, 18 Abspannseile, 18 Heringe                                                                                                                                          | Mengen und Mastlänge                          |
+| `tents/gigajurte12.ts`       | Jurtenspinne 9er, 3 × Mast 500 cm, 24 Abspannseile, 24 Heringe                                                                                                                        | Spinne, Mastzahl und -länge, Mengen           |
+| `tents/theaterjurte.ts`      | Dach „6 Kohtenblätter + 2 Zwischendachteile“                                                                                                                                          | Dachvariante vorhanden?                       |
+| `tents/dreierjurtenburg.ts`  | 27 Wandsegmente; Dach „18 Kohtenblätter + 1 Dreiecksdachteil“; 3 Jurtendächle, 3 Jurtenspinnen 6er, 9 × Mast 375 cm, 27 Seitenstangen, 27 Abspannseile, 27 Heringe, 3 Blockseilrollen | Geometrie, alle Mengen (O-3)                  |
+| `tents/cafelounge.ts`        | 24 Wandsegmente (16 + 12, je 2 an den Knüpfstellen abgezogen); 2 × Holzgestänge; 24 Abspannseile; 32 Heringe; Aufzugseil                                                              | Geometrie, Holzgestänge je Jurte, Abspannung  |
+| `tents/sudan.ts`             | Zelthaut, Gestängesatz, 16 Heringe, Bodenplane rund                                                                                                                                   | Gesamter Zelttyp (O-1)                        |
+| `tents/yellowstone.ts`       | 1 Mittelmast, 16 Heringe, Bodenplane eckig                                                                                                                                            | Mittelmast, Heringe, Bodenplane (O-2)         |
+| `walls.ts` (`erdstreifen()`) | 1 Erdstreifen je Kohte (`segments: 1`)                                                                                                                                                | Ein Streifen oder eigene Kohtenblätter? (O-5) |
 
 Die Bodennägel (2 je Wandsegment, `walls.ts`) und die Annahme, dass Seitenstangen,
 Abspannseile und Heringe auch ohne Wand gebraucht werden, ergeben sich aus 7.2 und sind

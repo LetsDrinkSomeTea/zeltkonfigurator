@@ -66,7 +66,7 @@ describe('ChecklistTab', () => {
   it('shows missing hints', async () => {
     const { pl, list } = await setup()
     const w = render(pl)
-    const tProfil = list.items.find((i) => i.articleId === 't-profil')!
+    const tProfil = list.items.find((i) => i.articleId === 't-profil-30')!
     expect(tProfil.missing).toBeGreaterThan(0)
     expect(rowFor(w, tProfil.name).text()).toContain(`${tProfil.missing} fehlen`)
     expect(w.text()).not.toContain('vor Ort schlagen')

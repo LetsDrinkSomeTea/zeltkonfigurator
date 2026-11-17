@@ -65,6 +65,7 @@ export const articles: Article[] = [
   { id: 'jurtendaechle', name: 'Jurtendächle', category: 'dach' },
   { id: 'grossjurtendaechle', name: 'Großjurtendächle', category: 'dach' },
   { id: 'gigajurtendaechle', name: 'Gigajurtendächle', category: 'dach' },
+  { id: 'theaterjurtendaechle', name: 'Theaterjurtenabdeckplane', category: 'dach' },
   { id: 'zelthaut-sudan', name: 'Zelthaut Sudan', category: 'dach' },
   { id: 'zelthaut-yellowstone', name: 'Zelthaut Yellowstone', category: 'dach' },
 
@@ -77,10 +78,17 @@ export const articles: Article[] = [
   { id: 'seitenstange', name: 'Seitenstange (verstellbar)', category: 'stange' },
   { id: 'gestaengesatz-sudan', name: 'Gestängesatz Sudan', category: 'stange' },
   { id: 'mittelmast-yellowstone', name: 'Mittelmast Yellowstone', category: 'stange' },
+  {
+    id: 'holzgestaenge-cafelounge',
+    name: 'Holzgestänge Cafélounge (mit Winkeln)',
+    category: 'stange'
+  },
 
   // Heringe und Abspannung
   { id: 'abspannseil', name: 'Abspannseil', category: 'abspannung' },
-  { id: 't-profil', name: 'T-Profil', category: 'abspannung' },
+  { id: 't-profil-30', name: 'T-Profil 30 cm', category: 'abspannung' },
+  { id: 't-profil-60', name: 'T-Profil 60 cm', category: 'abspannung' },
+  { id: 'pacman', name: 'PacMan (Abdeckung für T-Profil)', category: 'abspannung' },
   { id: 'bodennagel', name: 'Bodennagel', category: 'abspannung' },
   { id: 'aufzugseil', name: 'Aufzugseil', category: 'abspannung' },
 
@@ -89,7 +97,7 @@ export const articles: Article[] = [
   { id: 'jurtenspinne-6', name: 'Jurtenspinne 6er', category: 'kleinteil' },
   { id: 'jurtenspinne-8', name: 'Jurtenspinne 8er', category: 'kleinteil' },
   { id: 'jurtenspinne-9', name: 'Jurtenspinne 9er', category: 'kleinteil' },
-  { id: 'ovaljurtenspinne', name: 'Ovaljurtenspinne', category: 'kleinteil' },
+  { id: 'theaterjurtenspinne', name: 'Theaterjurtenspinne', category: 'kleinteil' },
   { id: 'blockseilrolle', name: 'Blockseilrolle', category: 'kleinteil' },
 
   // Bodenplanen

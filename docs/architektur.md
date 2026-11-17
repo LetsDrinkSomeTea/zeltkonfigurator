@@ -55,7 +55,7 @@ src/
       walls.ts              wiederverwendbare Wandoptionen (keine, normal, hoch, …)
       tents/
         kohte.ts  hochkohte.ts  jurte.ts  grossjurte.ts  gigajurte9.ts
-        gigajurte12.ts  ovaljurte.ts  dreierjurtenburg.ts  sudan.ts  yellowstone.ts
+        gigajurte12.ts  theaterjurte.ts  dreierjurtenburg.ts  cafelounge.ts  sudan.ts  yellowstone.ts
         index.ts            Liste aller Zelttypen
     roof.ts                 Dachkonfiguration wählen (mit Ausweichen)
     walls.ts                Wandsegmente decken (Rollen, Einzel/Doppel, Ausweichen)

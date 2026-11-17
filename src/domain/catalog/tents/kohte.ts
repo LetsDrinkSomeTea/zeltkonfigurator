@@ -1,4 +1,5 @@
 import type { TentType } from '../../types'
+import { heringe } from '../heringe'
 import { erdstreifen, keineWand } from '../walls'
 
 export const kohte: TentType = {
@@ -17,7 +18,7 @@ export const kohte: TentType = {
     { articleId: 'kohtendaechle', quantity: 1 },
     { articleId: 'kohtenkreuz', quantity: 1 },
     { articleId: 'mast-375', quantity: 2 },
-    { articleId: 't-profil', quantity: 8 },
+    ...heringe({ seitenwand: 8 }),
     { articleId: 'aufzugseil', quantity: 1 }
   ]
 }

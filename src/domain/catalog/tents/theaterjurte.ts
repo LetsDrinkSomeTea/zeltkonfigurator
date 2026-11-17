@@ -1,9 +1,10 @@
 import type { TentType } from '../../types'
+import { heringe } from '../heringe'
 import { hoheWand, keineWand, normaleWand } from '../walls'
 
-export const ovaljurte: TentType = {
-  id: 'ovaljurte',
-  name: 'Ovaljurte',
+export const theaterjurte: TentType = {
+  id: 'theaterjurte',
+  name: 'Theaterjurte',
   roofs: [
     {
       id: 'halbjurtendaecher',
@@ -26,12 +27,12 @@ export const ovaljurte: TentType = {
   // Standard: hohe Wand aus Superbahnen mit Gaze
   defaults: { wallId: 'hoch', buildId: 'super', finish: 'gaze' },
   fixed: [
-    { articleId: 'jurtendaechle', quantity: 1 }, // PLATZHALTER
-    { articleId: 'ovaljurtenspinne', quantity: 1 },
+    { articleId: 'theaterjurtendaechle', quantity: 1 },
+    { articleId: 'theaterjurtenspinne', quantity: 1 },
     { articleId: 'mast-375', quantity: 2 },
     { articleId: 'seitenstange', quantity: 14 },
     { articleId: 'abspannseil', quantity: 14 },
-    { articleId: 't-profil', quantity: 14 },
+    ...heringe({ seitenwand: 14 }),
     { articleId: 'blockseilrolle', quantity: 2 },
     { articleId: 'aufzugseil', quantity: 1 }
   ]

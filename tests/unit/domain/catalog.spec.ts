@@ -118,8 +118,9 @@ describe('Katalog: Stichproben aus den Anforderungen', () => {
       'grossjurte',
       'gigajurte9',
       'gigajurte12',
-      'ovaljurte',
+      'theaterjurte',
       'dreierjurtenburg',
+      'cafelounge',
       'sudan',
       'yellowstone'
     ])
@@ -136,12 +137,42 @@ describe('Katalog: Stichproben aus den Anforderungen', () => {
     ['grossjurte', 16],
     ['gigajurte9', 18],
     ['gigajurte12', 24],
-    ['ovaljurte', 14],
+    ['theaterjurte', 14],
     ['dreierjurtenburg', 27]
   ])('%s hat %i Wandsegmente', (id, segments) => {
     const hoch = tent(id).walls.find((w) => w.id === 'hoch')
     expect(hoch?.segments).toBe(segments)
     expect(count(tent(id).fixed, 'seitenstange')).toBe(segments)
+  })
+
+  it('Cafélounge: Großjurte, Jurte und Kohte; Holzgestänge statt Jurtengestänge', () => {
+    const t = tent('cafelounge')
+    expect(t.roofs[0].parts).toEqual([
+      { articleId: 'grossjurtendach', quantity: 1 },
+      { articleId: 'jurtendach', quantity: 1 },
+      { articleId: 'kohtenblatt', quantity: 4 }
+    ])
+    expect(t.walls.find((w) => w.id === 'hoch')?.segments).toBe(24)
+    expect(count(t.fixed, 'holzgestaenge-cafelounge')).toBe(2)
+    expect(count(t.fixed, 'seitenstange')).toBe(0)
+    expect(count(t.fixed, 'mast-375')).toBe(2)
+    expect(count(t.fixed, 'kohtenkreuz')).toBe(1)
+  })
+
+  it('Theaterjurte hat eigene Abdeckplane und Spinne', () => {
+    const t = tent('theaterjurte')
+    expect(count(t.fixed, 'theaterjurtendaechle')).toBe(1)
+    expect(count(t.fixed, 'theaterjurtenspinne')).toBe(1)
+  })
+
+  it('60-cm-T-Profile nur bei der Gigajurte (8), PacMan auf jedes T-Profil', () => {
+    for (const t of tentTypes) {
+      const giga = t.id === 'gigajurte9' || t.id === 'gigajurte12'
+      expect(count(t.fixed, 't-profil-60'), t.id).toBe(giga ? 8 : 0)
+      expect(count(t.fixed, 'pacman'), t.id).toBe(
+        count(t.fixed, 't-profil-30') + count(t.fixed, 't-profil-60')
+      )
+    }
   })
 
   it('Gigajurte 12 m: Dach aus Gigajurtendach, 12 Zwischendachteilen und 6 Kohtenblättern', () => {
@@ -209,8 +240,9 @@ describe('Standardkonfigurationen', () => {
       'grossjurte',
       'gigajurte9',
       'gigajurte12',
-      'ovaljurte',
-      'dreierjurtenburg'
+      'theaterjurte',
+      'dreierjurtenburg',
+      'cafelounge'
     ]
     for (const id of jurten) {
       expect(defaultTentOptions(tent(id)), id).toMatchObject({
