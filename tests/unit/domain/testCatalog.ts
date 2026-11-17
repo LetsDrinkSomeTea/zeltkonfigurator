@@ -2,6 +2,7 @@ import type {
   Article,
   Catalog,
   Finish,
+  RoofModule,
   Stock,
   TentConfig,
   TentType,
@@ -67,27 +68,44 @@ function wall(id: string, segments: number, builds: WallBuild[]): WallOption {
   }
 }
 
-export const jurte: TentType = {
+export const jurteDach: RoofModule = {
   id: 'jurte',
   name: 'Jurte',
   roofs: [
     { id: 'jurtendach', label: 'Jurtendach', parts: [{ articleId: 'dach-jurte', quantity: 1 }] },
     { id: 'kohten', label: '6 Kohtenblätter', parts: [{ articleId: 'kohtenblatt', quantity: 6 }] }
   ],
+  setups: [
+    { id: 'gestellt', label: 'Gestellt', parts: [{ articleId: 'mast', quantity: 3 }] },
+    { id: 'gehaengt', label: 'Gehängt', parts: [{ articleId: 'mast', quantity: 2 }] }
+  ],
+  parts: [{ articleId: 'daechle', quantity: 1 }]
+}
+
+export const jurte: TentType = {
+  id: 'jurte',
+  name: 'Jurte',
+  modules: [jurteDach],
   walls: [
     wall('keine', 0, []),
     wall('normal', 4, [normalBuild]),
     wall('hoch', 4, [superBuild, streifenBuild]),
     wall('hoch5', 5, [superBuild, streifenBuild])
   ],
-  fixed: [
-    { articleId: 'daechle', quantity: 1 },
-    { articleId: 'mast', quantity: 3 },
-    { articleId: 'seitenstange', quantity: 2 }
-  ]
+  fixed: [{ articleId: 'seitenstange', quantity: 2 }]
 }
 
-export const catalog: Catalog = { articles, tentTypes: [jurte] }
+export const catalog: Catalog = {
+  categories: [
+    { id: 'dach', name: 'Dächer und Planen' },
+    { id: 'wand', name: 'Seitenwand' },
+    { id: 'stange', name: 'Stangen und Gestänge' },
+    { id: 'kleinteil', name: 'Kleinteile' }
+  ],
+  articles,
+  modules: [jurteDach],
+  tentTypes: [jurte]
+}
 
 /** Bestand mit allem Nicht-Wandmaterial reichlich, Wand nach Angabe. */
 export function stockOf(extra: Stock = {}, base = true): Stock {
@@ -99,15 +117,20 @@ export function stockOf(extra: Stock = {}, base = true): Stock {
   }
 }
 
-export function tent(id: string, over: Partial<TentConfig> = {}): TentConfig {
+/** Testzelt; `roofId`/`setupId` als Kurzform für das einzige Dach. */
+export function tent(
+  id: string,
+  over: Partial<TentConfig> & { roofId?: string; setupId?: string } = {}
+): TentConfig {
+  const { roofId = 'jurtendach', setupId = 'gestellt', ...rest } = over
   return {
     id,
     typeId: 'jurte',
-    roofId: 'jurtendach',
+    roofs: [{ roofId, setupId }],
     wallId: 'hoch',
     buildId: 'super',
     finish: 'fenster',
-    ...over
+    ...rest
   }
 }
 

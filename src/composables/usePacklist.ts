@@ -1,12 +1,20 @@
-import { computed, getCurrentScope, onScopeDispose, ref, type ComputedRef, type Ref } from 'vue'
-import { catalog } from '../domain/catalog'
+import {
+  computed,
+  getCurrentScope,
+  onScopeDispose,
+  ref,
+  shallowRef,
+  type ComputedRef,
+  type Ref
+} from 'vue'
+import { catalog as defaultCatalog, catalogOf } from '../domain/catalog'
 import {
   createPacklist,
   createTentConfig,
   defaultTentOptions,
   fingerprint
 } from '../domain/packlist'
-import type { Finish, PacklistFile, Stock, TentConfig } from '../domain/types'
+import type { Catalog, Finish, PacklistFile, Part, Stock, TentConfig } from '../domain/types'
 import { ConflictError, type PacklistDocument } from '../storage/DataStore'
 import { applyOp, newId, type PacklistOp } from './packlistOps'
 import { MAX_CONFLICT_RETRIES, toError, toStock } from './useStock'
@@ -20,6 +28,8 @@ export interface UsePacklist {
   saving: Ref<boolean>
   error: Ref<Error | null>
   canWrite: Ref<boolean>
+  /** Katalog aus der Materialliste (Zelttypen, Artikel, Kategorien) */
+  catalog: Ref<Catalog>
   /** Bestand oder Katalog haben sich seit der Berechnung geändert (F-37). */
   stale: ComputedRef<boolean>
   load(): Promise<void>
@@ -38,6 +48,8 @@ export interface UsePacklist {
   moveTentTo(tentId: string, index: number): void
   toggleItem(articleId: string): void
   toggleExtra(extraId: string): void
+  /** weiteres Material aus der Materialliste (ersetzt die Liste) */
+  setMaterials(materials: Part[]): void
   addExtra(text: string, quantity: number): void
   removeExtra(extraId: string): void
   recalc(): void
@@ -58,13 +70,14 @@ export function usePacklist(doc: PacklistDocument): UsePacklist {
   const error = ref<Error | null>(null)
   const canWrite = ref(false)
   const stock = ref<Stock>({})
+  const catalog = shallowRef<Catalog>(defaultCatalog)
   const stockLoaded = ref(false)
 
   const stale = computed(
     () =>
       list.value !== null &&
       stockLoaded.value &&
-      list.value.fingerprint !== fingerprint(catalog, stock.value)
+      list.value.fingerprint !== fingerprint(catalog.value, stock.value)
   )
 
   let etag: string | null = null
@@ -72,7 +85,7 @@ export function usePacklist(doc: PacklistDocument): UsePacklist {
   let timer: ReturnType<typeof setTimeout> | undefined
   let chain: Promise<void> = Promise.resolve()
 
-  const ctx = () => ({ catalog, stock: stock.value })
+  const ctx = () => ({ catalog: catalog.value, stock: stock.value })
 
   function clearTimer() {
     if (timer !== undefined) {
@@ -93,6 +106,7 @@ export function usePacklist(doc: PacklistDocument): UsePacklist {
       ])
       canWrite.value = writable
       stock.value = toStock(stockFile.data.stock)
+      catalog.value = catalogOf(stockFile.data)
       stockLoaded.value = true
       etag = loaded.etag
       pending = []
@@ -100,7 +114,7 @@ export function usePacklist(doc: PacklistDocument): UsePacklist {
         list.value = loaded.data
       } else {
         // Leere Datei, frisch über „Neu“ angelegt: mit einer leeren Packliste füllen.
-        const created = createPacklist(doc.name, catalog, stock.value)
+        const created = createPacklist(doc.name, catalog.value, stock.value)
         if (writable) {
           etag = await doc.save(created, etag)
         }
@@ -136,7 +150,7 @@ export function usePacklist(doc: PacklistDocument): UsePacklist {
           const fresh = await doc.load()
           ops = [...ops, ...pending]
           pending = []
-          let next = fresh.data ?? createPacklist(doc.name, catalog, stock.value)
+          let next = fresh.data ?? createPacklist(doc.name, catalog.value, stock.value)
           for (const op of ops) {
             next = applyOp(next, op, ctx())
           }
@@ -185,7 +199,7 @@ export function usePacklist(doc: PacklistDocument): UsePacklist {
   }
 
   function addTent(typeId: string, count = 1): string[] {
-    const type = catalog.tentTypes.find((t) => t.id === typeId)
+    const type = catalog.value.tentTypes.find((t) => t.id === typeId)
     if (!type) {
       return []
     }
@@ -200,7 +214,7 @@ export function usePacklist(doc: PacklistDocument): UsePacklist {
 
   function resetTent(tentId: string) {
     const tent = list.value?.tents.find((t) => t.id === tentId)
-    const type = catalog.tentTypes.find((t) => t.id === tent?.typeId)
+    const type = catalog.value.tentTypes.find((t) => t.id === tent?.typeId)
     if (type) {
       push({ type: 'updateTent', tentId, patch: defaultTentOptions(type) })
     }
@@ -217,6 +231,7 @@ export function usePacklist(doc: PacklistDocument): UsePacklist {
 
   return {
     list,
+    catalog,
     loading,
     saving,
     error,
@@ -235,6 +250,7 @@ export function usePacklist(doc: PacklistDocument): UsePacklist {
     moveTentTo: (tentId, index) => push({ type: 'moveTentTo', tentId, index }),
     toggleItem,
     toggleExtra,
+    setMaterials: (materials) => push({ type: 'setMaterials', materials }),
     addExtra: (text, quantity) =>
       push({
         type: 'addExtra',

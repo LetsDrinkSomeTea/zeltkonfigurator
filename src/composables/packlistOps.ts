@@ -1,6 +1,14 @@
 import { UnknownConfigError } from '../domain/allocation'
 import { recalculate } from '../domain/packlist'
-import type { Catalog, ExtraItem, Finish, PacklistFile, Stock, TentConfig } from '../domain/types'
+import type {
+  Catalog,
+  ExtraItem,
+  Finish,
+  Part,
+  PacklistFile,
+  Stock,
+  TentConfig
+} from '../domain/types'
 
 /**
  * Kleine, wiederholbare Änderungen an einer Packliste (siehe docs/architektur.md 6.2).
@@ -19,6 +27,7 @@ export type PacklistOp =
   | { type: 'setItemChecked'; articleId: string; checked: boolean }
   | { type: 'setExtraChecked'; extraId: string; checked: boolean }
   | { type: 'addExtra'; extra: ExtraItem }
+  | { type: 'setMaterials'; materials: Part[] }
   | { type: 'removeExtra'; extraId: string }
   | { type: 'recalc' }
 
@@ -147,6 +156,10 @@ export function applyOp(list: PacklistFile, op: PacklistOp, ctx: OpContext): Pac
       result = next
       break
     }
+    case 'setMaterials':
+      next.materials = clone(op.materials)
+      result = recalc()
+      break
     case 'addExtra':
       if (!next.extraItems.some((e) => e.id === op.extra.id)) {
         next.extraItems.push(clone(op.extra))

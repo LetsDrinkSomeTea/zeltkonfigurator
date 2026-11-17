@@ -1,5 +1,5 @@
 import { chooseRoof, isRoofAvailable } from '../../../src/domain/roof'
-import { jurte } from './testCatalog'
+import { jurteDach as jurte } from './testCatalog'
 
 const [primary, alt] = jurte.roofs
 

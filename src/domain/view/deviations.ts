@@ -5,9 +5,10 @@ export type Translate = (msgid: string, params?: Record<string, string | number>
 /** Lesbare Zeile für eine Abweichung (F-26/F-27). */
 export function describeDeviation(d: Deviation, $gettext: Translate): string {
   if (d.kind === 'dach') {
+    const roof = d.roof ?? $gettext('Dach')
     return d.got === null
-      ? $gettext('Dach unvollständig: %{wanted}', { wanted: d.wanted })
-      : $gettext('Dach: %{got} statt %{wanted}', { got: d.got, wanted: d.wanted })
+      ? $gettext('%{roof} unvollständig: %{wanted}', { roof, wanted: d.wanted })
+      : $gettext('%{roof}: %{got} statt %{wanted}', { roof, got: d.got, wanted: d.wanted })
   }
   const n = d.segments ?? 0
   if (d.got === null) {

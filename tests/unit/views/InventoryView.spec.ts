@@ -8,11 +8,15 @@ import type { DataStore } from '../../../src/storage/DataStore'
 import { STOCK_SAVE_DELAY_MS } from '../../../src/composables/useStock'
 import { catalog } from '../../../src/domain/catalog'
 import type { StockFile } from '../../../src/domain/types'
+import { createTestRouter } from './support'
 
-async function mountView(store: DataStore) {
+async function mountView(store: DataStore, route = '/bestand') {
   const Host = defineComponent({ render: () => h(InventoryView) })
+  const router = createTestRouter()
+  await router.push(route)
+  await router.isReady()
   const wrapper = mount(Host, {
-    global: { plugins: [...defaultPlugins()], provide: { [storeKey as symbol]: store } }
+    global: { plugins: [...defaultPlugins(), router], provide: { [storeKey as symbol]: store } }
   })
   await flushPromises()
   return wrapper

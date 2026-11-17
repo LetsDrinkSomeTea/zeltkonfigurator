@@ -1,389 +1,112 @@
 <template>
   <app-layout
-    :title="$gettext('Bestand')"
+    :title="$gettext('Materialliste')"
     :framed="!!resource"
-    :loading="loading"
-    :error="error"
-    :read-only="!canWrite"
+    :loading="st.loading.value"
+    :error="st.error.value"
+    :read-only="!st.canWrite.value"
   >
-    <div class="zk-toolbar ext:mb-4">
-      <oc-text-input
-        id="zk-inventory-search"
-        v-model="query"
-        class="zk-search"
-        :label="$gettext('Artikel suchen')"
-        :default-value="$gettext('Name oder Kategorie')"
-        :clear-button-enabled="true"
-        :clear-button-accessible-label="$gettext('Suche zurücksetzen')"
-      />
-      <oc-switch
-        v-model:checked="onlyAvailable"
-        class="zk-filter"
-        :label="$gettext('Nur vorhandene')"
-      />
-    </div>
-
-    <p v-if="noMatches" class="zk-hint" role="status">{{ $gettext('keine Treffer') }}</p>
-
-    <section
-      v-for="group in groups"
-      :key="group.category"
-      class="ext:mb-6"
-      :aria-labelledby="`zk-group-${group.category}`"
+    <p v-if="problems.length > 0" class="zk-error ext:mb-4" role="alert">
+      {{ problems.join(' · ') }}
+    </p>
+    <div
+      class="zk-tabs ext:flex ext:mb-4"
+      role="tablist"
+      :aria-label="$gettext('Bereiche der Materialliste')"
     >
-      <h2 :id="`zk-group-${group.category}`" class="ext:text-lg ext:font-bold ext:mb-2">
-        {{ group.title }}
-        <span class="zk-count">({{ group.articles.length }})</span>
-      </h2>
-      <ul class="zk-list">
-        <li v-for="article in group.articles" :key="article.id" class="zk-row">
-          <div class="zk-name">
-            <span>{{ article.name }}</span>
-          </div>
-          <template v-if="canWrite">
-            <div class="zk-qty">
-              <oc-button
-                size="large"
-                :aria-label="$gettext('%{name}: eins weniger', { name: article.name })"
-                :disabled="quantityOf(article.id) <= 0"
-                @click="setQuantity(article.id, quantityOf(article.id) - 1)"
-              >
-                <oc-icon name="subtract" />
-              </oc-button>
-              <oc-text-input
-                :id="`zk-qty-${article.id}`"
-                class="zk-qty-input"
-                type="number"
-                min="0"
-                step="1"
-                inputmode="numeric"
-                :label="$gettext('%{name}: Stückzahl', { name: article.name })"
-                :model-value="String(quantityOf(article.id))"
-                @change="onQuantity(article.id, $event)"
-              >
-                <template #label>
-                  <label class="ext:sr-only" :for="`zk-qty-${article.id}`">{{
-                    $gettext('%{name}: Stückzahl', { name: article.name })
-                  }}</label>
-                </template>
-              </oc-text-input>
-              <oc-button
-                size="large"
-                :aria-label="$gettext('%{name}: eins mehr', { name: article.name })"
-                @click="setQuantity(article.id, quantityOf(article.id) + 1)"
-              >
-                <oc-icon name="add" />
-              </oc-button>
-            </div>
-            <oc-text-input
-              v-if="editingNote === article.id"
-              :id="`zk-note-${article.id}`"
-              class="zk-note"
-              :label="$gettext('%{name}: Notiz', { name: article.name })"
-              :default-value="$gettext('Notiz')"
-              :model-value="noteOf(article.id)"
-              @change="commitNote(article.id, $event)"
-              @keydown.enter.prevent="onNoteEnter(article.id, $event)"
-              @keydown.esc.stop="cancelNote(article.id)"
-              @focusout="onNoteFocusOut(article.id, $event)"
-            >
-              <template #label>
-                <label class="ext:sr-only" :for="`zk-note-${article.id}`">{{
-                  $gettext('%{name}: Notiz', { name: article.name })
-                }}</label>
-              </template>
-            </oc-text-input>
-            <button
-              v-else
-              :id="`zk-note-btn-${article.id}`"
-              type="button"
-              class="zk-note zk-note-button"
-              :class="{ 'zk-note-empty': noteOf(article.id) === '' }"
-              :aria-label="$gettext('%{name}: Notiz bearbeiten', { name: article.name })"
-              @click="startNote(article.id)"
-            >
-              {{ noteOf(article.id) || $gettext('Notiz hinzufügen') }}
-            </button>
-          </template>
-          <template v-else>
-            <span class="zk-qty-text">{{ quantityOf(article.id) }}</span>
-            <span class="zk-note-text">{{ noteOf(article.id) }}</span>
-          </template>
-        </li>
-      </ul>
-    </section>
-
-    <section v-if="unknown.length > 0" class="ext:mb-6" aria-labelledby="zk-group-unknown">
-      <h2 id="zk-group-unknown" class="ext:text-lg ext:font-bold ext:mb-2">
-        {{ $gettext('Unbekannte Artikel') }}
-        <span class="zk-count">({{ unknown.length }})</span>
-      </h2>
-      <p class="zk-hint ext:mb-2">
-        {{
-          $gettext(
-            'Diese Einträge stehen in der Bestandsdatei, die App kennt die Artikel aber nicht. Sie bleiben beim Speichern erhalten.'
-          )
-        }}
-      </p>
-      <ul class="zk-list">
-        <li v-for="item in unknown" :key="item.id" class="zk-row">
-          <div class="zk-name">
-            <code>{{ item.id }}</code>
-          </div>
-          <span class="zk-qty-text">{{ item.quantity }}</span>
-          <span class="zk-note-text">{{ item.note }}</span>
-          <oc-button
-            v-if="canWrite"
-            size="large"
-            class="zk-remove"
-            :class="{ 'zk-remove-confirm': confirmRemove === item.id }"
-            :aria-label="
-              confirmRemove === item.id
-                ? $gettext('%{id} wirklich entfernen?', { id: item.id })
-                : $gettext('%{id} entfernen', { id: item.id })
-            "
-            @click="onRemove(item.id)"
-            @blur="confirmRemove = null"
-            @keydown.esc="confirmRemove = null"
-          >
-            {{
-              confirmRemove === item.id ? $gettext('Wirklich entfernen?') : $gettext('Entfernen')
-            }}
-          </oc-button>
-        </li>
-      </ul>
-    </section>
+      <oc-button
+        v-for="t in tabs"
+        :id="`zk-mtab-${t.id}`"
+        :key="t.id"
+        appearance="raw"
+        role="tab"
+        class="zk-tab"
+        :aria-selected="t.id === activeTab"
+        :aria-controls="`zk-mpanel-${t.id}`"
+        :tabindex="t.id === activeTab ? 0 : -1"
+        @click="select(t.id)"
+        @keydown="onKey($event, t.id)"
+      >
+        {{ t.label }}
+      </oc-button>
+    </div>
+    <div
+      :id="`zk-mpanel-${activeTab}`"
+      role="tabpanel"
+      :aria-labelledby="`zk-mtab-${activeTab}`"
+      tabindex="-1"
+    >
+      <TentTypesTab v-if="activeTab === 'zelttypen'" :st="st" />
+      <RoofModulesTab v-else-if="activeTab === 'daecher'" :st="st" />
+      <MaterialTab v-else :st="st" />
+    </div>
   </app-layout>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted } from 'vue'
 import { useGettext } from 'vue3-gettext'
 import type { Resource } from '@opencloud-eu/web-client'
 import AppLayout from '../components/AppLayout.vue'
+import '../components/tabs.css'
+import MaterialTab from '../components/MaterialTab.vue'
+import RoofModulesTab from '../components/RoofModulesTab.vue'
+import TentTypesTab from '../components/TentTypesTab.vue'
+import { useAppRouter } from '../composables/useAppRouter'
 import { useStock } from '../composables/useStock'
-import { catalog } from '../domain/catalog'
-import { CATEGORIES, type Category } from '../domain/types'
+import { resolveCatalog } from '../domain/catalog'
+
+type TabId = 'material' | 'zelttypen' | 'daecher'
 
 // Im App-Rahmen (AppWrapper) übergibt OpenCloud die geöffnete Datei; ohne Rahmen fehlt sie.
 defineProps<{ resource?: Resource }>()
 
 const { $gettext } = useGettext()
-const { entries, loading, error, canWrite, load, setQuantity, setNote, removeEntry, flush } =
-  useStock()
+const { router, route } = useAppRouter()
+const st = useStock()
 
-const query = ref('')
-const confirmRemove = ref<string | null>(null)
-const editingNote = ref<string | null>(null)
+const tabs = computed<{ id: TabId; label: string }[]>(() => [
+  { id: 'material', label: $gettext('Material') },
+  { id: 'zelttypen', label: $gettext('Zelttypen') },
+  { id: 'daecher', label: $gettext('Dächer') }
+])
 
-// Filter „Nur vorhandene“: pro Betrachter im Browser gemerkt, Vorgabe aus.
-const FILTER_KEY = 'zeltkonfigurator.inventory.onlyAvailable'
-function readFilter(): boolean {
-  try {
-    return localStorage.getItem(FILTER_KEY) === '1'
-  } catch {
-    return false
-  }
-}
-const onlyAvailable = ref(readFilter())
-watch(onlyAvailable, (value) => {
-  try {
-    localStorage.setItem(FILTER_KEY, value ? '1' : '0')
-  } catch {
-    // Speicher nicht verfügbar: Der Filter gilt dann nur für diese Sitzung.
-  }
+const activeTab = computed<TabId>(() => {
+  const q = route.value.query.tab
+  return q === 'zelttypen' || q === 'daecher' ? q : 'material'
 })
 
-const categoryTitle = (category: Category): string => {
-  switch (category) {
-    case 'dach':
-      return $gettext('Dächer und Planen')
-    case 'wand':
-      return $gettext('Seitenwand')
-    case 'stange':
-      return $gettext('Stangen und Gestänge')
-    case 'abspannung':
-      return $gettext('Heringe und Abspannung')
-    case 'kleinteil':
-      return $gettext('Kleinteile')
-    default:
-      return $gettext('Bodenplanen')
-  }
+/** Zelttypen, die wegen fehlender Dächer nicht nutzbar sind */
+const problems = computed(() => resolveCatalog(st.catalogData.value).problems)
+
+function select(id: TabId) {
+  void router.replace({ query: { ...route.value.query, tab: id } })
 }
 
-const groups = computed(() => {
-  const q = query.value.trim().toLowerCase()
-  return CATEGORIES.map((category) => {
-    const title = categoryTitle(category)
-    const categoryMatches = q !== '' && title.toLowerCase().includes(q)
-    const articles = catalog.articles.filter(
-      (a) =>
-        a.category === category &&
-        (!onlyAvailable.value || quantityOf(a.id) > 0) &&
-        (q === '' || categoryMatches || a.name.toLowerCase().includes(q))
-    )
-    return { category, title, articles }
-  }).filter((g) => g.articles.length > 0)
-})
-
-const unknown = computed(() => {
-  const known = new Set(catalog.articles.map((a) => a.id))
-  const q = query.value.trim().toLowerCase()
-  return Object.entries(entries.value)
-    .filter(([id]) => !known.has(id))
-    .filter(([, e]) => !onlyAvailable.value || e.quantity > 0)
-    .filter(([id]) => q === '' || id.toLowerCase().includes(q))
-    .map(([id, e]) => ({ id, quantity: e.quantity, note: e.note ?? '' }))
-})
-
-const noMatches = computed(
-  () => !loading.value && groups.value.length === 0 && unknown.value.length === 0
-)
-
-const quantityOf = (id: string): number => entries.value[id]?.quantity ?? 0
-const noteOf = (id: string): string => entries.value[id]?.note ?? ''
-
-function onQuantity(id: string, value: string) {
-  setQuantity(id, value.trim() === '' ? NaN : Number(value))
-  // Ungültige Eingaben (leer, negativ, Dezimalzahl) im Feld auf den normalisierten Wert zurücksetzen.
-  const input = document.getElementById(`zk-qty-${id}`) as HTMLInputElement | null
-  if (input) {
-    input.value = String(quantityOf(id))
-  }
-}
-
-/** Öffnet das Notizfeld und setzt den Fokus hinein. */
-async function startNote(id: string) {
-  editingNote.value = id
+async function onKey(event: KeyboardEvent, id: TabId) {
+  const ids = tabs.value.map((t) => t.id)
+  const index = ids.indexOf(id)
+  const target =
+    event.key === 'ArrowRight'
+      ? (index + 1) % ids.length
+      : event.key === 'ArrowLeft'
+        ? (index - 1 + ids.length) % ids.length
+        : event.key === 'Home'
+          ? 0
+          : event.key === 'End'
+            ? ids.length - 1
+            : -1
+  if (target < 0) return
+  event.preventDefault()
+  select(ids[target])
   await nextTick()
-  document.getElementById(`zk-note-${id}`)?.focus()
-}
-
-/** Speichert die Notiz und schließt das Feld; doppelte Auslöser (change, blur) sind wirkungslos. */
-function commitNote(id: string, value: string) {
-  if (editingNote.value !== id) {
-    return
-  }
-  editingNote.value = null
-  setNote(id, value)
-}
-
-function focusNoteButton(id: string) {
-  void nextTick(() => document.getElementById(`zk-note-btn-${id}`)?.focus())
-}
-
-function onNoteEnter(id: string, event: KeyboardEvent) {
-  commitNote(id, (event.target as HTMLInputElement).value)
-  focusNoteButton(id)
-}
-
-function cancelNote(id: string) {
-  if (editingNote.value === id) {
-    editingNote.value = null
-    focusNoteButton(id)
-  }
-}
-
-function onNoteFocusOut(id: string, event: FocusEvent) {
-  commitNote(id, (event.target as HTMLInputElement).value)
-}
-
-/** Zweistufiges Entfernen: erster Klick fragt nach, zweiter entfernt den Eintrag. */
-function onRemove(id: string) {
-  if (confirmRemove.value === id) {
-    confirmRemove.value = null
-    removeEntry(id)
-  } else {
-    confirmRemove.value = id
-  }
+  document.getElementById(`zk-mtab-${ids[target]}`)?.focus()
 }
 
 onMounted(async () => {
-  await load()
+  await st.load()
 })
 onBeforeUnmount(() => {
-  void flush()
+  void st.flush()
 })
 </script>
-
-<style scoped>
-.zk-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.zk-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid var(--oc-role-outline-variant, #ccc);
-}
-.zk-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 1.5rem;
-}
-.zk-search {
-  flex: 1 1 16rem;
-}
-.zk-note-button {
-  min-height: 44px;
-  padding: 0.25rem 0.5rem;
-  text-align: left;
-  background: none;
-  border: 1px dashed var(--oc-role-outline, #888);
-  border-radius: 0.25rem;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-.zk-note-empty {
-  color: var(--oc-role-on-surface-variant, inherit);
-}
-.zk-remove-confirm {
-  background-color: var(--oc-role-error, #b3261e);
-  color: var(--oc-role-on-error, #fff);
-}
-.zk-qty {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.zk-hint,
-.zk-count {
-  color: var(--oc-role-on-surface-variant, inherit);
-}
-.zk-qty-input {
-  width: 5rem;
-}
-.zk-qty-input :deep(input),
-.zk-note :deep(input),
-.zk-search :deep(input) {
-  width: 100%;
-  box-sizing: border-box;
-}
-.zk-qty-input :deep(input) {
-  text-align: center;
-}
-.zk-qty-text {
-  font-weight: bold;
-}
-@media (min-width: 640px) {
-  .zk-row {
-    flex-direction: row;
-    align-items: center;
-  }
-  .zk-name {
-    flex: 1 1 40%;
-  }
-  .zk-note,
-  .zk-note-text {
-    flex: 1 1 30%;
-  }
-  .zk-qty-text {
-    min-width: 5rem;
-  }
-}
-</style>

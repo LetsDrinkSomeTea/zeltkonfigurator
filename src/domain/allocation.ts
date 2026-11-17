@@ -1,7 +1,7 @@
 import { coverWalls, hasFinishLayer, variantLabel } from './walls'
 import { chooseRoof } from './roof'
+import { roofNames } from './view/roofNames'
 import {
-  CATEGORIES,
   type AllocationResult,
   type AllocationStatus,
   type Article,
@@ -25,12 +25,17 @@ export class UnknownConfigError extends Error {
 
 type Row = Omit<PackItem, 'checked'>
 
+/** Schlüssel in perTent/missingPerTent für das weitere Material der Packliste. */
+export const MATERIAL_KEY = '_material'
+
 /** Berechnet Bedarf und Zuteilung aller Zelte gegen den Bestand. */
 export function allocate(
   tents: TentConfig[],
   finishOrder: Finish[],
   catalog: Catalog,
-  stock: Stock
+  stock: Stock,
+  /** weiteres Material der Packliste (nach den Zelten gebucht) */
+  materials: Part[] = []
 ): AllocationResult {
   const work: Stock = { ...stock }
   const articles = new Map<string, Article>(catalog.articles.map((a) => [a.id, a]))
@@ -84,12 +89,22 @@ export function allocate(
     if (!type) {
       throw new UnknownConfigError(`Zelt "${tent.id}": unbekannter Zelttyp "${tent.typeId}".`)
     }
-    const preferredRoof = type.roofs.find((r) => r.id === tent.roofId)
-    if (!preferredRoof) {
-      throw new UnknownConfigError(
-        `Zelt "${tent.id}": unbekannte Dachkonfiguration "${tent.roofId}" bei Zelttyp "${type.id}".`
-      )
-    }
+    const roofs = type.modules.map((module, index) => {
+      const pick = tent.roofs[index] ?? { roofId: module.roofs[0].id, setupId: module.setups[0].id }
+      const roof = module.roofs.find((r) => r.id === pick.roofId)
+      if (!roof) {
+        throw new UnknownConfigError(
+          `Zelt "${tent.id}": unbekannte Dachkonfiguration "${pick.roofId}" bei Zelttyp "${type.id}".`
+        )
+      }
+      const setup = module.setups.find((s) => s.id === pick.setupId)
+      if (!setup) {
+        throw new UnknownConfigError(
+          `Zelt "${tent.id}": unbekannter Aufbau "${pick.setupId}" bei Zelttyp "${type.id}".`
+        )
+      }
+      return { module, roof, setup }
+    })
     const wall = type.walls.find((w) => w.id === tent.wallId)
     if (!wall) {
       throw new UnknownConfigError(
@@ -107,18 +122,32 @@ export function allocate(
       }
     }
 
-    // 1. Dach
-    const choice = chooseRoof(type.roofs, preferredRoof, work)
-    for (const part of choice.roof.parts) book(tent, part)
-    if (choice.fallback) {
-      deviations.push({
-        tentId: tent.id,
-        kind: 'dach',
-        wanted: preferredRoof.label,
-        got: choice.roof.label
-      })
-    } else if (!choice.complete) {
-      deviations.push({ tentId: tent.id, kind: 'dach', wanted: preferredRoof.label, got: null })
+    // 1. Dächer: je Baustein Dach (mit Ausweichen), Aufbau und feste Teile des Bausteins
+    const names = roofNames(type.modules)
+    for (const [index, { module, roof: preferredRoof, setup }] of roofs.entries()) {
+      // Bei mehreren Dächern nennt die Abweichung, welches gemeint ist.
+      const roof = names[index] ? { roof: names[index] } : {}
+      const choice = chooseRoof(module.roofs, preferredRoof, work)
+      for (const part of choice.roof.parts) book(tent, part)
+      if (choice.fallback) {
+        deviations.push({
+          tentId: tent.id,
+          kind: 'dach',
+          wanted: preferredRoof.label,
+          ...roof,
+          got: choice.roof.label
+        })
+      } else if (!choice.complete) {
+        deviations.push({
+          tentId: tent.id,
+          kind: 'dach',
+          wanted: preferredRoof.label,
+          ...roof,
+          got: null
+        })
+      }
+      for (const part of module.parts) book(tent, part)
+      for (const part of setup.parts) book(tent, part)
     }
 
     // 2. feste Teile und Teile der Wandoption
@@ -174,10 +203,16 @@ export function allocate(
     }
   }
 
+  // Weiteres Material nach den Zelten; perTent führt es unter MATERIAL_KEY.
+  const materialOwner = { id: MATERIAL_KEY } as TentConfig
+  for (const part of materials) book(materialOwner, part)
+
+  // Kategorien in Katalog-Reihenfolge, unbekannte am Ende
+  const order = new Map(catalog.categories.map((c, i) => [c.id, i]))
+  const categoryRank = (c: string) => order.get(c) ?? order.size
   const items = [...rows.values()].sort(
     (a, b) =>
-      CATEGORIES.indexOf(a.category) - CATEGORIES.indexOf(b.category) ||
-      a.name.localeCompare(b.name, 'de')
+      categoryRank(a.category) - categoryRank(b.category) || a.name.localeCompare(b.name, 'de')
   )
   let status: AllocationStatus = 'ok'
   if (items.some((i) => i.missing > 0)) status = 'fehlt'

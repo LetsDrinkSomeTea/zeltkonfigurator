@@ -38,7 +38,7 @@ describe('createPacklist / createTentConfig', () => {
     const t = createTentConfig(jurte)
     expect(t).toMatchObject({
       typeId: 'jurte',
-      roofId: 'jurtendach',
+      roofs: [{ roofId: 'jurtendach', setupId: 'gestellt' }],
       wallId: 'keine',
       buildId: '',
       finish: 'blanko'
@@ -60,7 +60,7 @@ describe('Standardkonfiguration', () => {
 
   it('nimmt die Angaben aus defaults', () => {
     expect(createTentConfig(type)).toMatchObject({
-      roofId: 'jurtendach',
+      roofs: [{ roofId: 'jurtendach', setupId: 'gestellt' }],
       wallId: 'hoch',
       buildId: 'super',
       finish: 'gaze'
@@ -69,7 +69,7 @@ describe('Standardkonfiguration', () => {
 
   it('ergänzt fehlende Angaben: erste Bauart der gewählten Wand, blanko', () => {
     expect(defaultTentOptions({ ...jurte, defaults: { wallId: 'hoch' } })).toEqual({
-      roofId: 'jurtendach',
+      roofs: [{ roofId: 'jurtendach', setupId: 'gestellt' }],
       wallId: 'hoch',
       buildId: jurte.walls.find((w) => w.id === 'hoch')!.builds[0].id,
       finish: 'blanko'

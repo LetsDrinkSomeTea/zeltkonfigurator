@@ -1,9 +1,13 @@
 import { defaultPlugins, mount } from '@opencloud-eu/web-test-helpers'
 import PrintLayout from '../../../src/components/PrintLayout.vue'
+import { catalog } from '../../../src/domain/catalog'
 import { buildList } from './helpers'
 
 function render(list = buildList()) {
-  return mount(PrintLayout, { props: { list }, global: { plugins: [...defaultPlugins()] } })
+  return mount(PrintLayout, {
+    props: { list, catalog },
+    global: { plugins: [...defaultPlugins()] }
+  })
 }
 
 describe('PrintLayout', () => {

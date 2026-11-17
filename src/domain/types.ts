@@ -6,9 +6,16 @@
 
 // ---------------------------------------------------------------- Katalog (Code)
 
-export type Category = 'dach' | 'wand' | 'stange' | 'abspannung' | 'kleinteil' | 'boden'
+/** Kennung einer Kategorie, z. B. "dach" oder eine eigene wie "kueche". */
+export type Category = string
 
-export const CATEGORIES: Category[] = ['dach', 'wand', 'stange', 'abspannung', 'kleinteil', 'boden']
+export interface CategoryDef {
+  id: Category
+  name: string
+}
+
+/** Kategorie des Wandmaterials; die Wandberechnung hängt daran, sie ist nicht löschbar. */
+export const WALL_CATEGORY = 'wand'
 
 export type Finish = 'blanko' | 'fenster' | 'gaze'
 
@@ -39,6 +46,29 @@ export interface RoofConfig {
   parts: Part[]
 }
 
+/** Wie ein Dach aufgebaut wird, z. B. „Gestellt“ (Masten) oder „Gehängt“ (2 lange Mittelpfosten). */
+export interface RoofSetup {
+  id: string
+  label: string
+  /** Gestänge und Zubehör für diesen Aufbau */
+  parts: Part[]
+}
+
+/**
+ * Ein Dach als Baustein eines Zeltes, z. B. eine Jurte. Ein Zelttyp besteht aus einem oder
+ * mehreren Bausteinen (Dreierjurtenburg: 3 × Jurte); jeder wird im Zelt einzeln eingestellt.
+ */
+export interface RoofModule {
+  id: string
+  name: string
+  /** Dach-Varianten; mindestens eine, erste = Vorgabe */
+  roofs: RoofConfig[]
+  /** Aufbauten; mindestens einer, erster = Vorgabe */
+  setups: RoofSetup[]
+  /** immer nötig, z. B. das Dächle */
+  parts: Part[]
+}
+
 export interface WallBuild {
   id: string
   label: string
@@ -60,28 +90,58 @@ export interface WallOption {
 export interface TentType {
   id: string
   name: string
-  /** mindestens eine; erste = Vorgabe */
-  roofs: RoofConfig[]
+  /** Dächer des Zeltes; mindestens eins */
+  modules: RoofModule[]
   /** mindestens eine; erste = Vorgabe, sofern `defaults` nichts anderes sagt */
   walls: WallOption[]
   fixed: Part[]
   /**
-   * Standardkonfiguration eines neuen Zeltes. Fehlende Angaben: erstes Dach, erste Wandoption,
-   * erste Bauart der Wandoption, Ausführung 'blanko'.
+   * Standardkonfiguration eines neuen Zeltes. Fehlende Angaben: erste Wandoption, erste Bauart
+   * der Wandoption, Ausführung 'blanko'. Dach und Aufbau: jeweils das erste des Bausteins.
    */
   defaults?: TentDefaults
 }
 
 export interface TentDefaults {
-  roofId?: string
   wallId?: string
   buildId?: string
   finish?: Finish
 }
 
+/** Der aufgelöste Katalog, mit dem die App rechnet. */
 export interface Catalog {
+  /** Reihenfolge = Reihenfolge der Gruppen in Listen */
+  categories: CategoryDef[]
   articles: Article[]
+  /** Dach-Bausteine, aus denen Zelttypen bestehen */
+  modules: RoofModule[]
   tentTypes: TentType[]
+}
+
+/** Wandoptionen, aus denen ein Zelttyp wählt. */
+export type WallOptionId = 'keine' | 'normal' | 'hoch' | 'nur-streifen' | 'erdstreifen'
+
+/** Zelttyp, wie er gespeichert und im Editor bearbeitet wird. */
+export interface TentTypeData {
+  id: string
+  name: string
+  /** Dächer: Baustein und die angebotenen Aufbauten (fehlt `setupIds`: alle des Bausteins) */
+  modules: { moduleId: string; setupIds?: string[] }[]
+  /** Wandsegmente und angebotene Wandoptionen (Reihenfolge = Anzeige) */
+  wall: { segments: number; options: WallOptionId[] }
+  fixed: Part[]
+  defaults?: TentDefaults
+}
+
+/**
+ * Katalog als Daten: wird in der Materialliste gespeichert und dort bearbeitet. Wandmaterial
+ * (Normal-, Superbahn, Streifen …) gehört nicht dazu; es ist fest in der App.
+ */
+export interface CatalogData {
+  categories: CategoryDef[]
+  articles: Article[]
+  modules: RoofModule[]
+  tentTypes: TentTypeData[]
 }
 
 /** articleId → verfügbare Stückzahl. Fehlende Einträge gelten als 0. */
@@ -89,9 +149,16 @@ export type Stock = Record<string, number>
 
 // ---------------------------------------------------------------- Dateien im Space
 
+export interface TentRoof {
+  roofId: string
+  setupId: string
+}
+
 export interface StockFile {
   schemaVersion: 1
   stock: Record<string, { quantity: number; note?: string }>
+  /** Eigener Katalog; fehlt er, gilt der mitgelieferte. */
+  catalog?: CatalogData
 }
 
 export interface TentConfig {
@@ -99,8 +166,8 @@ export interface TentConfig {
   id: string
   typeId: string
   label?: string
-  /** bevorzugte Dachkonfiguration */
-  roofId: string
+  /** je Baustein des Zelttyps (gleiche Reihenfolge): bevorzugtes Dach und Aufbau */
+  roofs: TentRoof[]
   /** gewählte Wandoption */
   wallId: string
   /** bevorzugte Bauart innerhalb der Wandoption; '' wenn die Option keine Bauarten hat */
@@ -127,6 +194,8 @@ export interface PackItem {
 export interface Deviation {
   tentId: string
   kind: 'dach' | 'wand'
+  /** bei Zelten mit mehreren Dächern: welches, z. B. „Jurte 2“ */
+  roof?: string
   /** lesbar, z. B. "Superbahn Fenster" */
   wanted: string
   /** lesbar; null = fehlt */
@@ -151,6 +220,8 @@ export interface PacklistFile {
   /** Lagerdatum, frei (ISO-Datum empfohlen) */
   date?: string
   tents: TentConfig[]
+  /** weiteres Material aus der Materialliste, unabhängig von Zelten (z. B. Küche) */
+  materials: Part[]
   /** Ausweichreihenfolge der Ausführungen (F-2B) */
   finishOrder: Finish[]
   /** festgeschriebenes Rechenergebnis (F-37) */

@@ -57,7 +57,7 @@ export default defineWebApplication({
         path: '/bestand/:driveAliasAndItem(.*)?',
         name: 'zeltkonfigurator-bestand',
         component: () => import('./views/StockRoute.vue'),
-        meta: { authContext: 'user', title: $gettext('Bestand'), patchCleanPath: true }
+        meta: { authContext: 'user', title: $gettext('Materialliste'), patchCleanPath: true }
       }
     ]
 

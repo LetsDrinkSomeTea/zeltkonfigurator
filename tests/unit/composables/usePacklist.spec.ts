@@ -7,7 +7,7 @@ import { fakeCatalog, makeList, withStore } from './fixtures'
 
 vi.mock('../../../src/domain/catalog', async () => {
   const f = await import('./fixtures')
-  return { catalog: f.fakeCatalog }
+  return { catalog: f.fakeCatalog, catalogOf: () => f.fakeCatalog }
 })
 vi.mock('../../../src/domain/packlist', async () => {
   const f = await import('./fixtures')

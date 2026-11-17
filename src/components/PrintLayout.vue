@@ -18,7 +18,9 @@
             <span class="zk-print-qty">{{ item.quantity }} ×</span>
             <span>{{ item.name }}</span>
             <span v-if="item.missing > 0" class="zk-print-hint">
-              ({{ $gettext('%{n} fehlen', { n: String(item.missing) }) }})
+              ({{
+                $ngettext('%{n} fehlt', '%{n} fehlen', item.missing, { n: String(item.missing) })
+              }})
             </span>
           </li>
         </ul>
@@ -56,6 +58,18 @@
           </li>
         </ul>
       </div>
+      <div v-if="materialItems.length > 0" class="zk-print-tent">
+        <h3>{{ $gettext('Weiteres Material') }}</h3>
+        <ul class="zk-print-list">
+          <li v-for="t in materialItems" :key="t.item.articleId" class="zk-print-row">
+            <span class="zk-print-box" aria-hidden="true">{{
+              isCheckable(t.item) ? (t.item.checked ? '☑' : '☐') : '–'
+            }}</span>
+            <span class="zk-print-qty">{{ t.quantity }} ×</span>
+            <span>{{ t.item.name }}</span>
+          </li>
+        </ul>
+      </div>
     </section>
 
     <section v-if="list.deviations.length > 0" class="zk-print-section">
@@ -71,10 +85,10 @@
 </template>
 
 <script setup lang="ts">
+import { MATERIAL_KEY } from '../domain/allocation'
 import { computed } from 'vue'
 import { useGettext } from 'vue3-gettext'
-import { catalog } from '../domain/catalog'
-import type { Deviation, PacklistFile } from '../domain/types'
+import type { Deviation, PacklistFile, Catalog } from '../domain/types'
 import {
   describeTent,
   formatDate,
@@ -85,15 +99,16 @@ import {
 } from './checklistView'
 
 /** Druckansicht: auf dem Bildschirm verborgen, nur im Druck sichtbar. */
-const props = defineProps<{ list: PacklistFile }>()
+const props = defineProps<{ list: PacklistFile; catalog: Catalog }>()
 const { $gettext } = useGettext()
 
-const groups = computed(() => groupByCategory(props.list.items))
+const materialItems = computed(() => itemsForTent(props.list, MATERIAL_KEY))
+const groups = computed(() => groupByCategory(props.list.items, props.catalog.categories))
 const printedAt = new Date().toLocaleString('de-DE')
 
 function deviationTent(tentId: Deviation['tentId']): string {
   const tent = props.list.tents.find((t) => t.id === tentId)
-  return tent ? tentTitle(props.list, tent, catalog) : tentId
+  return tent ? tentTitle(props.list, tent, props.catalog) : tentId
 }
 </script>
 

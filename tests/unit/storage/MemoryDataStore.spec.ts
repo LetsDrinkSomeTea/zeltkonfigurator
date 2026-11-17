@@ -8,6 +8,7 @@ function list(id: string, overrides: Partial<PacklistFile> = {}): PacklistFile {
     id,
     name: id,
     tents: [],
+    materials: [],
     finishOrder: ['gaze', 'fenster', 'blanko'],
     items: [],
     deviations: [],

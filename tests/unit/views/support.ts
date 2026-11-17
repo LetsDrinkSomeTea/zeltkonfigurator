@@ -89,15 +89,6 @@ export async function mountWithStore(
   return { wrapper, router }
 }
 
-/** Klappt alle Zeltkarten auf („Anpassen“). */
-export async function expandTents(wrapper: VueWrapper) {
-  for (const button of wrapper.findAll('article button')) {
-    if (button.text() === 'Anpassen') {
-      await button.trigger('click')
-    }
-  }
-}
-
 /** Zelt ohne Seitenwand, unabhängig von der Standardkonfiguration des Typs. */
 export function bareTent(typeId: string, patch: Partial<TentConfig> = {}): TentConfig {
   return tentOf(typeId, { wallId: 'keine', buildId: '', finish: 'blanko', ...patch })

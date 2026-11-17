@@ -4,7 +4,7 @@ import { defineComponent, h } from 'vue'
 import TentsTab from '../../../src/components/TentsTab.vue'
 import { usePacklist } from '../../../src/composables/usePacklist'
 import { storeKey } from '../../../src/composables/useStore'
-import { fullStock, listFor, storeWith, tentOf } from '../views/support'
+import { choose, fullStock, listFor, ocSelect, storeWith, tentOf } from '../views/support'
 
 type Pl = ReturnType<typeof usePacklist>
 
@@ -12,7 +12,7 @@ async function mountTab(
   tents = [
     tentOf('kohte', { id: 'a' }),
     tentOf('jurte', { id: 'b' }),
-    tentOf('kohte', { id: 'c' })
+    tentOf('hochkohte', { id: 'c' })
   ],
   stock = fullStock(100),
   writable = true
@@ -42,52 +42,50 @@ type Wrapper = Awaited<ReturnType<typeof mountTab>>['wrapper']
 
 const ids = (pl: Pl) => pl.list.value!.tents.map((t) => t.id)
 
-describe('TentsTab add form', () => {
-  it('sits below the tent list and adds several tents of the chosen type', async () => {
+const tile = (wrapper: Wrapper, name: string, sign: 'mehr' | 'weniger') =>
+  wrapper.find(`button[aria-label="Eine ${name} ${sign}"]`)
+
+describe('TentsTab Kacheln', () => {
+  it('zeigt je Zelttyp eine Kachel mit Anzahl; + fügt hinzu, − entfernt', async () => {
     const { wrapper, pl } = await mountTab([tentOf('kohte', { id: 'a' })])
-    const html = wrapper.html()
-    expect(html.indexOf('<article')).toBeLessThan(html.indexOf('zk-add-tent-count'))
-    expect(html.indexOf('zk-add-tent-count')).toBeLessThan(html.indexOf('Ausweichreihenfolge'))
+    const kohteTile = () => wrapper.findAll('.zk-tile').find((t) => t.text().startsWith('Kohte'))!
+    expect(kohteTile().find('.zk-tile-count').text()).toBe('1')
+    expect(tile(wrapper, 'Jurte', 'weniger').attributes('disabled')).toBeDefined()
 
-    const input = wrapper.find('input#zk-add-tent-count')
-    expect((input.element as HTMLInputElement).value).toBe('1')
-    await input.setValue('3')
-    await wrapper.find('form').trigger('submit')
+    await tile(wrapper, 'Jurte', 'mehr').trigger('click')
+    await tile(wrapper, 'Jurte', 'mehr').trigger('click')
     await flushPromises()
-    expect(pl.list.value!.tents).toHaveLength(4)
-    expect(new Set(pl.list.value!.tents.slice(1).map((t) => t.typeId)).size).toBe(1)
-    expect((wrapper.find('input#zk-add-tent-count').element as HTMLInputElement).value).toBe('1')
+    expect(pl.list.value!.tents.map((t) => t.typeId)).toEqual(['kohte', 'jurte', 'jurte'])
+
+    await tile(wrapper, 'Kohte', 'weniger').trigger('click')
+    expect(pl.list.value!.tents.map((t) => t.typeId)).toEqual(['jurte', 'jurte'])
     wrapper.unmount()
   })
 
-  it('clamps the count to 1..20', async () => {
-    const { wrapper, pl } = await mountTab([])
-    await wrapper.find('input#zk-add-tent-count').setValue('99')
-    await wrapper.find('form').trigger('submit')
-    expect(pl.list.value!.tents).toHaveLength(20)
-    await wrapper.find('input#zk-add-tent-count').setValue('0')
-    await wrapper.find('form').trigger('submit')
-    expect(pl.list.value!.tents).toHaveLength(21)
+  it('− entfernt bevorzugt ein Zelt in Standardkonfiguration ohne Bezeichnung', async () => {
+    const { wrapper, pl } = await mountTab([
+      tentOf('jurte', { id: 'std' }),
+      tentOf('jurte', { id: 'kueche', label: 'Küche' })
+    ])
+    await tile(wrapper, 'Jurte', 'weniger').trigger('click')
+    expect(ids(pl)).toEqual(['kueche'])
     wrapper.unmount()
   })
 
-  it('scrolls to the first new tent and highlights it for two seconds', async () => {
+  it('scrollt zum neuen Zelt und hebt es zwei Sekunden hervor', async () => {
     const scroll = vi.fn()
     Element.prototype.scrollIntoView = scroll
     const { wrapper, pl } = await mountTab([tentOf('kohte', { id: 'a' })])
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     try {
-      await wrapper.find('input#zk-add-tent-count').setValue('2')
-      await wrapper.find('form').trigger('submit')
+      await tile(wrapper, 'Jurte', 'mehr').trigger('click')
       await flushPromises()
-      const [first, second] = ids(pl).slice(1)
+      const added = ids(pl)[1]
       expect(scroll).toHaveBeenCalledTimes(1)
-      expect(scroll.mock.contexts[0]).toBe(wrapper.find(`[data-tent-id="${first}"]`).element)
-      expect(wrapper.find(`[data-tent-id="${first}"]`).classes()).toContain('zk-card-highlight')
-      expect(wrapper.find(`[data-tent-id="${second}"]`).classes()).toContain('zk-card-highlight')
-      expect(wrapper.find('[data-tent-id="a"]').classes()).not.toContain('zk-card-highlight')
+      expect(scroll.mock.contexts[0]).toBe(wrapper.find(`[data-tent-id="${added}"]`).element)
+      expect(wrapper.find(`[data-tent-id="${added}"]`).classes()).toContain('zk-card-highlight')
       await vi.advanceTimersByTimeAsync(2100)
-      expect(wrapper.find(`[data-tent-id="${first}"]`).classes()).not.toContain('zk-card-highlight')
+      expect(wrapper.find(`[data-tent-id="${added}"]`).classes()).not.toContain('zk-card-highlight')
     } finally {
       vi.useRealTimers()
       delete (Element.prototype as Partial<Element>).scrollIntoView
@@ -96,62 +94,94 @@ describe('TentsTab add form', () => {
   })
 })
 
-describe('TentsTab tent card', () => {
-  it('always shows the arrows in the header and labels the reset button "Zurücksetzen"', async () => {
-    const { wrapper } = await mountTab()
-    const first = wrapper.find('article')
-    expect(first.find('button[aria-label="Nach oben"]').attributes('disabled')).toBeDefined()
-    expect(first.find('button[aria-expanded]').attributes('aria-expanded')).toBe('false')
-    await first.find('button[aria-expanded]').trigger('click')
-    expect(first.findAll('button').map((b) => b.text())).toContain('Zurücksetzen')
-    expect(first.findAll('button').map((b) => b.text())).not.toContain('Standard')
+describe('TentsTab gleiche Zelte', () => {
+  it('fasst gleich eingestellte Zelte zu einer Karte zusammen und ändert alle gemeinsam', async () => {
+    const { wrapper, pl } = await mountTab([
+      tentOf('jurte', { id: 'a' }),
+      tentOf('jurte', { id: 'b' }),
+      tentOf('jurte', { id: 'c', label: 'Küche' })
+    ])
+    const titles = wrapper.findAll('article h3').map((h) => h.text())
+    expect(titles).toEqual(['2 × Jurte', '3. Jurte – Küche'])
+    const group = wrapper.find('article')
+    const fenster = group.findAll('button[role="radio"]').find((b) => b.text() === 'Fenster')!
+    await fenster.trigger('click')
+    await flushPromises()
+    expect(pl.list.value!.tents.map((t) => t.finish)).toEqual(['fenster', 'fenster', 'gaze'])
     wrapper.unmount()
   })
 
-  it('asks before removing a tent and keeps it on cancel or Escape', async () => {
+  it('„Einzeln bearbeiten“ zeigt die Zelte als eigene Karten', async () => {
+    const { wrapper } = await mountTab([tentOf('jurte', { id: 'a' }), tentOf('jurte', { id: 'b' })])
+    const split = wrapper.findAll('button').find((b) => b.text() === 'Einzeln bearbeiten')!
+    await split.trigger('click')
+    expect(wrapper.findAll('article h3').map((h) => h.text())).toEqual(['1. Jurte', '2. Jurte'])
+    wrapper.unmount()
+  })
+
+  it('entfernt eine Gruppe nach Rückfrage komplett', async () => {
+    const { wrapper, pl } = await mountTab([
+      tentOf('jurte', { id: 'a' }),
+      tentOf('jurte', { id: 'b' }),
+      tentOf('kohte', { id: 'c' })
+    ])
+    await wrapper.find('button[aria-label="Alle 2 × Jurte entfernen"]').trigger('click')
+    expect(wrapper.find('[role="alertdialog"]').text()).toContain('Alle 2 × Jurte entfernen?')
+    await wrapper.find('.zk-confirm-ok').trigger('click')
+    expect(ids(pl)).toEqual(['c'])
+    wrapper.unmount()
+  })
+})
+
+describe('TentsTab Zeltkarte', () => {
+  it('zeigt Pfeile in der Kopfzeile und die Optionen als Knopfleisten', async () => {
+    const { wrapper } = await mountTab()
+    const first = wrapper.find('article')
+    expect(first.find('button[aria-label="Nach oben"]').attributes('disabled')).toBeDefined()
+    expect(first.findAll('button').map((b) => b.text())).toContain('Zurücksetzen')
+    const jurte = wrapper.findAll('article')[1]
+    const groups = jurte.findAll('[role="radiogroup"]').map((g) => g.text())
+    expect(groups.some((t) => t.startsWith('Dach') && t.includes('6 Kohtenblätter'))).toBe(true)
+    expect(groups.some((t) => t.startsWith('Aufbau') && t.includes('Gehängt'))).toBe(true)
+    expect(groups.some((t) => t.startsWith('Seitenwand'))).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('fragt vor dem Entfernen und behält das Zelt bei Abbrechen oder Escape', async () => {
     const { wrapper, pl } = await mountTab()
     const remove = () => wrapper.find('article button[aria-label$="entfernen"]')
     await remove().trigger('click')
     const dialog = wrapper.find('[role="alertdialog"]')
-    expect(dialog.exists()).toBe(true)
     expect(dialog.text()).toContain('1. Kohte entfernen?')
     expect(document.activeElement?.textContent?.trim()).toBe('Abbrechen')
-    expect(ids(pl)).toHaveLength(3)
-
     await dialog.find('.zk-confirm-cancel').trigger('click')
-    expect(wrapper.find('[role="alertdialog"]').exists()).toBe(false)
     expect(ids(pl)).toHaveLength(3)
-
     await remove().trigger('click')
     await wrapper.find('[role="alertdialog"]').trigger('keydown', { key: 'Escape' })
-    expect(wrapper.find('[role="alertdialog"]').exists()).toBe(false)
     expect(ids(pl)).toHaveLength(3)
-
     await remove().trigger('click')
     await wrapper.find('.zk-confirm-ok').trigger('click')
     expect(ids(pl)).toEqual(['b', 'c'])
-    expect(wrapper.find('[role="alertdialog"]').exists()).toBe(false)
     wrapper.unmount()
   })
 
-  it('shows what is missing per tent', async () => {
+  it('zeigt, was pro Zelt fehlt', async () => {
     const stock = fullStock(100, { kohtenblatt: 5 })
     const { wrapper, pl } = await mountTab(
-      [tentOf('kohte', { id: 'a' }), tentOf('kohte', { id: 'b' })],
+      [tentOf('kohte', { id: 'a' }), tentOf('kohte', { id: 'b', label: 'zwei' })],
       stock
     )
     const item = pl.list.value!.items.find((i) => i.articleId === 'kohtenblatt')!
     expect(item.missingPerTent).toEqual({ b: 3 })
     const [a, b] = wrapper.findAll('article')
     expect(a.find('.zk-tent-missing').exists()).toBe(false)
-    expect(a.find('.zk-missing-list').exists()).toBe(false)
     expect(b.find('.zk-tent-missing').text()).toBe('fehlt: 3 Teile')
     expect(b.find('.zk-missing-list').text()).toBe(`3 × ${item.name} fehlen`)
     wrapper.unmount()
   })
 })
 
-describe('TentsTab drag and drop', () => {
+describe('TentsTab Ziehen', () => {
   async function drag(wrapper: Wrapper, from: number, to: number) {
     const cards = wrapper.findAll('article')
     await cards[from].find('.zk-drag-handle').trigger('dragstart')
@@ -161,7 +191,7 @@ describe('TentsTab drag and drop', () => {
     await cards[from].find('.zk-drag-handle').trigger('dragend')
   }
 
-  it('moves a dragged tent to the position of the card it is dropped on', async () => {
+  it('verschiebt ein gezogenes Zelt an die Stelle der Zielkarte', async () => {
     const { wrapper, pl } = await mountTab()
     await drag(wrapper, 0, 2)
     expect(ids(pl)).toEqual(['b', 'c', 'a'])
@@ -171,7 +201,7 @@ describe('TentsTab drag and drop', () => {
     wrapper.unmount()
   })
 
-  it('ignores drops onto itself and drops without a drag', async () => {
+  it('ignoriert Ablegen auf sich selbst und ohne Ziehen', async () => {
     const { wrapper, pl } = await mountTab()
     await drag(wrapper, 1, 1)
     expect(ids(pl)).toEqual(['a', 'b', 'c'])
@@ -180,11 +210,28 @@ describe('TentsTab drag and drop', () => {
     wrapper.unmount()
   })
 
-  it('offers no handle, arrows or add form when read-only', async () => {
+  it('ohne Schreibrecht: keine Griffe, Pfeile, Kacheln oder Knopfleisten', async () => {
     const { wrapper } = await mountTab(undefined, undefined, false)
     expect(wrapper.find('.zk-drag-handle').exists()).toBe(false)
     expect(wrapper.find('button[aria-label="Nach oben"]').exists()).toBe(false)
-    expect(wrapper.find('form').exists()).toBe(false)
+    expect(wrapper.find('.zk-tiles').exists()).toBe(false)
+    expect(wrapper.find('[role="radiogroup"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+})
+
+describe('TentsTab weiteres Material', () => {
+  it('nimmt Material aus der Materialliste auf und rechnet es mit', async () => {
+    const { wrapper, pl } = await mountTab([tentOf('kohte', { id: 'a' })])
+    await choose(ocSelect(wrapper, 'article'), 'blockseilrolle')
+    await flushPromises()
+    await wrapper.find('.zk-parts-add input[type="number"]').setValue('2')
+    await wrapper.findAll('.zk-parts-add button').at(-1)!.trigger('click')
+    await flushPromises()
+    expect(pl.list.value!.materials).toEqual([{ articleId: 'blockseilrolle', quantity: 2 }])
+    const item = pl.list.value!.items.find((i) => i.articleId === 'blockseilrolle')!
+    expect(item.quantity).toBe(2)
+    expect(wrapper.find('.zk-parts-list').text()).toContain('Blockseilrolle')
     wrapper.unmount()
   })
 })

@@ -3,7 +3,7 @@
     <nav class="preview-nav zk-no-print">
       <strong>Vorschau</strong>
       <router-link to="/liste/Sommerlager.packliste">Packliste</router-link>
-      <router-link :to="{ name: 'zeltkonfigurator-bestand' }">Bestand</router-link>
+      <router-link :to="{ name: 'zeltkonfigurator-bestand' }">Materialliste</router-link>
     </nav>
     <router-view />
   </div>

@@ -12,7 +12,7 @@
         $gettext('Drucken')
       }}</oc-button>
       <oc-button class="zk-no-print" size="small" @click="openStock">{{
-        $gettext('Bestand')
+        $gettext('Materialliste')
       }}</oc-button>
       <oc-button v-if="doc.close" class="zk-no-print" size="small" @click="close">{{
         $gettext('Schließen')
@@ -43,7 +43,7 @@
         <div v-if="pl.stale.value" class="zk-stale ext:p-3 ext:mb-4 ext:rounded">
           <span>{{
             $gettext(
-              'Der Bestand oder die Zelt-Daten haben sich geändert. „Neu berechnen“ passt die Mengen an; Haken bleiben erhalten, solange sich die Menge eines Artikels nicht ändert.'
+              'Die Materialliste (Bestand, Material oder Zelttypen) hat sich geändert. „Neu berechnen“ passt die Mengen an; Haken bleiben erhalten, solange sich die Menge eines Artikels nicht ändert.'
             )
           }}</span>
           <oc-button v-if="pl.canWrite.value" class="ext:ml-2" size="small" @click="pl.recalc()">{{
@@ -83,7 +83,7 @@
           <ChecklistTab v-else :pl="pl" />
         </div>
       </div>
-      <PrintLayout :list="pl.list.value" />
+      <PrintLayout :list="pl.list.value" :catalog="pl.catalog.value" />
     </template>
   </AppLayout>
 </template>
@@ -93,6 +93,7 @@ import { computed, nextTick, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useGettext } from 'vue3-gettext'
 import type { Resource, SpaceResource } from '@opencloud-eu/web-client'
 import AppLayout from '../components/AppLayout.vue'
+import '../components/tabs.css'
 import ChecklistTab from '../components/ChecklistTab.vue'
 import DemandTab from '../components/DemandTab.vue'
 import PrintLayout from '../components/PrintLayout.vue'
@@ -204,23 +205,6 @@ onBeforeUnmount(() => {
 </script>
 
 <style>
-.zk-tabs {
-  border-bottom: 1px solid var(--oc-role-outline-variant, #ccc);
-  overflow-x: auto;
-}
-.zk-tab {
-  min-height: 2.75rem;
-  padding: 0 1rem;
-  white-space: nowrap;
-  border-radius: 0;
-  box-shadow: none;
-  background: transparent;
-  border-bottom: 3px solid transparent;
-}
-.zk-tab[aria-selected='true'] {
-  border-bottom-color: var(--oc-role-primary, #1f3a2d);
-  font-weight: bold;
-}
 .zk-stale {
   border: 1px solid var(--oc-role-outline, #888);
   background: var(--oc-role-surface-container-high, #eee);

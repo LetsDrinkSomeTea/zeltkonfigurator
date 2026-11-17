@@ -1,4 +1,8 @@
-import { countMissingItems, hasCheckedItems } from '../../../src/domain/view/status'
+import {
+  countMissingItems,
+  derivePacklistStatus,
+  hasCheckedItems
+} from '../../../src/domain/view/status'
 import type { PackItem } from '../../../src/domain/types'
 
 const item = (patch: Partial<PackItem>) => ({ missing: 0, checked: false, ...patch }) as PackItem
@@ -18,5 +22,18 @@ describe('status helpers', () => {
         extraItems: [{ id: 'e', text: 'x', quantity: 1, checked: true }]
       })
     ).toBe(true)
+  })
+})
+
+describe('derivePacklistStatus mit weiterem Material', () => {
+  it('ist nicht leer, wenn nur weiteres Material eingetragen ist', () => {
+    expect(
+      derivePacklistStatus({
+        tents: [],
+        materials: [{ articleId: 'braeter', quantity: 1 }],
+        items: [],
+        deviations: []
+      })
+    ).toBe('ok')
   })
 })

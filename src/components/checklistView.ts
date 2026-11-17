@@ -1,15 +1,14 @@
+import { roofNames } from '../domain/view/roofNames'
 import { hasFinishLayer } from '../domain/walls'
-import type { Catalog, Category, Finish, PackItem, PacklistFile, TentConfig } from '../domain/types'
-import { CATEGORIES } from '../domain/types'
-
-export const CATEGORY_TITLES: Record<Category, string> = {
-  dach: 'Dächer und Planen',
-  wand: 'Seitenwand',
-  stange: 'Stangen und Gestänge',
-  abspannung: 'Heringe und Abspannung',
-  kleinteil: 'Kleinteile',
-  boden: 'Bodenplanen'
-}
+import type {
+  Catalog,
+  Category,
+  CategoryDef,
+  Finish,
+  PackItem,
+  PacklistFile,
+  TentConfig
+} from '../domain/types'
 
 export const FINISH_TITLES: Record<Finish, string> = {
   blanko: 'Blanko',
@@ -23,13 +22,20 @@ export interface ItemGroup {
   items: PackItem[]
 }
 
-/** Gruppiert nach Kategorie in der Reihenfolge von CATEGORIES; leere Gruppen entfallen. */
-export function groupByCategory(items: PackItem[]): ItemGroup[] {
-  return CATEGORIES.map((category) => ({
-    category,
-    title: CATEGORY_TITLES[category],
-    items: items.filter((i) => i.category === category)
-  })).filter((g) => g.items.length > 0)
+/**
+ * Gruppiert nach Kategorie in der Reihenfolge des Katalogs; leere Gruppen entfallen. Artikel mit
+ * unbekannter Kategorie folgen am Ende unter ihrer Kennung.
+ */
+export function groupByCategory(items: PackItem[], categories: CategoryDef[]): ItemGroup[] {
+  const known = new Set(categories.map((c) => c.id))
+  const extra = [...new Set(items.map((i) => i.category).filter((c) => !known.has(c)))]
+  return [...categories, ...extra.map((id) => ({ id, name: id }))]
+    .map((c) => ({
+      category: c.id,
+      title: c.name,
+      items: items.filter((i) => i.category === c.id)
+    }))
+    .filter((g) => g.items.length > 0)
 }
 
 /** Abhakbar ist nur, was tatsächlich aus dem Bestand gepackt wird. */
@@ -86,14 +92,22 @@ export interface TentDescriptionLine {
 /** Konfiguration in Worten; unbekannte Kennungen werden unverändert ausgegeben. */
 export function describeTent(tent: TentConfig, catalog: Catalog): TentDescriptionLine[] {
   const type = catalog.tentTypes.find((t) => t.id === tent.typeId)
-  const roof = type?.roofs.find((r) => r.id === tent.roofId)
   const wall = type?.walls.find((w) => w.id === tent.wallId)
   const build = wall?.builds.find((b) => b.id === tent.buildId)
   const lines: TentDescriptionLine[] = [{ label: 'Zelttyp', value: type?.name ?? tent.typeId }]
   if (tent.label?.trim()) {
     lines.push({ label: 'Bezeichnung', value: tent.label.trim() })
   }
-  lines.push({ label: 'Dach', value: roof?.label ?? tent.roofId })
+  tent.roofs.forEach((pick, i) => {
+    const module = type?.modules[i]
+    const roof = module?.roofs.find((r) => r.id === pick.roofId)
+    const setup = module?.setups.find((s) => s.id === pick.setupId)
+    const name = type ? roofNames(type.modules)[i] : ''
+    const label = name ? `Dach ${name}` : 'Dach'
+    let value = roof?.label ?? pick.roofId
+    if (module && module.setups.length > 1) value += `, ${setup?.label ?? pick.setupId}`
+    lines.push({ label, value })
+  })
   lines.push({ label: 'Seitenwand', value: wall?.label ?? tent.wallId })
   if (tent.buildId) {
     lines.push({ label: 'Bauart', value: build?.label ?? tent.buildId })

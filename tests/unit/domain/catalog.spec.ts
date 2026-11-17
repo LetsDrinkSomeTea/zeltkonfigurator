@@ -16,8 +16,22 @@ function count(parts: Part[], articleId: string): number {
   return parts.filter((p) => p.articleId === articleId).reduce((s, p) => s + p.quantity, 0)
 }
 
+/** Alle Teile, die im Zelttyp vorkommen (alle Varianten). */
 function allParts(t: TentType): Part[] {
-  return [...t.roofs.flatMap((r) => r.parts), ...t.fixed, ...t.walls.flatMap((w) => w.parts)]
+  return [
+    ...t.modules.flatMap((m) => [
+      ...m.roofs.flatMap((r) => r.parts),
+      ...m.setups.flatMap((st) => st.parts),
+      ...m.parts
+    ]),
+    ...t.fixed,
+    ...t.walls.flatMap((w) => w.parts)
+  ]
+}
+
+/** Teile im Standard-Aufbau ohne Dach und Wand: Bausteine (erster Aufbau) + feste Teile. */
+function standardParts(t: TentType): Part[] {
+  return [...t.modules.flatMap((m) => [...m.setups[0].parts, ...m.parts]), ...t.fixed]
 }
 
 const unique = (ids: string[]) => new Set(ids).size === ids.length
@@ -30,7 +44,10 @@ describe('Katalog: Konsistenz', () => {
 
   it('hat in jedem Zelttyp eindeutige Dach-, Wand- und Bauart-IDs', () => {
     for (const t of tentTypes) {
-      expect(unique(t.roofs.map((r) => r.id)), `${t.id} roofs`).toBe(true)
+      for (const m of t.modules) {
+        expect(unique(m.roofs.map((r) => r.id)), `${t.id} roofs`).toBe(true)
+        expect(unique(m.setups.map((st) => st.id)), `${t.id} setups`).toBe(true)
+      }
       expect(unique(t.walls.map((w) => w.id)), `${t.id} walls`).toBe(true)
       for (const w of t.walls) {
         expect(unique(w.builds.map((b) => b.id)), `${t.id}/${w.id} builds`).toBe(true)
@@ -47,9 +64,13 @@ describe('Katalog: Konsistenz', () => {
     }
   })
 
-  it('hat je Zelttyp mindestens eine Dach- und eine Wandoption', () => {
+  it('hat je Zelttyp mindestens ein Dach mit Variante und Aufbau und eine Wandoption', () => {
     for (const t of tentTypes) {
-      expect(t.roofs.length, t.id).toBeGreaterThanOrEqual(1)
+      expect(t.modules.length, t.id).toBeGreaterThanOrEqual(1)
+      for (const m of t.modules) {
+        expect(m.roofs.length, t.id).toBeGreaterThanOrEqual(1)
+        expect(m.setups.length, t.id).toBeGreaterThanOrEqual(1)
+      }
       expect(t.walls.length, t.id).toBeGreaterThanOrEqual(1)
     }
   })
@@ -128,7 +149,7 @@ describe('Katalog: Stichproben aus den Anforderungen', () => {
 
   it('Jurte: 12 Segmente und zwei Dächer', () => {
     const t = tent('jurte')
-    expect(t.roofs.map((r) => r.id)).toEqual(['jurtendach', 'kohtenblaetter'])
+    expect(t.modules[0].roofs.map((r) => r.id)).toEqual(['jurtendach', 'kohtenblaetter'])
     expect(t.walls.map((w) => w.id)).toEqual(['keine', 'normal', 'hoch'])
     expect(t.walls.filter((w) => w.segments > 0).every((w) => w.segments === 12)).toBe(true)
   })
@@ -147,36 +168,58 @@ describe('Katalog: Stichproben aus den Anforderungen', () => {
 
   it('Cafélounge: Großjurte, Jurte und Kohte; Holzgestänge statt Jurtengestänge', () => {
     const t = tent('cafelounge')
-    expect(t.roofs[0].parts).toEqual([
-      { articleId: 'grossjurtendach', quantity: 1 },
-      { articleId: 'jurtendach', quantity: 1 },
-      { articleId: 'kohtenblatt', quantity: 4 }
+    expect(t.modules.map((m) => m.id)).toEqual(['grossjurte', 'jurte', 'kohte'])
+    expect(t.modules.map((m) => m.setups.map((st) => st.id))).toEqual([
+      ['holzgestaenge'],
+      ['holzgestaenge'],
+      ['gestellt']
     ])
     expect(t.walls.find((w) => w.id === 'hoch')?.segments).toBe(24)
-    expect(count(t.fixed, 'holzgestaenge-cafelounge')).toBe(2)
-    expect(count(t.fixed, 'seitenstange')).toBe(0)
-    expect(count(t.fixed, 'mast-375')).toBe(2)
-    expect(count(t.fixed, 'kohtenkreuz')).toBe(1)
+    const parts = standardParts(t)
+    expect(count(parts, 'holzgestaenge-cafelounge')).toBe(2)
+    expect(count(parts, 'seitenstange')).toBe(0)
+    expect(count(parts, 'mast-375')).toBe(2)
+    expect(count(parts, 'kohtenkreuz')).toBe(1)
   })
 
   it('Theaterjurte hat eigene Abdeckplane und Spinne', () => {
     const t = tent('theaterjurte')
-    expect(count(t.fixed, 'theaterjurtendaechle')).toBe(1)
-    expect(count(t.fixed, 'theaterjurtenspinne')).toBe(1)
+    expect(count(standardParts(t), 'theaterjurtendaechle')).toBe(1)
+    expect(count(standardParts(t), 'theaterjurtenspinne')).toBe(1)
+  })
+
+  it('Dreierjurtenburg: drei einzeln einstellbare Jurtendächer und ein Dreiecksdachteil', () => {
+    const t = tent('dreierjurtenburg')
+    expect(t.modules.map((m) => m.id)).toEqual(['jurte', 'jurte', 'jurte'])
+    expect(count(t.fixed, 'dreiecksdachteil')).toBe(1)
+  })
+
+  it('Jurten, Großjurte, Gigajurten und Theaterjurte lassen sich hängen', () => {
+    for (const id of ['jurte', 'grossjurte', 'gigajurte9', 'gigajurte12', 'theaterjurte']) {
+      const haengen = tent(id).modules[0].setups.find((st) => st.id === 'gehaengt')
+      expect(haengen, id).toBeDefined()
+      // 2 lange Mittelpfosten statt der Masten, 4 × T-Profil 60 cm mit PacMan
+      expect(count(haengen!.parts, 'mast-500'), id).toBe(2)
+      expect(count(haengen!.parts, 'mast-375'), id).toBe(0)
+      expect(count(haengen!.parts, 't-profil-60'), id).toBe(4)
+      expect(count(haengen!.parts, 'pacman'), id).toBe(4)
+    }
+    expect(tent('kohte').modules[0].setups.map((st) => st.id)).toEqual(['gestellt'])
   })
 
   it('60-cm-T-Profile nur bei der Gigajurte (8), PacMan auf jedes T-Profil', () => {
     for (const t of tentTypes) {
       const giga = t.id === 'gigajurte9' || t.id === 'gigajurte12'
-      expect(count(t.fixed, 't-profil-60'), t.id).toBe(giga ? 8 : 0)
-      expect(count(t.fixed, 'pacman'), t.id).toBe(
-        count(t.fixed, 't-profil-30') + count(t.fixed, 't-profil-60')
+      const parts = standardParts(t)
+      expect(count(parts, 't-profil-60'), t.id).toBe(giga ? 8 : 0)
+      expect(count(parts, 'pacman'), t.id).toBe(
+        count(parts, 't-profil-30') + count(parts, 't-profil-60')
       )
     }
   })
 
   it('Gigajurte 12 m: Dach aus Gigajurtendach, 12 Zwischendachteilen und 6 Kohtenblättern', () => {
-    const roof = tent('gigajurte12').roofs[0]
+    const roof = tent('gigajurte12').modules[0].roofs[0]
     expect(roof.parts).toEqual([
       { articleId: 'gigajurtendach', quantity: 1 },
       { articleId: 'jurten-zwischendachteil', quantity: 12 },
@@ -207,7 +250,8 @@ describe('Katalog: Stichproben aus den Anforderungen', () => {
       ['yellowstone', 'bodenplane-eckig']
     ]) {
       const t = tent(id)
-      expect(t.roofs).toHaveLength(1)
+      expect(t.modules).toHaveLength(1)
+      expect(t.modules[0].roofs).toHaveLength(1)
       expect(t.walls.map((w) => w.id)).toEqual(['keine'])
       expect(count(t.fixed, boden)).toBe(1)
     }
@@ -219,11 +263,6 @@ describe('Standardkonfigurationen', () => {
     for (const t of tentTypes) {
       const d = t.defaults
       if (!d) continue
-      if (d.roofId)
-        expect(
-          t.roofs.some((r) => r.id === d.roofId),
-          `${t.id} roof`
-        ).toBe(true)
       const wall = t.walls.find((w) => w.id === (d.wallId ?? t.walls[0].id))
       expect(wall, `${t.id} wall`).toBeDefined()
       if (d.buildId)
