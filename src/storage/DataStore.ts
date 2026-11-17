@@ -1,5 +1,8 @@
 import type { PacklistFile, StockFile } from '../domain/types'
 
+/** Jemand anderes hat die Datei geändert; etag = neuer Stand, falls bekannt. */
+export type ChangeListener = (change: { etag: string | null }) => void
+
 export interface Versioned<T> {
   data: T
   /** null = Datei existiert noch nicht */
@@ -17,6 +20,8 @@ export interface DataStore {
   loadStock(): Promise<Versioned<StockFile>>
   /** etag = zuletzt gelesener Stand, null = neu anlegen. Liefert den neuen ETag. */
   saveStock(file: StockFile, etag: string | null): Promise<string>
+  /** Meldet Änderungen der Bestandsdatei durch andere. Liefert die Abmeldung. */
+  watchStock?(listener: ChangeListener): () => void
 }
 
 /**
@@ -31,6 +36,8 @@ export interface PacklistDocument {
   load(): Promise<Versioned<PacklistFile | null>>
   /** etag = zuletzt gelesener Stand. Liefert den neuen ETag. */
   save(file: PacklistFile, etag: string | null): Promise<string>
+  /** Meldet Änderungen der Datei durch andere. Liefert die Abmeldung. */
+  watch?(listener: ChangeListener): () => void
   /** Zurück zur Dateiansicht, sofern die Umgebung das anbietet. */
   close?(): void
 }

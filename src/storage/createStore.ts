@@ -4,6 +4,7 @@ import { parseStockFile } from '../domain/schema'
 import type { StockFile } from '../domain/types'
 import { getAppConfig } from './appConfig'
 import type { DataStore, Versioned } from './DataStore'
+import { useWatchFile } from './fileEvents'
 import { readStorageConfig, resolveLocation, type ResolvedLocation } from './location'
 import { useSpacesReady } from './spaces'
 import { createWebDavFiles, WebDavDataStore } from './WebDavDataStore'
@@ -32,6 +33,7 @@ export function createStore(): DataStore {
   const spacesStore = useSpacesStore()
   const userStore = useUserStore()
   const stockLocation = useStockLocation()
+  const watchFile = useWatchFile()
 
   let pending: Promise<WebDavDataStore> | undefined
 
@@ -67,6 +69,18 @@ export function createStore(): DataStore {
   return {
     canWrite: async () => (await store()).canWrite(),
     loadStock: async (): Promise<Versioned<StockFile>> => (await store()).loadStock(),
-    saveStock: async (file, etag) => (await store()).saveStock(file, etag)
+    saveStock: async (file, etag) => (await store()).saveStock(file, etag),
+    watchStock: (listener) => {
+      // Die Datei kann noch fehlen; ihre ID wird beim ersten passenden Ereignis nachgeschlagen.
+      let fileId: string | undefined
+      const resolveFileId = async () => {
+        const { space, path } = await stockLocation()
+        const info = await clientService.webdav.getFileInfo(space, { path })
+        fileId = info.fileId || info.id || undefined
+        return fileId
+      }
+      void resolveFileId().catch((): undefined => undefined)
+      return watchFile({ fileId: () => fileId, resolveFileId }, listener)
+    }
   }
 }

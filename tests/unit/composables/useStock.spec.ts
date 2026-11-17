@@ -123,4 +123,52 @@ describe('useStock', () => {
     expect(s.stock.value).toEqual({})
     expect(spy).not.toHaveBeenCalled()
   })
+
+  describe('changes by others', () => {
+    it('reloads silently when someone else saves the file', async () => {
+      const { store, s } = await setup({
+        stock: { schemaVersion: 1, stock: { a: { quantity: 1 } } }
+      })
+      store.externalSaveStock({ schemaVersion: 1, stock: { a: { quantity: 9 } } })
+      await vi.advanceTimersByTimeAsync(0)
+      expect(s.stock.value).toEqual({ a: 9 })
+      expect(s.loading.value).toBe(false)
+    })
+
+    it('keeps own unsaved changes on top of the new state and saves them without conflict', async () => {
+      const { store, s } = await setup({
+        stock: { schemaVersion: 1, stock: { a: { quantity: 1 }, b: { quantity: 1 } } }
+      })
+      s.setQuantity('b', 4)
+      store.externalSaveStock({
+        schemaVersion: 1,
+        stock: { a: { quantity: 9 }, b: { quantity: 1 } }
+      })
+      await vi.advanceTimersByTimeAsync(0)
+      expect(s.stock.value).toEqual({ a: 9, b: 4 })
+      const spy = vi.spyOn(store, 'saveStock')
+      await vi.advanceTimersByTimeAsync(STOCK_SAVE_DELAY_MS)
+      expect(spy).toHaveBeenCalledTimes(1)
+      expect(s.error.value).toBeNull()
+      expect((await store.loadStock()).data.stock).toEqual({
+        a: { quantity: 9 },
+        b: { quantity: 4 }
+      })
+    })
+
+    it('reloads when the tab becomes visible again', async () => {
+      const { store, s } = await setup({
+        stock: { schemaVersion: 1, stock: { a: { quantity: 1 } } }
+      })
+      // Änderung, deren Ereignis verpasst wurde
+      await store.saveStock(
+        { schemaVersion: 1, stock: { a: { quantity: 5 } } },
+        (await store.loadStock()).etag
+      )
+      expect(s.stock.value).toEqual({ a: 1 })
+      document.dispatchEvent(new Event('visibilitychange'))
+      await vi.advanceTimersByTimeAsync(0)
+      expect(s.stock.value).toEqual({ a: 5 })
+    })
+  })
 })

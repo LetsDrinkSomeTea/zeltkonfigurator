@@ -11,6 +11,7 @@ import type {
   TentTypeData
 } from '../domain/types'
 import { ConflictError } from '../storage/DataStore'
+import { onVisible } from './onVisible'
 import { useStore } from './useStore'
 
 export const STOCK_SAVE_DELAY_MS = 800
@@ -125,6 +126,8 @@ export interface UseStock {
   error: Ref<Error | null>
   canWrite: Ref<boolean>
   load(): Promise<void>
+  /** Lädt still nach, wenn die Datei woanders geändert wurde; eigene ungespeicherte Änderungen bleiben. */
+  refresh(): Promise<void>
   setQuantity(articleId: string, quantity: number): void
   setNote(articleId: string, note: string): void
   removeEntry(articleId: string): void
@@ -149,6 +152,7 @@ export function useStock(): UseStock {
   let pending: StockOp[] = []
   let timer: ReturnType<typeof setTimeout> | undefined
   let chain: Promise<void> = Promise.resolve()
+  let unwatch: (() => void)[] | undefined
 
   function clearTimer() {
     if (timer !== undefined) {
@@ -166,11 +170,43 @@ export function useStock(): UseStock {
       file.value = loaded.data
       etag = loaded.etag
       pending = []
+      watchChanges()
     } catch (e) {
       error.value = toError(e)
     } finally {
       loading.value = false
     }
+  }
+
+  function watchChanges() {
+    if (unwatch) return
+    const changed = store.watchStock?.((change) => {
+      if (change.etag === null || change.etag !== etag) void refresh()
+    })
+    unwatch = [onVisible(() => void refresh())]
+    if (changed) unwatch.push(changed)
+  }
+
+  async function doRefresh() {
+    try {
+      const fresh = await store.loadStock()
+      if (fresh.etag === etag) return
+      let next = fresh.data
+      for (const op of pending) {
+        next = applyFileOp(next, op)
+      }
+      file.value = next
+      etag = fresh.etag
+    } catch (e) {
+      error.value = toError(e)
+    }
+  }
+
+  /** Läuft nach laufenden Speicherungen, damit kein halber Stand überschrieben wird. */
+  function refresh(): Promise<void> {
+    const run = chain.then(doRefresh)
+    chain = run
+    return run
   }
 
   async function doSave() {
@@ -230,6 +266,7 @@ export function useStock(): UseStock {
 
   if (getCurrentScope()) {
     onScopeDispose(() => {
+      for (const stop of unwatch ?? []) stop()
       if (pending.length > 0) {
         void flush()
       }
@@ -247,6 +284,7 @@ export function useStock(): UseStock {
     error,
     canWrite,
     load,
+    refresh,
     setQuantity: (articleId, quantity) => push({ type: 'setQuantity', articleId, quantity }),
     setNote: (articleId, note) => push({ type: 'setNote', articleId, note }),
     removeEntry: (articleId) => push({ type: 'remove', articleId }),

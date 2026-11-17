@@ -209,11 +209,27 @@ export function normalizeEtag(etag: string | null | undefined): string | null {
   return etag.replace(/^W\//, '').replace(/"/g, '') || null
 }
 
-export function createWebDavFiles<S>(webdav: WebDavApi<S>, space: S): WebDavFiles {
+/** Wartezeiten, wenn der Server „425 Too Early“ meldet (Datei wird nach dem Speichern noch verarbeitet). */
+export const TOO_EARLY_DELAYS_MS = [200, 400, 800, 1600, 3200]
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+export function createWebDavFiles<S>(
+  webdav: WebDavApi<S>,
+  space: S,
+  delays: readonly number[] = TOO_EARLY_DELAYS_MS
+): WebDavFiles {
   return {
     async read(path) {
-      const res = await webdav.getFileContents(space, { path }, { responseType: 'text' })
-      return { body: res.body, etag: normalizeEtag(res.headers?.ETag) }
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const res = await webdav.getFileContents(space, { path }, { responseType: 'text' })
+          return { body: res.body, etag: normalizeEtag(res.headers?.ETag) }
+        } catch (e) {
+          if (statusOf(e) !== 425 || attempt >= delays.length) throw e
+          await sleep(delays[attempt])
+        }
+      }
     },
     async write(path, content, etag) {
       const resource = await webdav.putFileContents(space, {

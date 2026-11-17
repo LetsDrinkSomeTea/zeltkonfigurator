@@ -3,6 +3,7 @@ import type { Resource, SpaceResource } from '@opencloud-eu/web-client'
 import { packlistName } from '../domain/fileNames'
 import { parsePacklistFile } from '../domain/schema'
 import { NotFoundError, type PacklistDocument } from './DataStore'
+import { useWatchFile } from './fileEvents'
 import { createWebDavFiles, WebDavPacklistDocument } from './WebDavDataStore'
 
 export const APP_ID = 'zeltkonfigurator'
@@ -21,6 +22,7 @@ export interface OpenedFile {
  */
 export function createDocument(opened: OpenedFile): PacklistDocument {
   const clientService = useClientService()
+  const watchFile = useWatchFile()
 
   function doc(): WebDavPacklistDocument {
     const space = opened.space()
@@ -44,6 +46,13 @@ export function createDocument(opened: OpenedFile): PacklistDocument {
     },
     canWrite: async () => await doc().canWrite(),
     load: async () => await doc().load(),
-    save: async (file, etag) => await doc().save(file, etag)
+    save: async (file, etag) => await doc().save(file, etag),
+    watch: (listener) => {
+      const fileId = () => {
+        const resource = opened.resource()
+        return resource?.fileId || resource?.id || undefined
+      }
+      return watchFile({ fileId }, listener)
+    }
   }
 }

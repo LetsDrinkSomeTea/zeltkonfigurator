@@ -336,4 +336,22 @@ describe('createWebDavFiles adapter', () => {
     expect(calls[2]).toEqual(['put', 'space', { path: 'd/b.json', content: 'c', overwrite: false }])
     expect(calls[3]).toEqual(['mkdir', 'space', { path: 'd', fetchFolder: false }])
   })
+
+  it('retries reads while the server answers 425 Too Early, then gives up', async () => {
+    const tooEarly = Object.assign(new Error('too early'), { statusCode: 425 })
+    let failures = 2
+    const getFileContents = vi.fn(async () => {
+      if (failures-- > 0) throw tooEarly
+      return { body: 'x', headers: { ETag: '"e"' } }
+    })
+    const api = { getFileContents, putFileContents: vi.fn(), createFolder: vi.fn() }
+    const f = createWebDavFiles(api as unknown as WebDavApi<string>, 'space', [0, 0, 0])
+    expect(await f.read('a')).toEqual({ body: 'x', etag: 'e' })
+    expect(getFileContents).toHaveBeenCalledTimes(3)
+
+    failures = 10
+    getFileContents.mockClear()
+    await expect(f.read('a')).rejects.toBe(tooEarly)
+    expect(getFileContents).toHaveBeenCalledTimes(4)
+  })
 })
