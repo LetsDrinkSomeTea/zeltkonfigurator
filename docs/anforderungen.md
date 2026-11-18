@@ -138,12 +138,12 @@ Dabei gilt:
 
 ### 5.6 Einbindung in OpenCloud
 
-| ID   | Anforderung                                                                                                                                                                                                                 |
-| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| F-40 | Die App hat keinen Eintrag im App-Umschalter. Sie wird über ihre Dateien und den Eintrag „Packliste“ im „Neu“-Menü geöffnet.                                                                                                |
-| F-41 | Der Ablageort des Bestands (Space und Pfad der Datei) wird einmal in der App-Konfiguration des Servers festgelegt. Vorgabe: `Zeltmaterial.bestand` auf oberster Ebene des Space „Material-Team“.                            |
-| F-42 | Fehlt die Konfiguration, der Space oder der Zugriff, zeigt die App eine verständliche Meldung statt einer leeren Seite.                                                                                                     |
-| F-43 | Packlisten (`.packliste`) und der Bestand (`.bestand`) lassen sich aus der Dateiansicht heraus mit der App öffnen. Jede Packliste verlinkt auf den Bestand; er öffnet in einem neuen Tab, damit die Packliste offen bleibt. |
+| ID   | Anforderung                                                                                                                                                                                                                           |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F-40 | Die App hat keinen Eintrag im App-Umschalter. Sie wird über ihre Dateien geöffnet. Neue Packlisten entstehen vorerst als Kopie einer bestehenden; der Eintrag „Packliste“ im „Neu“-Menü ist bis zum produktiven Betrieb ausgeblendet. |
+| F-41 | Der Ablageort des Bestands (Space und Pfad der Datei) wird einmal in der App-Konfiguration des Servers festgelegt. Vorgabe: `Zeltmaterial.bestand` auf oberster Ebene des Space „Material-Team“.                                      |
+| F-42 | Fehlt die Konfiguration, der Space oder der Zugriff, zeigt die App eine verständliche Meldung statt einer leeren Seite.                                                                                                               |
+| F-43 | Packlisten (`.packliste`) und der Bestand (`.bestand`) lassen sich aus der Dateiansicht heraus mit der App öffnen. Jede Packliste verlinkt auf den Bestand; er öffnet in einem neuen Tab, damit die Packliste offen bleibt.           |
 
 ## 6. Nichtfunktionale Anforderungen
 

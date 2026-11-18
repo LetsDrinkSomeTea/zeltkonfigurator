@@ -18,16 +18,15 @@ export default defineWebApplication({
       // Kein Eintrag im App-Umschalter: Die App wird über ihre Dateien geöffnet.
       extensions: [
         {
-          // Packlisten lassen sich über „Neu“ in jedem Ordner anlegen.
+          // Vorerst kein Eintrag im „Neu“-Menü: Wer keinen Zugriff auf den Space mit dem Bestand
+          // hat, könnte sonst Packlisten anlegen, die sich nicht berechnen lassen. Neue Packlisten
+          // entstehen bis dahin als Kopie einer bestehenden. Zum Einschalten wieder ergänzen:
+          //   newFileMenu: { menuTitle: () => $gettext('Packliste'), defaultName: () => $gettext('Neue Packliste') }
           extension: 'packliste',
           routeName: 'zeltkonfigurator-liste',
           label: $gettext('Im Zeltkonfigurator öffnen'),
-          // Datei-Icon in der Dateiliste und im „Neu“-Menü
-          icon: { name: 'resource-type-form', fillType: 'fill' as const },
-          newFileMenu: {
-            menuTitle: () => $gettext('Packliste'),
-            defaultName: () => $gettext('Neue Packliste')
-          }
+          // Datei-Icon in der Dateiliste
+          icon: { name: 'resource-type-form', fillType: 'fill' as const }
         },
         {
           extension: 'bestand',

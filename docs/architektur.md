@@ -376,7 +376,8 @@ technischem Risiko und wird deshalb zuerst und einzeln geklärt.
 | `/bestand` | InventoryView  | Artikel nach Kategorie, Suche, Stückzahlen bearbeiten                                                    |
 
 - Einstieg ist die Dateiansicht: `appInfo.extensions` verknüpft `.packliste` und `.bestand` mit
-  den Routen und trägt „Packliste“ ins „Neu“-Menü ein (`newFileMenu`). Einen Eintrag im
+  den Routen. Der Eintrag „Packliste“ im „Neu“-Menü (`newFileMenu`) ist vorerst ausgeblendet;
+  neue Packlisten entstehen als Kopie einer bestehenden. Einen Eintrag im
   App-Umschalter und eine Seitenleiste gibt es nicht.
 - Die Zeltkarte zeigt die Konfiguration in einer Zeile; die Auswahlfelder stehen hinter
   „Anpassen“ (F-2C). Sie baut ihre Auswahlfelder aus dem Zelttyp: Dach nur bei mehreren

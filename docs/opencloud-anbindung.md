@@ -149,7 +149,7 @@ Admin-Dokumentation „Web Applications“:
 - **Installation:** Der Ordner im Web-App-Verzeichnis muss wie die App-ID heißen
   (`zeltkonfigurator`) und den Inhalt von `dist/` enthalten.
 - **Navigation:** Die App registriert weder `navItems` noch einen Eintrag im App-Umschalter.
-  Sie hängt über `appInfo.extensions` an den Endungen `.packliste` (mit `newFileMenu`) und
+  Sie hängt über `appInfo.extensions` an den Endungen `.packliste` (derzeit ohne `newFileMenu`) und
   `.bestand`. Im Browser gegen OpenCloud 9.0.0 geprüft: „Neu → Packliste“, Öffnen per Klick,
   Schließen zurück in den Ordner, Nur-Lese-Ansicht für Mitglieder mit Leserecht.
 - **Neustart nötig:** OpenCloud liest das `manifest.json` einer App nur beim Start. Da der
